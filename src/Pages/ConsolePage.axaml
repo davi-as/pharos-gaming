@@ -14,6 +14,12 @@
                         <TextBlock x:Name="HeroText" Classes="dim" Text="O controle liga o PC e a TV, o botão Xbox abre o Hydra e os jogos rodam com MangoHud."/>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Button Click="Tv_Mode_Click" ToolTip.Tip="FPS, limite e temperaturas em letras grandes, pelo controle (também: pharos-gaming --tv)">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <PathIcon Data="{StaticResource ic-television}" Width="15" Height="15"/>
+                                <TextBlock Text="Modo TV"/>
+                            </StackPanel>
+                        </Button>
                         <Button Click="Doctor_Click" ToolTip.Tip="Roda o gaming-doctor de novo">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <PathIcon Data="{StaticResource ic-stethoscope}" Width="15" Height="15"/>

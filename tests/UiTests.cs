@@ -93,5 +93,10 @@ public class Screenshots
             w.CaptureRenderedFrame()?.Save(Path.Combine(dir, $"{i:00}-{nav[i].Tag ?? i}.png"));
         }
         w.Close();
+        var tv = new TvWindow { WindowState = WindowState.Normal, Width = 1600, Height = 900 };
+        tv.Show();
+        for (int t = 0; t < 30; t++) { Avalonia.Threading.Dispatcher.UIThread.RunJobs(); Live.Step(); Thread.Sleep(50); }
+        tv.CaptureRenderedFrame()?.Save(Path.Combine(dir, "99-modo-tv.png"));
+        tv.Close();
     }
 }

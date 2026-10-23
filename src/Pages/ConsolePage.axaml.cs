@@ -207,6 +207,8 @@ public partial class ConsolePage : UserControl
 
     private async void Doctor_Click(object? sender, RoutedEventArgs e) => await RunDoctor();
 
+    private void Tv_Mode_Click(object? sender, RoutedEventArgs e) => new TvWindow().Show();
+
     /// <summary>gaming-doctor em cartões por seção, com ✓ / ! / ✗ viram ícones.</summary>
     private async Task RunDoctor()
     {

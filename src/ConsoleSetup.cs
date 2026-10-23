@@ -27,6 +27,7 @@ public static partial class ConsoleSetup
     {
         new("hydra", "Abrir o Hydra"),
         new("steam_bp", "Abrir o Steam Big Picture"),
+        new("pharos_tv", "Pharos na TV (abre e fecha)"),
         new("mangohud", "Mostrar/esconder MangoHud"),
         new("screenshot", "Capturar a tela"),
         new("tv_pc", "TV na entrada do PC"),

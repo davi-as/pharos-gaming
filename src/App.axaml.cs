@@ -20,7 +20,8 @@ public partial class App : Application
     {
         ApplyTheme(AppSettings.Current.Theme);
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            desktop.MainWindow = new MainWindow();
+            // --tv: só o modo TV (o controle abre assim, pela ação "Pharos na TV" do daemon do console)
+            desktop.MainWindow = desktop.Args?.Contains("--tv") == true ? new TvWindow() : new MainWindow();
         base.OnFrameworkInitializationCompleted();
     }
 }

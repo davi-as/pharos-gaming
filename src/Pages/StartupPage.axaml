@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:PharosGaming"
+             x:Class="PharosGaming.StartupPage">
+    <ScrollViewer>
+        <StackPanel Margin="6,6,16,6" Spacing="12">
+            <TextBlock Classes="dim" Text="Programas que abrem sozinhos com a sessão: menos coisa ligada = boot mais rápido e mais RAM livre para o jogo"/>
+            <Border Classes="card" Margin="0">
+                <StackPanel>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock x:Name="Summary" Classes="label"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                            <Button x:Name="BtnRestore" Content="RESTAURAR REMOVIDOS" FontSize="11" Click="Restore_Click"/>
+                            <Button Content="ATUALIZAR" FontSize="11" Click="Scan_Click"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock x:Name="Result" Classes="dim" FontSize="12" Margin="0,6,0,0"/>
+                    <ItemsControl x:Name="List" Margin="0,6,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:StartupEntry">
+                                <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,8">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <ToggleSwitch IsChecked="{Binding Enabled, Mode=OneWay}" IsEnabled="{Binding CanToggle}" Tag="{Binding}" OnContent="" OffContent=""
+                                                      Click="Toggle_Click" VerticalAlignment="Top"/>
+                                        <StackPanel Grid.Column="1" Margin="10,0">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+                                                <TextBlock Text="{Binding State}" Classes="label" FontSize="10" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Source}" Classes="dim" FontSize="12"/>
+                                            <TextBlock Text="{Binding Command}" FontFamily="monospace" FontSize="11" Foreground="{StaticResource Faint}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Detail}" Foreground="{StaticResource Faint}" FontSize="12" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="2" Content="REMOVER" FontSize="11" Tag="{Binding}" IsVisible="{Binding CanRemove}" VerticalAlignment="Top" Click="Remove_Click"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap" Margin="0,8,0,0"
+                               Text="Desligar é sempre reversível (o programa continua instalado). O que o Hyprland abre por exec-once fica na configuração dele e não aparece aqui."/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

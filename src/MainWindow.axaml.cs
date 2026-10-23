@@ -24,6 +24,7 @@ public partial class MainWindow : Window
         new("PHAROS DESEMPENHO", "Stress test", () => new StressPage()),
         new("PHAROS DESEMPENHO", "Overclock", () => new OcPage()),
         new("PHAROS FERRAMENTAS", "Otimização", () => new OptimizePage()),
+        new("PHAROS FERRAMENTAS", "Inicialização", () => new StartupPage()),
     };
 
     private readonly Dictionary<PageDef, Control> _made = new();

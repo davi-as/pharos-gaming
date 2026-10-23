@@ -55,6 +55,10 @@ public sealed class AppSettings
     // Otimização: valores originais dos ajustes antes da primeira alteração (null = não existia)
     public Dictionary<string, string?> TweakBackup { get; set; } = new();
 
+    // Inicialização: removidos (para restaurar) e serviços desligados pelo PHAROS (para poder religar)
+    public List<StartupBackup> StartupRemoved { get; set; } = new();
+    public List<string> StartupDisabledServices { get; set; } = new();
+
     // FPS estimado: a chave fica neste arquivo, que só o usuário lê (permissão 600)
     public string? HowManyFpsKey { get; set; }
 

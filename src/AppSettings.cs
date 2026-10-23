@@ -35,9 +35,13 @@ public sealed class CustomGame
 /// <summary>Configurações em ~/.config/pharos-gaming/settings.json.</summary>
 public sealed class AppSettings
 {
-    public static string Folder { get; } =
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "pharos-gaming");
+    // PHAROS_CONFIG_DIR: os testes usam uma pasta temporária para não mexer nas configurações de verdade
+    public static string Folder { get; } = Environment.GetEnvironmentVariable("PHAROS_CONFIG_DIR") is { Length: > 0 } dir ? dir
+        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "pharos-gaming");
     private static string FilePath => Path.Combine(Folder, "settings.json");
+
+    /// <summary>Instância única, compartilhada pelas páginas (cada uma grava a sua parte).</summary>
+    public static AppSettings Current { get; } = Load();
 
     public Dictionary<string, GameProfile> GameProfiles { get; set; } = new();
     public List<CustomGame> CustomGames { get; set; } = new();

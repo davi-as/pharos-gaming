@@ -7,9 +7,9 @@ using Avalonia.Threading;
 namespace PharosGaming;
 
 /// <summary>Aba JOGOS: lista os jogos instalados, guarda um perfil por jogo e inicia aplicando o perfil.</summary>
-public partial class MainWindow
+public partial class LibraryPage : UserControl
 {
-    private readonly AppSettings _settings = AppSettings.Load();
+    private readonly AppSettings _settings = AppSettings.Current;
     private List<LibGame> _libGames = new();
     private LibGame? _lg;
     private GameProfile? _lp;
@@ -25,8 +25,9 @@ public partial class MainWindow
          "Atenção: a Valve diz que usar esta opção pode reduzir o seu Fator de Confiança (Trust Factor) no matchmaking."),
     };
 
-    private void InitLauncher()
+    public LibraryPage()
     {
+        InitializeComponent();
         foreach (var (label, token, hint) in ExtraPresets)
         {
             var b = new Button { Content = label, FontSize = 11, Margin = new Thickness(0, 0, 6, 6) };
@@ -80,9 +81,10 @@ public partial class MainWindow
 
     private async Task<string?> PickFileAsync(string title, string? startDir = null)
     {
+        var sp = TopLevel.GetTopLevel(this)!.StorageProvider;
         var opts = new FilePickerOpenOptions { Title = title };
-        if (startDir != null && Directory.Exists(startDir)) opts.SuggestedStartLocation = await StorageProvider.TryGetFolderFromPathAsync(startDir);
-        var files = await StorageProvider.OpenFilePickerAsync(opts);
+        if (startDir != null && Directory.Exists(startDir)) opts.SuggestedStartLocation = await sp.TryGetFolderFromPathAsync(startDir);
+        var files = await sp.OpenFilePickerAsync(opts);
         return files.Count > 0 ? files[0].TryGetLocalPath() : null;
     }
 

@@ -42,9 +42,27 @@
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
-        <Style Selector="TabItem">
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+        <!-- Item do menu lateral -->
+        <Style Selector="RadioButton.nav">
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="12,7">
+                        <ContentPresenter Content="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="RadioButton.nav:pointerover">
+            <Setter Property="Foreground" Value="{StaticResource Fg}"/>
+        </Style>
+        <Style Selector="RadioButton.nav:checked">
+            <Setter Property="Background" Value="{StaticResource LineStrong}"/>
+            <Setter Property="Foreground" Value="{StaticResource Fg}"/>
         </Style>
         <Style Selector="WrapPanel.chips">
             <Setter Property="Margin" Value="0,4,0,10"/>

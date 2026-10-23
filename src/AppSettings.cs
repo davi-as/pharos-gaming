@@ -98,6 +98,10 @@ public sealed class AppSettings
     public Dictionary<string, bool> OverlayHidden { get; set; } = new();
     /// <summary>Saída do Hyprland que é a TV (ex. DP-2); null = adivinhar pela descrição do monitor.</summary>
     public string? TvScreen { get; set; }
+    // Ajustes do menu rápido (só dele): tema "dark" | "light", tamanho da interface e animações
+    public string TvTheme { get; set; } = "dark";
+    public double TvScale { get; set; } = 1.0;
+    public bool TvMotion { get; set; } = true;
 
     public Dictionary<string, GameProfile> GameProfiles { get; set; } = new();
     public List<CustomGame> CustomGames { get; set; } = new();

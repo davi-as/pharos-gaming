@@ -2,19 +2,42 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="PharosGaming.TvWindow"
         Title="Pharos Gaming · TV" Icon="/Assets/icon-192.png" WindowState="FullScreen" Width="1600" Height="900"
-        RequestedThemeVariant="Dark" Background="#070E1A">
+        RequestedThemeVariant="Dark" Background="{DynamicResource TvBg}">
     <Window.Resources>
-        <!-- vidro escuro sobre a noite do Nilo; lápis-lazúli só no foco e no que está ligado -->
-        <SolidColorBrush x:Key="TvGlass" Color="#14FFFFFF"/>
-        <SolidColorBrush x:Key="TvGlassHi" Color="#22FFFFFF"/>
-        <SolidColorBrush x:Key="TvEdge" Color="#1AFFFFFF"/>
-        <SolidColorBrush x:Key="TvInk" Color="#F0E6D0"/>
-        <SolidColorBrush x:Key="TvSoft" Color="#A8B3C5"/>
-        <SolidColorBrush x:Key="TvFaint" Color="#6B7891"/>
-        <SolidColorBrush x:Key="TvLapis" Color="#6F98D8"/>
-        <SolidColorBrush x:Key="TvOk" Color="#58C1B3"/>
-        <SolidColorBrush x:Key="TvWarn" Color="#F0C14B"/>
-        <SolidColorBrush x:Key="TvBad" Color="#FF7F5E"/>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <!-- escuro: vidro sobre a noite do Nilo; lápis-lazúli só no foco e no que está ligado -->
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="TvBg" Color="#070E1A"/>
+                    <SolidColorBrush x:Key="TvGlass" Color="#14FFFFFF"/>
+                    <SolidColorBrush x:Key="TvGlassHi" Color="#22FFFFFF"/>
+                    <SolidColorBrush x:Key="TvEdge" Color="#1AFFFFFF"/>
+                    <SolidColorBrush x:Key="TvTrack" Color="#16FFFFFF"/>
+                    <SolidColorBrush x:Key="TvInk" Color="#F0E6D0"/>
+                    <SolidColorBrush x:Key="TvSoft" Color="#A8B3C5"/>
+                    <SolidColorBrush x:Key="TvFaint" Color="#6B7891"/>
+                    <SolidColorBrush x:Key="TvLapis" Color="#6F98D8"/>
+                    <SolidColorBrush x:Key="TvOk" Color="#58C1B3"/>
+                    <SolidColorBrush x:Key="TvWarn" Color="#F0C14B"/>
+                    <SolidColorBrush x:Key="TvBad" Color="#FF7F5E"/>
+                </ResourceDictionary>
+                <!-- claro: papiro, as mesmas cores do tema claro do app -->
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="TvBg" Color="#F6EEDD"/>
+                    <SolidColorBrush x:Key="TvGlass" Color="#A6FFFFFF"/>
+                    <SolidColorBrush x:Key="TvGlassHi" Color="#E6FFFFFF"/>
+                    <SolidColorBrush x:Key="TvEdge" Color="#2212264A"/>
+                    <SolidColorBrush x:Key="TvTrack" Color="#1412264A"/>
+                    <SolidColorBrush x:Key="TvInk" Color="#12264A"/>
+                    <SolidColorBrush x:Key="TvSoft" Color="#4A566D"/>
+                    <SolidColorBrush x:Key="TvFaint" Color="#7D8698"/>
+                    <SolidColorBrush x:Key="TvLapis" Color="#2B4F8F"/>
+                    <SolidColorBrush x:Key="TvOk" Color="#22706A"/>
+                    <SolidColorBrush x:Key="TvWarn" Color="#9A6E12"/>
+                    <SolidColorBrush x:Key="TvBad" Color="#A33D26"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
     </Window.Resources>
     <Window.Styles>
         <!-- botão: vidro com borda fina; foco cresce com mola suave, ganha luz e borda em lápis-lazúli; aperto afunda -->
@@ -22,9 +45,9 @@
             <Setter Property="Padding" Value="20,16"/>
             <Setter Property="CornerRadius" Value="22"/>
             <Setter Property="BorderThickness" Value="1.5"/>
-            <Setter Property="Background" Value="{StaticResource TvGlass}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource TvEdge}"/>
-            <Setter Property="Foreground" Value="{StaticResource TvInk}"/>
+            <Setter Property="Background" Value="{DynamicResource TvGlass}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource TvEdge}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TvInk}"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="VerticalAlignment" Value="Stretch"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -50,9 +73,9 @@
             </Setter>
         </Style>
         <Style Selector="Button.tile:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource TvGlassHi}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource TvEdge}"/>
-            <Setter Property="Foreground" Value="{StaticResource TvInk}"/>
+            <Setter Property="Background" Value="{DynamicResource TvGlassHi}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource TvEdge}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TvInk}"/>
         </Style>
         <Style Selector="Button.tile:focus">
             <Setter Property="RenderTransform" Value="scale(1.035)"/>
@@ -60,7 +83,7 @@
         </Style>
         <Style Selector="Button.tile:focus /template/ ContentPresenter">
             <Setter Property="Background" Value="#2A3F6BB5"/>
-            <Setter Property="BorderBrush" Value="{StaticResource TvLapis}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource TvLapis}"/>
             <Setter Property="BoxShadow" Value="0 12 40 0 #806F98D8"/>
         </Style>
         <Style Selector="Button.tile:pressed">
@@ -73,14 +96,14 @@
             <Setter Property="Opacity" Value="0.42"/>
         </Style>
         <Style Selector="Button.tile:disabled /template/ ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource TvGlass}"/>
+            <Setter Property="Background" Value="{DynamicResource TvGlass}"/>
         </Style>
         <!-- ícone do botão num círculo; ligado = lápis-lazúli -->
         <Style Selector="Border.ico">
             <Setter Property="Width" Value="44"/>
             <Setter Property="Height" Value="44"/>
             <Setter Property="CornerRadius" Value="22"/>
-            <Setter Property="Background" Value="#14FFFFFF"/>
+            <Setter Property="Background" Value="{DynamicResource TvTrack}"/>
             <Setter Property="Transitions">
                 <Transitions><BrushTransition Property="Background" Duration="0:0:0.25"/></Transitions>
             </Setter>
@@ -88,34 +111,47 @@
         <Style Selector="Border.ico.on">
             <Setter Property="Background" Value="#3F6BB5"/>
         </Style>
+        <Style Selector="Border.ico.on > PathIcon">
+            <Setter Property="Foreground" Value="#F0E6D0"/>
+        </Style>
+        <Style Selector="TextBlock.ink">
+            <Setter Property="Foreground" Value="{DynamicResource TvInk}"/>
+        </Style>
+        <!-- animações desligadas nos ajustes: sem mola nem esmaecer -->
+        <Style Selector="LayoutTransformControl.still Button.tile">
+            <Setter Property="Transitions" Value="{x:Null}"/>
+        </Style>
+        <Style Selector="LayoutTransformControl.still Button.tile /template/ ContentPresenter">
+            <Setter Property="Transitions" Value="{x:Null}"/>
+        </Style>
         <Style Selector="TextBlock.cap">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="Foreground" Value="{StaticResource TvFaint}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TvFaint}"/>
             <Setter Property="LetterSpacing" Value="1.6"/>
         </Style>
         <Style Selector="TextBlock.soft">
             <Setter Property="FontSize" Value="19"/>
-            <Setter Property="Foreground" Value="{StaticResource TvSoft}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TvSoft}"/>
         </Style>
         <Style Selector="TextBlock.serif">
             <Setter Property="FontFamily" Value="{StaticResource Serif}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{StaticResource TvInk}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TvInk}"/>
         </Style>
         <!-- etiqueta dos botões do controle (como na Steam) -->
         <Style Selector="Border.key">
             <Setter Property="Width" Value="34"/>
             <Setter Property="Height" Value="34"/>
             <Setter Property="CornerRadius" Value="17"/>
-            <Setter Property="Background" Value="#1FFFFFFF"/>
+            <Setter Property="Background" Value="{DynamicResource TvTrack}"/>
         </Style>
         <Style Selector="Border.key > TextBlock">
             <Setter Property="HorizontalAlignment" Value="Center"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="FontSize" Value="15"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{StaticResource TvInk}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TvInk}"/>
         </Style>
     </Window.Styles>
 
@@ -138,30 +174,38 @@
             </Border.Background>
         </Border>
 
-        <Grid x:Name="Root" RowDefinitions="Auto,*,Auto" Margin="72,44,72,36" Opacity="0">
+        <!-- tamanho da interface (ajustes): escala tudo junto, o layout se refaz no espaço que sobra -->
+        <LayoutTransformControl x:Name="Zoom" Opacity="0">
+        <Grid x:Name="Root" RowDefinitions="Auto,*,Auto" Margin="72,44,72,36">
             <!-- cabeçalho: a marca (o Φ do ícone no lugar do P) e o estado -->
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Path x:Name="Phi" Data="{StaticResource pharos-phi}" Fill="{StaticResource TvInk}" Stretch="Uniform" Height="50"
+                    <Path x:Name="Phi" Data="{StaticResource pharos-phi}" Fill="{DynamicResource TvInk}" Stretch="Uniform" Height="50"
                           VerticalAlignment="Bottom" Margin="0,0,1,1" Opacity="0" RenderTransformOrigin="50%,100%"/>
                     <StackPanel x:Name="Word" Orientation="Horizontal" VerticalAlignment="Bottom"/>
                 </StackPanel>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
-                    <Border x:Name="BatteryRow" CornerRadius="999" Background="{StaticResource TvGlass}" Padding="16,8">
+                    <Button x:Name="BtnSettings" Classes="tile" Margin="0" Padding="18,8" CornerRadius="999" Click="Settings_Click">
                         <StackPanel Orientation="Horizontal" Spacing="9">
-                            <PathIcon Data="{StaticResource ic-controller}" Width="20" Height="20" Foreground="{StaticResource TvSoft}"/>
-                            <TextBlock x:Name="Battery" FontSize="17" Foreground="{StaticResource TvSoft}" VerticalAlignment="Center"/>
+                            <PathIcon Data="{StaticResource ic-tune-variant}" Width="20" Height="20"/>
+                            <TextBlock x:Name="SettingsText" Text="Ajustes" FontSize="17" FontWeight="Medium" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Border x:Name="BatteryRow" CornerRadius="999" Background="{DynamicResource TvGlass}" Padding="16,8">
+                        <StackPanel Orientation="Horizontal" Spacing="9">
+                            <PathIcon Data="{StaticResource ic-controller}" Width="20" Height="20" Foreground="{DynamicResource TvSoft}"/>
+                            <TextBlock x:Name="Battery" FontSize="17" Foreground="{DynamicResource TvSoft}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
-                    <Border CornerRadius="999" Background="{StaticResource TvGlass}" Padding="18,8">
-                        <TextBlock x:Name="Clock" FontSize="19" FontWeight="Medium" Foreground="{StaticResource TvInk}" VerticalAlignment="Center"/>
+                    <Border CornerRadius="999" Background="{DynamicResource TvGlass}" Padding="18,8">
+                        <TextBlock x:Name="Clock" FontSize="19" FontWeight="Medium" Foreground="{DynamicResource TvInk}" VerticalAlignment="Center"/>
                     </Border>
                 </StackPanel>
             </Grid>
 
             <Grid Grid.Row="1" ColumnDefinitions="0.95*,30,1.6*" Margin="0,30,0,0">
                 <!-- a sessão -->
-                <Border x:Name="SessionCard" CornerRadius="28" Background="{StaticResource TvGlass}" BorderBrush="{StaticResource TvEdge}" BorderThickness="1"
+                <Border x:Name="SessionCard" CornerRadius="28" Background="{DynamicResource TvGlass}" BorderBrush="{DynamicResource TvEdge}" BorderThickness="1"
                         Padding="32,26" VerticalAlignment="Stretch">
                     <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto">
                         <TextBlock Classes="cap" Text="AGORA"/>
@@ -169,17 +213,17 @@
                         <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="14" Margin="0,4,0,0">
                             <TextBlock x:Name="Fps" Classes="serif" FontSize="80" Text="—"/>
                             <StackPanel VerticalAlignment="Bottom" Margin="0,0,0,18" Spacing="2">
-                                <TextBlock Text="FPS" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TvSoft}"/>
+                                <TextBlock Text="FPS" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TvSoft}"/>
                                 <TextBlock x:Name="Ft" Classes="soft" FontSize="16"/>
                             </StackPanel>
                         </StackPanel>
                         <StackPanel Grid.Row="3" Spacing="10" Margin="0,2,0,12">
                             <Grid ColumnDefinitions="*,Auto">
                                 <TextBlock Classes="cap" Text="ACIMA DE 60 NESTA SESSÃO"/>
-                                <TextBlock x:Name="FloorPct" Grid.Column="1" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource TvInk}"/>
+                                <TextBlock x:Name="FloorPct" Grid.Column="1" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TvInk}"/>
                             </Grid>
                             <Panel Height="10">
-                                <Border Background="#1AFFFFFF" CornerRadius="5"/>
+                                <Border Background="{DynamicResource TvTrack}" CornerRadius="5"/>
                                 <Border x:Name="FloorBar" CornerRadius="5" HorizontalAlignment="Left" Width="0">
                                     <Border.Transitions><Transitions><DoubleTransition Property="Width" Duration="0:0:0.6" Easing="CubicEaseOut"/></Transitions></Border.Transitions>
                                     <Border.Background>
@@ -195,7 +239,7 @@
                         <StackPanel Grid.Row="6" Spacing="10">
                             <Grid ColumnDefinitions="*,Auto">
                                 <TextBlock Classes="cap" Text="TEMPO DE CADA QUADRO · 1 MIN"/>
-                                <TextBlock x:Name="GraphNote" Grid.Column="1" FontSize="14" Foreground="{StaticResource TvFaint}"/>
+                                <TextBlock x:Name="GraphNote" Grid.Column="1" FontSize="14" Foreground="{DynamicResource TvFaint}"/>
                             </Grid>
                             <Panel Height="56">
                                 <Canvas x:Name="Graph" ClipToBounds="True"/>
@@ -205,15 +249,15 @@
                 </Border>
 
                 <!-- ajustes em seções: o que é do jogo, o que é do PC e os atalhos -->
-                <StackPanel Grid.Column="2" Spacing="4">
+                <StackPanel x:Name="MainPanel" Grid.Column="2" Spacing="4">
                     <Grid ColumnDefinitions="Auto,*" Margin="8,0,8,2">
                         <TextBlock Classes="cap" Text="JOGO" VerticalAlignment="Center"/>
                         <Border x:Name="GameChip" Grid.Column="1" HorizontalAlignment="Left" Margin="12,0,0,0" CornerRadius="999"
-                                Background="#14FFFFFF" Padding="10,3">
+                                Background="{DynamicResource TvTrack}" Padding="10,3">
                             <Border.Transitions><Transitions><DoubleTransition Property="Opacity" Duration="0:0:0.3"/></Transitions></Border.Transitions>
                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                <PathIcon Data="{StaticResource ic-gamepad-variant-outline}" Width="14" Height="14" Foreground="{StaticResource TvFaint}"/>
-                                <TextBlock Text="com um jogo aberto" FontSize="12.5" Foreground="{StaticResource TvFaint}" VerticalAlignment="Center"/>
+                                <PathIcon Data="{StaticResource ic-gamepad-variant-outline}" Width="14" Height="14" Foreground="{DynamicResource TvFaint}"/>
+                                <TextBlock Text="com um jogo aberto" FontSize="12.5" Foreground="{DynamicResource TvFaint}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -222,7 +266,7 @@
                     <Grid x:Name="SystemTiles" ColumnDefinitions="*,*,*,*"/>
                     <TextBlock Classes="cap" Text="ATALHOS" Margin="8,12,0,2"/>
                     <Grid x:Name="ShortcutTiles" ColumnDefinitions="*,*,*,*">
-                        <Border x:Name="TipBox" Grid.Column="2" Grid.ColumnSpan="2" CornerRadius="22" Background="{StaticResource TvGlass}" BorderThickness="1.5"
+                        <Border x:Name="TipBox" Grid.Column="2" Grid.ColumnSpan="2" CornerRadius="22" Background="{DynamicResource TvGlass}" BorderThickness="1.5"
                                 Padding="20,14" Margin="7" VerticalAlignment="Stretch">
                             <Border.Transitions><Transitions><BrushTransition Property="BorderBrush" Duration="0:0:0.4"/></Transitions></Border.Transitions>
                             <Grid ColumnDefinitions="Auto,*">
@@ -232,14 +276,21 @@
                         </Border>
                     </Grid>
                 </StackPanel>
+                <!-- ajustes do próprio menu (o app no PC tem o tema dele) -->
+                <StackPanel x:Name="SettingsPanel" Grid.Column="2" Spacing="4" IsVisible="False">
+                    <TextBlock Classes="cap" Text="AJUSTES DO MENU" Margin="8,0,0,2"/>
+                    <Grid x:Name="SettingsTiles" ColumnDefinitions="*,*,*,*"/>
+                    <TextBlock Classes="soft" FontSize="15.5" Margin="8,10,8,0" TextWrapping="Wrap"
+                               Text="Valem só para este menu e ficam guardados para a próxima vez. O tema do Pharos no PC continua o dele."/>
+                </StackPanel>
             </Grid>
 
             <!-- rodapé: os botões do controle -->
             <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,20,0,0">
                 <StackPanel Orientation="Horizontal" Spacing="26" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Spacing="10"><Border Classes="key"><TextBlock Text="A"/></Border><TextBlock Classes="soft" Text="Mudar" VerticalAlignment="Center"/></StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="10"><Border Classes="key"><TextBlock Text="B"/></Border><TextBlock Classes="soft" Text="Voltar ao jogo" VerticalAlignment="Center"/></StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="10"><Border Classes="key"><PathIcon Data="{StaticResource ic-controller}" Width="18" Height="18" Foreground="{StaticResource TvInk}"/></Border><TextBlock Classes="soft" Text="Guide + View abre e fecha" VerticalAlignment="Center"/></StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10"><Border Classes="key"><TextBlock Text="B"/></Border><TextBlock x:Name="BackHint" Classes="soft" Text="Voltar ao jogo" VerticalAlignment="Center"/></StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10"><Border Classes="key"><PathIcon Data="{StaticResource ic-controller}" Width="18" Height="18" Foreground="{DynamicResource TvInk}"/></Border><TextBlock Classes="soft" Text="Guide + View abre e fecha" VerticalAlignment="Center"/></StackPanel>
                 </StackPanel>
                 <Button x:Name="BtnClose" Grid.Column="1" Classes="tile" Margin="0" Padding="30,14" Click="Close_Click">
                     <StackPanel Orientation="Horizontal" Spacing="12">
@@ -249,5 +300,6 @@
                 </Button>
             </Grid>
         </Grid>
+        </LayoutTransformControl>
     </Panel>
 </Window>

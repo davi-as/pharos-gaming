@@ -37,7 +37,9 @@ public partial class TvWindow : Window
         ["limit"] = "timer-outline", ["fg"] = "animation-outline", ["fglight"] = "feather", ["overlay"] = "eye-outline",
         ["audio"] = "speaker", ["voldown"] = "volume-minus", ["volup"] = "volume-plus", ["power"] = "lightning-bolt-outline",
         ["screens"] = "monitor-multiple", ["pad"] = "bluetooth-off", ["shot"] = "camera-outline", ["bp"] = "play-circle-outline",
+        ["theme"] = "theme-light-dark", ["scale"] = "magnify", ["motion"] = "animation-outline", ["reset"] = "restart",
     };
+    private static readonly double[] Scales = { 0.85, 1.0, 1.15, 1.3 };
     private readonly List<(TextBlock Label, TextBlock Value)> _stats = new();
 
     public TvWindow()
@@ -47,13 +49,15 @@ public partial class TvWindow : Window
         (string, string)[] game = { ("limit", "LIMITE"), ("fg", "GERAÇÃO"), ("fglight", "QUALIDADE"), ("overlay", "OVERLAY") };
         (string, string)[] system = { ("audio", "SOM"), ("power", "ENERGIA"), ("screens", "TELAS"), ("pad", "CONTROLE") };
         (string, string)[] shortcuts = { ("shot", "CAPTURA"), ("bp", "HYDRA") };
-        foreach (var (grid, items) in new[] { (GameTiles, game), (SystemTiles, system), (ShortcutTiles, shortcuts) })
+        (string, string)[] settings = { ("theme", "TEMA"), ("scale", "TAMANHO"), ("motion", "ANIMAÇÕES"), ("reset", "PADRÃO") };
+        foreach (var (grid, items) in new[] { (GameTiles, game), (SystemTiles, system), (ShortcutTiles, shortcuts), (SettingsTiles, settings) })
             for (int i = 0; i < items.Length; i++) AddTile(items[i].Item1, items[i].Item2, grid, i);
         for (int r = 0; r < 8; r++) AddStat(r);
         // o controle só manda aqui com a janela em foco: com o jogo na frente, os botões são do jogo
         _pad = new Gamepad(nav => Dispatcher.UIThread.Post(() => { if (IsActive) Navigate(nav); }));
         KeyDown += OnKey;
         _floorGradient = FloorBar.Background;
+        ApplyLook();
         Opened += (_, _) => { Intro(); FirstEnabled()?.Focus(); };
         Closed += (_, _) => { _pad.Dispose(); Live.Tick -= Tick; };
         Live.Start();
@@ -63,15 +67,15 @@ public partial class TvWindow : Window
         Tick();
     }
 
-    private IBrush Br(string key) => (IBrush)this.FindResource(key)!;
+    private IBrush Br(string key) => this.TryFindResource(key, ActualThemeVariant, out var v) && v is IBrush b ? b : Brushes.Gray;
 
     private Button? FirstEnabled() => _tile.Values.Select(t => t.Button).FirstOrDefault(b => b.IsEffectivelyEnabled);
 
     private void AddTile(string name, string label, Grid grid, int col)
     {
-        var icon = new Border { Classes = { "ico" }, Child = new PathIcon { Data = (Geometry)this.FindResource("ic-" + Icons[name])!, Width = 22, Height = 22, Foreground = Br("TvInk") } };
+        var icon = new Border { Classes = { "ico" }, Child = new PathIcon { Data = (Geometry)this.FindResource("ic-" + Icons[name])!, Width = 22, Height = 22 } };
         var v = new TextBlock { Classes = { "serif" }, FontSize = 22, Text = "—", TextTrimming = TextTrimming.CharacterEllipsis, Margin = new(0, 10, 0, 0) };
-        var h = new TextBlock { FontSize = 15, Foreground = Br("TvSoft"), TextTrimming = TextTrimming.CharacterEllipsis, Margin = new(0, 3, 0, 0) };
+        var h = new TextBlock { Classes = { "soft" }, FontSize = 15, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new(0, 3, 0, 0) };
         var panel = new StackPanel();
         var top = new Grid { ColumnDefinitions = new("Auto,*") };
         top.Children.Add(icon);
@@ -91,26 +95,28 @@ public partial class TvWindow : Window
     /// <summary>Entrada: o Φ sobe, as letras "haros" entram uma a uma (como no login do Pharos), os botões em cascata.</summary>
     private void Intro()
     {
-        static void Prepare(Control c, double dy)
+        bool anim = _s.TvMotion;
+        void Prepare(Control c, double dy)
         {
             c.Opacity = 0;
+            if (!anim) return;
             c.RenderTransform = TransformOperations.Parse($"translateY({dy}px)");
             c.Transitions ??= new Transitions();
             c.Transitions.Add(new DoubleTransition { Property = OpacityProperty, Duration = TimeSpan.FromMilliseconds(420), Easing = new Avalonia.Animation.Easings.CubicEaseOut() });
             c.Transitions.Add(new TransformOperationsTransition { Property = RenderTransformProperty, Duration = TimeSpan.FromMilliseconds(520), Easing = new Avalonia.Animation.Easings.CubicEaseOut() });
         }
-        static void Show(Control c, int ms) => DispatcherTimer.RunOnce(() => { c.Opacity = 1; c.RenderTransform = TransformOperations.Parse("translateY(0px)"); }, TimeSpan.FromMilliseconds(ms));
+        void Show(Control c, int ms) => DispatcherTimer.RunOnce(() => { c.Opacity = 1; c.RenderTransform = TransformOperations.Parse("translateY(0px)"); }, TimeSpan.FromMilliseconds(anim ? ms : 1));
 
         Word.Children.Clear();
-        var letters = "haros".Select(ch => new TextBlock { Text = ch.ToString(), FontSize = 50, FontWeight = FontWeight.Medium, Foreground = Br("TvInk"), Margin = new(0, 0, -0.5, -6) }).ToList();
+        var letters = "haros".Select(ch => new TextBlock { Classes = { "ink" }, Text = ch.ToString(), FontSize = 50, FontWeight = FontWeight.Medium, Margin = new(0, 0, -0.5, -6) }).ToList();
         foreach (var l in letters) Word.Children.Add(l);
-        Prepare(Root, 0);
+        Prepare(Zoom, 0); // no Zoom, não no Root: o RenderTransform do Root é a escala do tamanho
         Prepare(Phi, 18);
         foreach (var l in letters) Prepare(l, 12);
         var tiles = _tile.Values.Select(t => t.Button).ToList();
-        foreach (var t in tiles) t.Opacity = 0; // a transição de opacidade vem do estilo do botão
+        if (anim) foreach (var t in tiles) t.Opacity = 0; // a transição de opacidade vem do estilo do botão
         Prepare(SessionCard, 24);
-        Show(Root, 10);
+        Show(Zoom, 10);
         Show(Phi, 60);
         for (int i = 0; i < letters.Count; i++) Show(letters[i], 380 + 70 * i);
         Show(SessionCard, 160);
@@ -123,7 +129,7 @@ public partial class TvWindow : Window
         // as 3 últimas linhas (limite, geração, overlay) são a configuração do jogo: separadas por um respiro
         var gap = row == 5 ? new Thickness(0, 16, 0, 2) : new Thickness(0, 2);
         var l = new TextBlock { Classes = { "soft" }, FontSize = 16.5, Margin = gap };
-        var v = new TextBlock { FontSize = 16.5, FontWeight = FontWeight.Medium, Foreground = Br("TvInk"), HorizontalAlignment = HorizontalAlignment.Right, Margin = gap };
+        var v = new TextBlock { Classes = { "ink" }, FontSize = 16.5, FontWeight = FontWeight.Medium, HorizontalAlignment = HorizontalAlignment.Right, Margin = gap };
         Grid.SetRow(l, row);
         Grid.SetRow(v, row);
         Grid.SetColumn(v, 1);
@@ -282,6 +288,12 @@ public partial class TvWindow : Window
         T("pad", _padConfirm ? "Confirmar" : "Desligar", _padConfirm ? "A de novo desliga" : "desconecta o Bluetooth");
         T("shot", "Tirar foto", "fecha o menu e captura");
         T("bp", "Big Picture", "o jogo continua aberto");
+        bool paper = _s.TvTheme == "light";
+        T("theme", paper ? "Claro" : "Escuro", paper ? "trocar para escuro" : "trocar para claro", on: paper);
+        T("scale", $"{_s.TvScale:0%}", $"próximo: {NextScale():0%}", on: _s.TvScale != 1);
+        T("motion", _s.TvMotion ? "Ligadas" : "Desligadas", _s.TvMotion ? "desligar entrada e molas" : "ligar entrada e molas", on: _s.TvMotion);
+        bool custom = paper || _s.TvScale != 1 || !_s.TvMotion;
+        T("reset", "Restaurar", custom ? "escuro, 100%, animado" : "já está no padrão", custom);
     }
 
     private async Task ReadAudio()
@@ -352,6 +364,23 @@ public partial class TvWindow : Window
                 case "bp":
                     await Sys.RunAsync("systemd-run", "--user", "--collect", "--quiet", ConsoleSetup.HydraWrapper, "--big-picture");
                     break;
+                case "theme":
+                    _s.TvTheme = _s.TvTheme == "light" ? "dark" : "light";
+                    SaveLook();
+                    break;
+                case "scale":
+                    _s.TvScale = NextScale();
+                    SaveLook();
+                    break;
+                case "motion":
+                    _s.TvMotion = !_s.TvMotion;
+                    SaveLook();
+                    break;
+                case "reset":
+                    (_s.TvTheme, _s.TvScale, _s.TvMotion) = ("dark", 1.0, true);
+                    SaveLook();
+                    _tile["theme"].Button.Focus(); // o Restaurar fica desligado: o foco não pode sumir
+                    break;
             }
         }
         catch (Exception ex) { Tip.Text = "Não consegui mudar: " + ex.Message; }
@@ -373,7 +402,7 @@ public partial class TvWindow : Window
     /// <summary>Navegação espacial: o botão mais próximo na direção pedida, pela posição na tela.</summary>
     private void Navigate(PadNav nav)
     {
-        if (nav == PadNav.Back) { Close(); return; }
+        if (nav == PadNav.Back) { if (SettingsPanel.IsVisible) ShowSettings(false); else Close(); return; }
         var buttons = this.GetVisualDescendants().OfType<Button>().Where(b => b.IsEffectivelyVisible && b.IsEffectivelyEnabled).ToList();
         var cur = buttons.FirstOrDefault(b => b.IsFocused);
         if (nav == PadNav.Confirm) { cur?.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); return; }
@@ -392,4 +421,33 @@ public partial class TvWindow : Window
     }
 
     private void Close_Click(object? sender, RoutedEventArgs e) => Close();
+
+    private void Settings_Click(object? sender, RoutedEventArgs e) => ShowSettings(!SettingsPanel.IsVisible);
+
+    /// <summary>Troca a coluna da direita entre os ajustes do jogo e os do menu; B volta.</summary>
+    private void ShowSettings(bool on)
+    {
+        SettingsPanel.IsVisible = on;
+        MainPanel.IsVisible = !on;
+        SettingsText.Text = on ? "Fechar ajustes" : "Ajustes";
+        BackHint.Text = on ? "Voltar ao menu" : "Voltar ao jogo";
+        (on ? _tile["theme"].Button : BtnSettings).Focus(NavigationMethod.Directional);
+    }
+
+    private double NextScale() => Scales[(Array.FindIndex(Scales, x => Math.Abs(x - _s.TvScale) < 0.01) + 1) % Scales.Length];
+
+    private void SaveLook()
+    {
+        _s.Save();
+        ApplyLook();
+    }
+
+    /// <summary>Tema, tamanho e animações do menu (AppSettings.TvTheme, TvScale, TvMotion).</summary>
+    private void ApplyLook()
+    {
+        RequestedThemeVariant = _s.TvTheme == "light" ? Avalonia.Styling.ThemeVariant.Light : Avalonia.Styling.ThemeVariant.Dark;
+        double k = Math.Clamp(_s.TvScale, 0.5, 2); // settings.json pode vir editado à mão
+        Zoom.LayoutTransform = new ScaleTransform(k, k);
+        Zoom.Classes.Set("still", !_s.TvMotion);
+    }
 }

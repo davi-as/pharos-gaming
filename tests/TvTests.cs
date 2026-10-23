@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Media;
 using Avalonia.VisualTree;
 
 namespace PharosGaming.Tests;
@@ -54,6 +55,44 @@ public class TvWindowTests
         w.Closed += (_, _) => closed = true;
         w.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
         Assert.True(closed);
+    }
+
+    [AvaloniaFact] // grava settings.json: pasta temporária do TestApp
+    public void Settings_ThemeScaleMotion_BackReturnsToMenu()
+    {
+        var s = AppSettings.Current;
+        (s.TvTheme, s.TvScale, s.TvMotion) = ("dark", 1.0, true);
+        var w = new TvWindow();
+        w.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        var settings = w.FindControl<StackPanel>("SettingsPanel")!;
+        var zoom = w.FindControl<LayoutTransformControl>("Zoom")!;
+        Button Tile(string label) => w.GetVisualDescendants().OfType<Button>().First(b => b.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == label));
+        void Press() { w.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null); Avalonia.Threading.Dispatcher.UIThread.RunJobs(); }
+
+        w.FindControl<Button>("BtnSettings")!.Focus();
+        Press();
+        Assert.True(settings.IsVisible);
+        Assert.True(Tile("TEMA").IsFocused);
+        Press();
+        Assert.Equal("light", s.TvTheme);
+        Assert.Equal(Avalonia.Styling.ThemeVariant.Light, w.ActualThemeVariant);
+        Assert.Equal(Color.Parse("#12264A"), (w.TryFindResource("TvInk", w.ActualThemeVariant, out var ink) ? ((ISolidColorBrush)ink!).Color : default));
+        w.KeyPress(Key.Right, RawInputModifiers.None, PhysicalKey.ArrowRight, null);
+        Press();
+        Assert.Equal(1.15, s.TvScale);
+        Assert.Equal(1.15, ((ScaleTransform)zoom.LayoutTransform!).ScaleX);
+        Tile("PADRÃO").Focus();
+        Press();
+        Assert.Equal(("dark", 1.0, true), (s.TvTheme, s.TvScale, s.TvMotion));
+        Assert.True(Tile("TEMA").IsFocused); // Restaurar fica desligado: o foco não se perde
+
+        bool closed = false;
+        w.Closed += (_, _) => closed = true;
+        w.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        Assert.False(settings.IsVisible); // B nos ajustes volta ao menu, não fecha
+        Assert.False(closed);
+        w.Close();
     }
 }
 

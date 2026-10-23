@@ -98,5 +98,17 @@ public class Screenshots
         for (int t = 0; t < 50; t++) { Avalonia.Threading.Dispatcher.UIThread.RunJobs(); AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Live.Step(); Thread.Sleep(50); }
         tv.CaptureRenderedFrame()?.Save(Path.Combine(dir, "99-modo-tv.png"));
         tv.Close();
+        // ajustes do menu: claro com a seção aberta e o maior tamanho
+        foreach (var (tvTheme, scale, name) in new[] { ("light", 1.0, "99-modo-tv-claro"), ("dark", 1.3, "99-modo-tv-130") })
+        {
+            (AppSettings.Current.TvTheme, AppSettings.Current.TvScale) = (tvTheme, scale);
+            tv = new TvWindow { WindowState = WindowState.Normal, Width = 1920, Height = 1080 };
+            tv.Show();
+            if (tvTheme == "light") tv.FindControl<Button>("BtnSettings")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            for (int t = 0; t < 30; t++) { Avalonia.Threading.Dispatcher.UIThread.RunJobs(); AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Thread.Sleep(50); }
+            tv.CaptureRenderedFrame()?.Save(Path.Combine(dir, name + ".png"));
+            tv.Close();
+        }
+        (AppSettings.Current.TvTheme, AppSettings.Current.TvScale) = ("dark", 1.0);
     }
 }

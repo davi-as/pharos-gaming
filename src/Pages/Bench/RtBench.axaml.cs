@@ -19,16 +19,16 @@ public partial class RtBench : UserControl
         History.ItemsSource = BenchLog.History(t => t.StartsWith("rt:"));
     }
 
-    private static string? Tag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
+    private static string? CheckedTag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
     private static string PresetName(string p) => p switch { "normal" => "Normal", "extrema" => "Extrema", _ => "Alta" };
 
     private async void Run_Click(object? sender, RoutedEventArgs e)
     {
         if (_bench != null) { _bench.Cancel(); return; }
         if (BenchLog.Busy != null) { Status.Text = $"Termine o teste em andamento ({BenchLog.Busy}) antes."; return; }
-        var size = (Tag(ResPanel) ?? "2560x1440").Split('x').Select(int.Parse).ToArray();
-        string preset = Tag(PresetPanel) ?? "alta";
-        bool quick = Tag(ModePanel) == "quick";
+        var size = (CheckedTag(ResPanel) ?? "2560x1440").Split('x').Select(int.Parse).ToArray();
+        string preset = CheckedTag(PresetPanel) ?? "alta";
+        bool quick = CheckedTag(ModePanel) == "quick";
         var gpus = await Task.Run(GpuInfoCollector.Collect);
         var bench = _bench = new GpuRtBench
         {

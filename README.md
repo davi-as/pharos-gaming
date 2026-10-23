@@ -1,4 +1,4 @@
-# PHAROS GAMING
+# Pharos Gaming
 
 Central de desempenho para jogar no Linux: painel ao vivo para o segundo monitor (FPS, GPU, CPU, RAM e o que está
 limitando o FPS), biblioteca de jogos com perfis, benchmarks, stress test, overclock, otimização do sistema, drivers,
@@ -69,7 +69,22 @@ O FPS vem do log do [MangoHud](https://github.com/flightlessmango/MangoHud) (`pa
 
 Já usa o MangoHud com log ligado? O PHAROS também lê a `output_folder` do seu `~/.config/MangoHud/MangoHud.conf`.
 
-## Rodar
+## Instalar (atalho no menu de aplicativos)
+```
+git clone https://github.com/davi-as/pharos-gaming.git
+cd pharos-gaming
+scripts/install.sh
+```
+Publica o app self-contained em `~/.local/share/pharos-gaming/app` (abre sem o .NET instalado), instala o ícone e cria o
+atalho "Pharos Gaming" no menu de aplicativos (no Omarchy, Super + Espaço). Rode de novo depois de atualizar o código;
+`scripts/install.sh --uninstall` remove (as configurações em `~/.config/pharos-gaming` ficam).
+
+## Identidade visual
+A mesma do [Pharos](https://github.com/davi-as/pharos) (`docs/DESIGN.md` de lá): o Φ do Farol de Alexandria, tema claro
+"papiro" e escuro "noite do Nilo" seguindo o tema do sistema, lápis-lazúli no que age, ouro na luz, turquesa no ok e
+cornalina no alerta; títulos e números em Literata, texto em Fira Sans (embutidas em `src/Assets/Fonts`, licença OFL).
+
+## Rodar a partir do código
 Precisa do .NET SDK 10. Com o [mise](https://mise.jdx.dev):
 ```
 git clone https://github.com/davi-as/pharos-gaming.git

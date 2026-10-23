@@ -26,14 +26,14 @@ public partial class RenderBench : UserControl
         UpdateHistory();
     }
 
-    private static string? Tag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
+    private static string? CheckedTag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
 
     private async void Run_Click(object? sender, RoutedEventArgs e)
     {
         if (_cts != null) { _cts.Cancel(); return; }
         if (BenchLog.Busy != null) { Hint.Text = $"Termine o teste em andamento ({BenchLog.Busy}) antes."; return; }
-        string mode = Tag(ModePanel) ?? "both";
-        bool sustained = Tag(DurationPanel) == "10";
+        string mode = CheckedTag(ModePanel) ?? "both";
+        bool sustained = CheckedTag(DurationPanel) == "10";
         var minDuration = sustained ? TimeSpan.FromMinutes(10) : TimeSpan.Zero;
         int threads = Environment.ProcessorCount;
 

@@ -34,7 +34,7 @@ public partial class FpsPage : UserControl
         Refresh();
     }
 
-    private static string? Tag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
+    private static string? CheckedTag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
 
     private void Option_Changed(object? sender, RoutedEventArgs e)
     {
@@ -58,7 +58,7 @@ public partial class FpsPage : UserControl
     /// <summary>Recalcula a estimativa local de todos os jogos e, com chave configurada, busca os dados reais na API.</summary>
     private void Refresh()
     {
-        string res = Tag(ResPanel) ?? "1920x1080", preset = Tag(PresetPanel) ?? "Alto", up = Tag(UpPanel) ?? "Native";
+        string res = CheckedTag(ResPanel) ?? "1920x1080", preset = CheckedTag(PresetPanel) ?? "Alto", up = CheckedTag(UpPanel) ?? "Native";
         foreach (var row in _rows)
         {
             var est = GameCatalog.Estimate(row.Game, _gpuIdx, _cpuIdx, res, preset, up);

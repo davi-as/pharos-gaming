@@ -35,7 +35,7 @@ public partial class StressPage : UserControl
     }
 
     private bool Running => _stress.Running || _gpuOn;
-    private static string? Tag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
+    private static string? CheckedTag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
 
     private void Options_Changed(object? sender, RoutedEventArgs e)
     {
@@ -69,7 +69,7 @@ public partial class StressPage : UserControl
             return;
         }
         _confirmNoSensor = false;
-        double fraction = double.Parse(Tag(RamPanel) ?? "0.6", CultureInfo.InvariantCulture);
+        double fraction = double.Parse(CheckedTag(RamPanel) ?? "0.6", CultureInfo.InvariantCulture);
         _duration = TimeSpan.FromMinutes((double)(Minutes.Value ?? 0));
         _start = DateTime.Now;
         _cpuMax = _gpuMax = 0;
@@ -78,9 +78,9 @@ public partial class StressPage : UserControl
         string gpuDesc = "não";
         if (gpu)
         {
-            var size = (Tag(ResPanel) ?? "1920x1080").Split('x').Select(int.Parse).ToArray();
-            int msaa = int.Parse(Tag(MsaaPanel) ?? "4");
-            var intensity = (Tag(IntensityPanel) ?? "128,48").Split(',').Select(int.Parse).ToArray();
+            var size = (CheckedTag(ResPanel) ?? "1920x1080").Split('x').Select(int.Parse).ToArray();
+            int msaa = int.Parse(CheckedTag(MsaaPanel) ?? "4");
+            var intensity = (CheckedTag(IntensityPanel) ?? "128,48").Split(',').Select(int.Parse).ToArray();
             _burn.Start(new GpuBurnSettings { Width = size[0], Height = size[1], Msaa = msaa, Shells = intensity[0], Iterations = intensity[1], AdapterName = Live.Gpu?.Name ?? "" });
             _gpuOn = true;
             Preview.IsVisible = true;

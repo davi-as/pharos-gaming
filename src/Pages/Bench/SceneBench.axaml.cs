@@ -19,14 +19,14 @@ public partial class SceneBench : UserControl
         History.ItemsSource = BenchLog.History(t => t == "gpu");
     }
 
-    private static string? Tag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
+    private static string? CheckedTag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
 
     private async void Run_Click(object? sender, RoutedEventArgs e)
     {
         if (_bench != null) { _bench.Cancel(); return; }
         if (BenchLog.Busy != null) { Status.Text = $"Termine o teste em andamento ({BenchLog.Busy}) antes."; return; }
-        var size = (Tag(ResPanel) ?? "1920x1080").Split('x').Select(int.Parse).ToArray();
-        int secs = int.Parse(Tag(DurPanel) ?? "60");
+        var size = (CheckedTag(ResPanel) ?? "1920x1080").Split('x').Select(int.Parse).ToArray();
+        int secs = int.Parse(CheckedTag(DurPanel) ?? "60");
         var gpus = await Task.Run(GpuInfoCollector.Collect);
         var bench = _bench = new GpuGameBench { Width = size[0], Height = size[1], Duration = TimeSpan.FromSeconds(secs), AdapterName = gpus.FirstOrDefault()?.Name ?? "" };
         BenchLog.Busy = "Cena de jogo (GPU)";

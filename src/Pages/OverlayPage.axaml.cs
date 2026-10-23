@@ -50,7 +50,7 @@ public partial class OverlayPage : UserControl
 
     private void Preset_Click(object? sender, RoutedEventArgs e)
     {
-        _show = (sender as Control)?.Tag as string switch
+        _show = ((sender as Control)?.Tag as string) switch
         {
             "all" => OverlayMetrics.All.Select(m => m.Key).ToHashSet(),
             "min" => new HashSet<string> { "fps", "frametime", "low1" },

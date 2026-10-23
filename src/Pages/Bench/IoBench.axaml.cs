@@ -35,7 +35,7 @@ public partial class IoBench : UserControl
         if (drives.Count == 0) { Status.Text = "Nenhuma unidade gravável com espaço livre suficiente (1,5 GB)."; BtnRun.IsEnabled = false; }
     }
 
-    private static string? Tag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
+    private static string? CheckedTag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
 
     private async void Run_Click(object? sender, RoutedEventArgs e)
     {
@@ -60,8 +60,8 @@ public partial class IoBench : UserControl
         {
             if (_disk)
             {
-                string root = Tag(DrivePanel) ?? throw new InvalidOperationException("Escolha uma unidade.");
-                long mb = long.Parse(Tag(SizePanel) ?? "1024");
+                string root = CheckedTag(DrivePanel) ?? throw new InvalidOperationException("Escolha uma unidade.");
+                long mb = long.Parse(CheckedTag(SizePanel) ?? "1024");
                 var r = await Task.Run(() => DiskBench.Run(root, mb, (phase, f) => progress = (phase, f), ct), ct);
                 rows.AddRange(new[]
                 {

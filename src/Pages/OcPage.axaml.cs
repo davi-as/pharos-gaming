@@ -24,7 +24,7 @@ public partial class OcPage : UserControl
         _ = InitAsync();
     }
 
-    private static string? Tag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
+    private static string? CheckedTag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
 
     private async Task InitAsync()
     {
@@ -113,9 +113,9 @@ public partial class OcPage : UserControl
     {
         if (_cts != null) { _cts.Cancel(); return; }
         if (BenchLog.Busy != null) { Status.Text = $"Termine o teste em andamento ({BenchLog.Busy}) antes."; return; }
-        string target = Tag(TargetPanel) ?? "cpu";
+        string target = CheckedTag(TargetPanel) ?? "cpu";
         bool cpu = target is "cpu" or "both", gpu = target is "gpu" or "both";
-        var duration = TimeSpan.FromMinutes(int.Parse(Tag(DurPanel) ?? "15"));
+        var duration = TimeSpan.FromMinutes(int.Parse(CheckedTag(DurPanel) ?? "15"));
         string label = (Label.Text ?? "").Trim() is { Length: > 0 } l ? l : "sem descrição";
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;

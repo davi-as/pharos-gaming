@@ -26,6 +26,7 @@ public static class MangoHudLog
     public static void Tick()
     {
         var games = FrameLimiter.Running().Where(g => g.Key != "wine-explorer").ToList();
+        Lsfg.Settle(AppSettings.Current, games.Select(g => g.Key).ToHashSet());
         foreach (int dead in Started.Keys.Except(games.Select(g => g.Pid)).ToList()) Started.Remove(dead);
         foreach (var g in games)
         {

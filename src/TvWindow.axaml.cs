@@ -98,7 +98,7 @@ public partial class TvWindow : Window
         var f = _game != null ? Live.Frames : null;
         Game.Text = _game?.Name ?? "Nenhum jogo aberto";
         Fps.Text = f != null ? $"{f.Fps:0}" : "—";
-        int mult = _game != null ? Lsfg.Multiplier(_s, _game.Key) : 1;
+        int mult = _game != null ? _s.FgApplied.GetValueOrDefault(_game.Key, 1) : 1; // a que está valendo agora
         Ft.Text = f == null ? "" : mult >= 2 ? $"FPS reais · {f.Fps * mult:0} na tela ({mult}×)" : $"FPS · {f.FrameTimeMs:0.0} ms";
 
         var floor = f != null ? Live.SessionFloor : null;
@@ -136,12 +136,14 @@ public partial class TvWindow : Window
             t.Button.IsEnabled = enabled;
         }
         double lim = Limit();
-        int mult = has ? Lsfg.Multiplier(_s, _game!.Key) : 1;
+        int mult = has ? _s.FgApplied.GetValueOrDefault(_game!.Key, 1) : 1; // valendo agora
+        int want = has ? Lsfg.Multiplier(_s, _game!.Key) : 1;             // pedida (vale ao reabrir)
         T("limit", !has ? "—" : lim > 0 ? $"{lim:0.##}" : "Sem limite",
           !has ? "abra um jogo" : Math.Abs(lim * mult - ScreenHz) < 0.6 ? "igual à TV" : "A troca o valor", has);
         string? fgMissing = Lsfg.Missing();
-        T("fg", !has ? "—" : mult >= 2 ? $"{mult}× ligada" : "Desligada",
-          fgMissing ?? (mult >= 2 ? $"{ScreenHz / mult:0.##} reais × {mult}" : "2× = metade reais, mais atraso"), has && fgMissing == null);
+        T("fg", !has ? "—" : want >= 2 ? $"{want}× ligada" : "Desligada",
+          fgMissing ?? (want != mult ? "vale quando o jogo abrir de novo"
+                        : want >= 2 ? $"{ScreenHz / want:0.##} reais × {want}" : "2× = metade reais, mais atraso"), has && fgMissing == null);
         bool limited = has && _s.FpsLimits.ContainsKey(_game!.Key);
         bool hidden = has && (_s.OverlayHidden.TryGetValue(_game!.Key, out bool h) ? h : ConsoleSetup.MangoHidden(Sys.Read(MangoHudConfig.FilePath) ?? ""));
         T("overlay", !has ? "—" : hidden ? "Escondido" : "Visível", has && !limited ? "precisa de um limite salvo" : "o FPS chega ao Pharos igual", limited);
@@ -166,13 +168,13 @@ public partial class TvWindow : Window
             {
                 case "limit" when g != null:
                     // os valores que casam com a tela, e sem limite; com geração ligada, o limite é dos quadros reais
-                    int mult = Lsfg.Multiplier(_s, g.Key);
+                    int mult = _s.FgApplied.GetValueOrDefault(g.Key, 1);
                     var values = FrameLimiter.Candidates(ScreenHz, _screen?.Vrr == true).Select(v => Math.Round(v / mult, 2)).Append(0).Distinct().ToList();
                     int i = values.FindIndex(v => Math.Abs(v - Limit()) < 0.01);
                     FrameLimiter.Set(_s, g.Key, values[(i + 1) % values.Count]);
                     break;
                 case "fg" when g != null:
-                    Lsfg.Set(_s, g.Key, Lsfg.Multiplier(_s, g.Key) >= 2 ? 1 : 2, ScreenHz);
+                    Lsfg.Set(_s, g.Key, Lsfg.Multiplier(_s, g.Key) >= 2 ? 1 : 2, ScreenHz); // o limite troca quando o jogo fechar
                     break;
                 case "overlay" when g != null:
                     bool hidden = _s.OverlayHidden.TryGetValue(g.Key, out bool h) ? h : ConsoleSetup.MangoHidden(Sys.Read(MangoHudConfig.FilePath) ?? "");

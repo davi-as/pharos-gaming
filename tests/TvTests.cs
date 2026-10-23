@@ -57,6 +57,7 @@ public class TvWindowTests
 }
 
 public class LsfgTests
+
 {
     [Fact]
     public void Build_OneProfilePerGameWithExe()
@@ -69,5 +70,26 @@ public class LsfgTests
         Assert.Contains("multiplier = 3", toml);
         Assert.DoesNotContain("hades", toml); // 1× = desligada: sem perfil
         Assert.Equal(2, toml.Split("[[profile]]").Length - 1);
+    }
+
+    [Fact]
+    public void Build_KeepsConfigValidWithNoGames() =>
+        Assert.Contains("active_in = [ \"pharos-nenhum-jogo\" ]", Lsfg.Build(new Dictionary<string, int>(), "/x.dll"));
+
+    [AvaloniaFact] // grava configs: XDG_CONFIG_HOME temporário do TestApp
+    public void Settle_ChangesLimitOnlyWithGameClosed()
+    {
+        var s = new AppSettings();
+        s.FpsLimits["wine-eldenring"] = 59.95;
+        Lsfg.Set(s, "wine-eldenring", 2, 59.95);
+        Assert.True(Lsfg.Pending(s, "wine-eldenring"));
+        Assert.Empty(Lsfg.Settle(s, new HashSet<string> { "wine-eldenring" })); // aberto: o limite fica
+        Assert.Equal(59.95, s.FpsLimits["wine-eldenring"]);
+        Assert.Single(Lsfg.Settle(s, new HashSet<string>()));                    // fechou: 29,98 reais × 2
+        Assert.Equal(29.98, s.FpsLimits["wine-eldenring"]);
+        Lsfg.Set(s, "wine-eldenring", 1, 59.95);
+        Lsfg.Settle(s, new HashSet<string>());
+        Assert.Equal(59.95, s.FpsLimits["wine-eldenring"]);
+        Assert.False(Lsfg.Pending(s, "wine-eldenring"));
     }
 }

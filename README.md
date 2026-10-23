@@ -57,8 +57,11 @@ que vê o jogo rodando (os da Steam pelo `SteamAppId`; os do Hydra fora da Steam
 - **Perfil da TV:** todo jogo novo que aparece na TV ganha o limite igual à taxa dela (59,95), e cada sessão mede o
   tempo abaixo de 60 e sugere o ajuste que falta (upscaling ou gráficos quando a GPU está cheia; CPU quando não está).
 - **Geração de quadros (lsfg-vk):** por jogo, pelo menu rápido. O PHAROS escreve `~/.config/lsfg-vk/conf.toml` (um
-  perfil por jogo, pelo `.exe`) e baixa o limite real para metade (29,98 × 2 = 59,95 na TV sem VRR). Precisa do
-  lsfg-vk instalado e da Lossless Scaling no ramo beta `lsfg-vk` na Steam. Só como último recurso: dobra o atraso.
+  perfil por jogo, pelo `.exe`) e, com o jogo fechado, baixa o limite real para metade (29,98 × 2 = 59,95 na TV sem
+  VRR). Ligar ou desligar vale ao reabrir o jogo: o lsfg-vk escolhe o perfil quando o jogo abre (só o multiplicador muda
+  com ele aberto). O MangoHud conta os quadros reais; o menu mostra "reais × multiplicador". Precisa do lsfg-vk e da
+  Lossless Scaling no ramo beta `lsfg-vk` na Steam (esse ramo não abre o programa, só traz o arquivo). Último recurso:
+  dobra o atraso.
 
 **Desempenho**
 - **Benchmark:** render de CPU (path tracing, como o Cinebench), cena de jogo e ray tracing em OpenGL, simulação de jogo,

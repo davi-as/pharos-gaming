@@ -93,3 +93,49 @@ public class LsfgTests
         Assert.False(Lsfg.Pending(s, "wine-eldenring"));
     }
 }
+
+public class QuickActionsTests
+{
+    private const string Status = "PipeWire 'pipewire-0' [1.4.8]\n └─ Clients:\n\nAudio\n ├─ Devices:\n │      64. Fosi Audio SK02                     [alsa]\n │  \n ├─ Sinks:\n │  *   50. Fosi Audio SK02 Analog Stereo       [vol: 0.50]\n │      55. GA106 High Definition Audio Controller Digital Stereo (HDMI 2) [vol: 1.00]\n │      57. Starship/Matisse HD Audio Controller Digital Stereo (IEC958) [vol: 0.40]\n │  \n ├─ Sources:\n │      70. Microfone                          [vol: 1.00]\n\nVideo\n ├─ Sinks:\n │      90. Câmera                             [vol: 1.00]\n";
+
+    [Fact]
+    public void Sinks_OnlyAudioWithDefault()
+    {
+        var s = QuickActions.Sinks(Status);
+        Assert.Equal(new[] { 50, 55, 57 }, s.Select(x => x.Id));
+        Assert.True(s[0].Default);
+        Assert.Equal("Fosi SK02", QuickActions.Short(s[0].Name));
+        Assert.Equal("TV (HDMI)", QuickActions.Short(s[1].Name));
+        Assert.Equal("Óptica", QuickActions.Short(s[2].Name));
+        Assert.Equal(50, QuickActions.ParseVolume("Volume: 0.50"));
+        Assert.Equal(35, QuickActions.ParseVolume("Volume: 0.35 [MUTED]"));
+    }
+
+    [Fact]
+    public void PadBatteries_PercentOrLevel()
+    {
+        var root = Directory.CreateTempSubdirectory("ps").FullName;
+        void Dev(string n, string scope, string? cap, string? level)
+        {
+            var d = Directory.CreateDirectory(Path.Combine(root, n)).FullName;
+            File.WriteAllText(Path.Combine(d, "scope"), scope);
+            if (cap != null) File.WriteAllText(Path.Combine(d, "capacity"), cap);
+            if (level != null) File.WriteAllText(Path.Combine(d, "capacity_level"), level);
+        }
+        Dev("nintendo_switch_controller_battery_0005", "Device", null, "Low");
+        Dev("xpadneo_battery_0", "Device", "80", "Normal");
+        Dev("BAT0", "System", "50", "Normal"); // bateria do notebook: fora
+        var b = QuickActions.PadBatteries(root).OrderBy(x => x.Name).ToList();
+        Assert.Equal(new[] { "8BitDo baixa", "Xbox 80%" }, b.Select(QuickActions.Text));
+        Assert.True(QuickActions.Low(b[0]));
+        Assert.False(QuickActions.Low(b[1]));
+    }
+
+    [Fact]
+    public void Choices_KeepAtLeast30Real()
+    {
+        Assert.Equal(new[] { 2 }, Lsfg.Choices(59.95));
+        Assert.Equal(new[] { 2, 3, 4 }, Lsfg.Choices(165));
+        Assert.Contains("performance_mode = true", Lsfg.Build(new Dictionary<string, int> { ["wine-x"] = 2 }, "/d", new HashSet<string> { "wine-x" }));
+    }
+}

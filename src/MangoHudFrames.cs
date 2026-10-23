@@ -27,6 +27,11 @@ public sealed partial class MangoHudFrames
     private int _colFps = -1, _colFt = -1;
     private readonly Queue<(DateTime At, double Fps, double Ft)> _hist = new();
     private readonly List<double> _all = new(); // a sessão inteira deste log (tempo abaixo de 60)
+    private readonly Queue<double> _recent = new(); // os últimos tempos de quadro, para o gráfico do menu
+    private const int RecentMax = 240;
+
+    /// <summary>Os últimos 240 tempos de quadro (60 s com log a cada 250 ms).</summary>
+    public IReadOnlyList<double> RecentFrameTimes => _recent.ToList();
 
     /// <summary>"Nunca 59" desde o começo deste log.</summary>
     public Floor SessionFloor => Floor.Of(_all);
@@ -75,6 +80,7 @@ public sealed partial class MangoHudFrames
             _partial.Clear();
             _hist.Clear();
             _all.Clear();
+            _recent.Clear();
             _colFps = _colFt = -1;
         }
 
@@ -114,6 +120,8 @@ public sealed partial class MangoHudFrames
                         double.TryParse(cols[_colFt], NumberStyles.Float, CultureInfo.InvariantCulture, out var t) ? t : 1000 / fps;
             _hist.Enqueue((now, fps, ft));
             _all.Add(fps);
+            _recent.Enqueue(ft);
+            if (_recent.Count > RecentMax) _recent.Dequeue();
         }
         while (_hist.Count > 0 && (now - _hist.Peek().At).TotalSeconds > WindowSec) _hist.Dequeue();
     }

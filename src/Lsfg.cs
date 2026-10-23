@@ -37,12 +37,15 @@ public static class Lsfg
 
     private static string Q(string s) => "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
 
-    public static string Build(IReadOnlyDictionary<string, int> multipliers, string dll)
+    public static string Build(IReadOnlyDictionary<string, int> multipliers, string dll, ISet<string>? light = null)
     {
         var lines = new List<string> { Header, "version = 2", "", "[global]", $"dll = {Q(dll)}" };
         var on = multipliers.Where(p => p.Value >= 2).OrderBy(p => p.Key).ToList();
         foreach (var (key, m) in on)
+        {
             lines.AddRange(new[] { "", "[[profile]]", $"name = {Q(FrameLimiter.Display(key))}", $"active_in = [ {Q(ExeFor(key))} ]", $"multiplier = {m}" });
+            if (light?.Contains(key) == true) lines.Add("performance_mode = true");
+        }
         // sem nenhum perfil o lsfg-vk acha a config inválida e segue com a anterior: um que não casa com nada
         if (on.Count == 0) lines.AddRange(new[] { "", "[[profile]]", "name = \"nenhum jogo\"", "active_in = [ \"pharos-nenhum-jogo\" ]" });
         return string.Join("\n", lines) + "\n";
@@ -50,11 +53,25 @@ public static class Lsfg
 
     public static int Multiplier(AppSettings s, string key) => s.FgMultiplier.GetValueOrDefault(key, 1);
 
-    /// <summary>Liga (2×) ou desliga para o jogo. Vale ao reabrir; o limite acompanha quando o jogo fechar (Settle).</summary>
-    public static void Set(AppSettings s, string key, int multiplier, double screenHz)
+    /// <summary>
+    /// Multiplicadores que fazem sentido na tela: cada um precisa de pelo menos ~30 FPS reais (abaixo disso o atraso e os
+    /// fantasmas aparecem). Na TV de 60 Hz, só 2×; num monitor de 165 Hz, 2× e 3×.
+    /// </summary>
+    public static List<int> Choices(double screenHz) => new[] { 2, 3, 4 }.Where(m => screenHz / m >= 29).ToList();
+
+    /// <summary>
+    /// Liga, troca ou desliga. Ligar ou desligar vale ao reabrir (o limite acompanha quando o jogo fechar, Settle);
+    /// trocar 2× ↔ 3× com o jogo que abriu com geração vale na hora (o lsfg-vk relê o multiplicador), e o limite também.
+    /// </summary>
+    public static void Set(AppSettings s, string key, int multiplier, double screenHz, bool running = false)
     {
         s.FgScreenHz[key] = screenHz;
         if (multiplier >= 2) s.FgMultiplier[key] = multiplier; else s.FgMultiplier.Remove(key);
+        if (running && multiplier >= 2 && s.FgApplied.GetValueOrDefault(key, 1) >= 2)
+        {
+            s.FgApplied[key] = multiplier;
+            FrameLimiter.Set(s, key, Math.Round(screenHz / multiplier, 2));
+        }
         if (DllSource() is { } src && (!File.Exists(DllPath) || File.GetLastWriteTimeUtc(src) > File.GetLastWriteTimeUtc(DllPath)))
         {
             Directory.CreateDirectory(Path.GetDirectoryName(DllPath)!);
@@ -63,9 +80,16 @@ public static class Lsfg
         Directory.CreateDirectory(Path.GetDirectoryName(ConfPath)!);
         if (File.Exists(ConfPath) && !File.ReadLines(ConfPath).FirstOrDefault()?.StartsWith("# Gerado pelo PHAROS") == true && !File.Exists(ConfPath + ".pharos-bak"))
             File.Copy(ConfPath, ConfPath + ".pharos-bak"); // config feita à mão (lsfg-vk-ui): guarda antes
-        File.WriteAllText(ConfPath + ".tmp", Build(s.FgMultiplier, DllPath));
+        File.WriteAllText(ConfPath + ".tmp", Build(s.FgMultiplier, DllPath, s.FgLight));
         File.Move(ConfPath + ".tmp", ConfPath, overwrite: true);
         s.Save();
+    }
+
+    /// <summary>Modelo leve liga e desliga com o jogo aberto (o lsfg-vk relê performance_mode).</summary>
+    public static void SetLight(AppSettings s, string key, bool light, double screenHz)
+    {
+        if (light) s.FgLight.Add(key); else s.FgLight.Remove(key);
+        Set(s, key, Multiplier(s, key), screenHz, running: true);
     }
 
     /// <summary>Pendente: o jogo pediu outra geração, mas o limite ainda é o da antiga.</summary>

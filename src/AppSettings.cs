@@ -92,6 +92,8 @@ public sealed class AppSettings
     /// <summary>Multiplicador com que o limite do jogo está hoje (troca só com o jogo fechado: o lsfg-vk escolhe o perfil ao abrir).</summary>
     public Dictionary<string, int> FgApplied { get; set; } = new();
     public Dictionary<string, double> FgScreenHz { get; set; } = new();
+    /// <summary>Jogos com o modelo leve do lsfg-vk (performance_mode: mais rápido, um pouco menos de qualidade).</summary>
+    public HashSet<string> FgLight { get; set; } = new();
     /// <summary>Overlay do MangoHud por jogo pelo menu rápido: true = escondido; ausente = o do MangoHud.conf.</summary>
     public Dictionary<string, bool> OverlayHidden { get; set; } = new();
     /// <summary>Saída do Hyprland que é a TV (ex. DP-2); null = adivinhar pela descrição do monitor.</summary>

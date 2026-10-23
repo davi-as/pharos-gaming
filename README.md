@@ -51,8 +51,9 @@ que vê o jogo rodando (os da Steam pelo `SteamAppId`; os do Hydra fora da Steam
   do `gaming-doctor`. Cada arquivo editado ganha uma cópia `.pharos-bak` na primeira mudança.
 - **Menu rápido na TV:** Guide + View no controle abre o Pharos em tela cheia por cima do jogo (o daemon do console
   devolve o jogo ao fechar). Mostra a sessão ao vivo (quanto do tempo ficou acima de 60, quedas, ritmo, temperaturas,
-  a sessão anterior e a sugestão do jogo) e ajustes que valem com o jogo aberto: limite, geração de quadros, overlay,
-  perfil de energia, captura e Big Picture. Navega pelo controle (direcional ou analógico, A muda, B volta ao jogo) ou
+  a sessão anterior, o gráfico do tempo de cada quadro no último minuto e a sugestão do jogo), a bateria do controle e
+  ajustes que valem com o jogo aberto: limite, geração de quadros (2×, 3× quando a tela permite, modelo leve), overlay,
+  saída de som e volume, perfil de energia, desligar as outras telas, desligar o controle, captura e Big Picture. Navega pelo controle (direcional ou analógico, A muda, B volta ao jogo) ou
   pelas setas; também abre pela página e com `pharos-gaming --tv`.
 - **Perfil da TV:** todo jogo novo que aparece na TV ganha o limite igual à taxa dela (59,95), e cada sessão mede o
   tempo abaixo de 60 e sugere o ajuste que falta (upscaling ou gráficos quando a GPU está cheia; CPU quando não está).

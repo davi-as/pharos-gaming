@@ -23,15 +23,19 @@ public partial class TvWindow : Window
     private int _ticks;
     private bool _scanning;
     private string? _power;
+    private string? _sink;
+    private int? _volume;
+    private bool _screensOff, _padConfirm;
     private readonly Dictionary<string, (Button Button, TextBlock Value, TextBlock Hint)> _tile = new();
     private readonly List<(TextBlock Label, TextBlock Value)> _stats = new();
 
     public TvWindow()
     {
         InitializeComponent();
-        string[] names = { "limit", "fg", "overlay", "power", "shot", "bp" };
-        string[] labels = { "LIMITE", "GERAÇÃO DE QUADROS", "OVERLAY", "ENERGIA", "CAPTURA", "HYDRA" };
-        for (int i = 0; i < names.Length; i++) AddTile(names[i], labels[i], i / 3, i % 3);
+        string[] names = { "limit", "fg", "fglight", "overlay", "audio", "voldown", "volup", "power", "screens", "pad", "shot", "bp" };
+        string[] labels = { "LIMITE", "GERAÇÃO", "QUALIDADE", "OVERLAY", "SAÍDA DE SOM", "VOLUME −", "VOLUME +",
+                            "ENERGIA", "OUTRAS TELAS", "CONTROLE", "CAPTURA", "HYDRA" };
+        for (int i = 0; i < names.Length; i++) AddTile(names[i], labels[i], i / 4, i % 4);
         for (int r = 0; r < 5; r++) AddStat(r);
         // o controle só manda aqui com a janela em foco: com o jogo na frente, os botões são do jogo
         _pad = new Gamepad(nav => Dispatcher.UIThread.Post(() => { if (IsActive) Navigate(nav); }));
@@ -41,18 +45,19 @@ public partial class TvWindow : Window
         Live.Start();
         Live.Tick += Tick;
         _ = ReadPower();
+        _ = ReadAudio();
         Tick();
     }
 
     private void AddTile(string name, string label, int row, int col)
     {
-        var v = new TextBlock { Classes = { "tvbig" }, FontSize = 26, Text = "—" };
+        var v = new TextBlock { Classes = { "tvbig" }, FontSize = 22, Text = "—", TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis };
         var h = new TextBlock { Classes = { "tv" }, FontSize = 16, TextWrapping = Avalonia.Media.TextWrapping.Wrap };
         var panel = new StackPanel { Spacing = 6 };
         panel.Children.Add(new TextBlock { Classes = { "tvlabel" }, FontSize = 13, Text = label });
         panel.Children.Add(v);
         panel.Children.Add(h);
-        var b = new Button { Classes = { "tile" }, Content = panel, MinHeight = 140 };
+        var b = new Button { Classes = { "tile" }, Content = panel, MinHeight = 118 };
         b.Click += (_, _) => Activate(name);
         Grid.SetRow(b, row);
         Grid.SetColumn(b, col);
@@ -88,7 +93,13 @@ public partial class TvWindow : Window
             _scanning = false;
             _game = g;
             _screen = sc;
+            _screensOff = await Task.Run(() => QuickActions.OthersOff(sc?.Name));
+            var bats = await Task.Run(() => QuickActions.PadBatteries());
+            BatteryRow.IsVisible = bats.Count > 0;
+            Battery.Text = string.Join(" · ", bats.Select(QuickActions.Text));
+            Battery.Foreground = App.Brush(bats.Any(QuickActions.Low) ? "Bad" : "Muted");
         }
+        if (_ticks % 8 == 1) _ = ReadAudio(); // alguém pode mudar o som por fora
         ShowSession();
         ShowTiles();
     }
@@ -120,6 +131,25 @@ public partial class TvWindow : Window
             ? $"Abaixo de 60 em {floor.BelowPct:0.#}% do tempo até agora. " + (tip != null && !tip.Good ? tip.Text : "Se continuar, baixe um degrau nos gráficos ou ligue upscaling (FSR, XeSS ou DLSS) em Qualidade.")
             : tip != null ? $"{tip.Title}. {tip.Text}" : "Segurando 60. A sugestão do jogo aparece aqui quando houver o que ajustar.";
         TipBox.BorderBrush = App.Brush(floor != null && floor.BelowPct >= 0.5 || tip is { Good: false } ? "Warn" : "Ok");
+        DrawGraph(f != null ? Live.RecentFrameTimes : Array.Empty<double>());
+    }
+
+    /// <summary>Tempo de cada quadro no último minuto: linha reta = liso; picos = engasgos. A linha fina é o alvo (16,7 ms).</summary>
+    private void DrawGraph(IReadOnlyList<double> ft)
+    {
+        Graph.Children.Clear();
+        double w = Graph.Bounds.Width, h = Graph.Bounds.Height;
+        GraphNote.Text = ft.Count > 1 ? $"máx. {ft.Max():0.#} ms" : "";
+        if (ft.Count < 2 || w <= 0 || h <= 0) return;
+        double target = Limit() > 0 ? 1000 / Limit() : 1000 / 60.0;
+        double top = Math.Max(target * 2.2, ft.Max() * 1.1);
+        double Y(double v) => h - Math.Min(v, top) / top * h;
+        Graph.Children.Add(new Avalonia.Controls.Shapes.Line
+        {
+            StartPoint = new Point(0, Y(target)), EndPoint = new Point(w, Y(target)), Stroke = App.Brush("Line"), StrokeThickness = 2,
+        });
+        var pts = ft.Select((v, i) => new Point(i * w / Math.Max(1, ft.Count - 1), Y(v))).ToList();
+        Graph.Children.Add(new Avalonia.Controls.Shapes.Polyline { Points = pts, Stroke = App.Brush("Flame"), StrokeThickness = 2.5 });
     }
 
     private double Limit() => _game != null && _s.FpsLimits.TryGetValue(_game.Key, out var l) ? l : 0;
@@ -149,8 +179,24 @@ public partial class TvWindow : Window
         T("overlay", !has ? "—" : hidden ? "Escondido" : "Visível", has && !limited ? "precisa de um limite salvo" : "o FPS chega ao Pharos igual", limited);
         T("power", _power == "performance" ? "Desempenho" : _power == null ? "—" : "Equilibrado",
           _power == null ? "sem power-profiles-daemon" : "CPU sem economia", _power != null);
+        bool light = has && _s.FgLight.Contains(_game!.Key);
+        T("fglight", !has ? "—" : light ? "Leve" : "Normal", want < 2 ? "com a geração ligada" : light ? "mais rápida, menos nítida" : "melhor imagem",
+          has && want >= 2 && fgMissing == null);
+        T("audio", _sink != null ? QuickActions.Short(_sink) : "—", "A troca a saída", _sink != null);
+        T("voldown", _volume is int vd ? $"{vd}%" : "—", "abaixa 5%", _volume != null);
+        T("volup", _volume is int vu ? $"{vu}%" : "—", "aumenta 5%", _volume != null);
+        T("screens", _screensOff ? "Desligadas" : "Ligadas", _screensOff ? "A liga de novo" : "deixa só a tela do jogo");
+        T("pad", _padConfirm ? "Confirmar" : "Desligar", _padConfirm ? "A de novo desliga e fecha o menu" : "desconecta o Bluetooth");
         T("shot", "Tirar foto", "fecha o menu e captura o jogo");
         T("bp", "Big Picture", "o jogo continua aberto");
+    }
+
+    private async Task ReadAudio()
+    {
+        var sinks = await QuickActions.ReadSinks();
+        _sink = sinks.FirstOrDefault(x => x.Default)?.Name;
+        _volume = await QuickActions.Volume();
+        ShowTiles();
     }
 
     private async Task ReadPower()
@@ -162,6 +208,7 @@ public partial class TvWindow : Window
     private async void Activate(string name)
     {
         var g = _game;
+        if (name != "pad") _padConfirm = false;
         try
         {
             switch (name)
@@ -174,8 +221,34 @@ public partial class TvWindow : Window
                     FrameLimiter.Set(_s, g.Key, values[(i + 1) % values.Count]);
                     break;
                 case "fg" when g != null:
-                    Lsfg.Set(_s, g.Key, Lsfg.Multiplier(_s, g.Key) >= 2 ? 1 : 2, ScreenHz); // o limite troca quando o jogo fechar
+                    // desligada → 2× → 3× (se der ≥ 30 reais na tela) → desligada; ligar/desligar vale ao reabrir, trocar vale já
+                    var steps = new List<int> { 1 }.Concat(Lsfg.Choices(ScreenHz)).ToList();
+                    int cur = Lsfg.Multiplier(_s, g.Key);
+                    Lsfg.Set(_s, g.Key, steps[(steps.IndexOf(cur) + 1) % steps.Count], ScreenHz, running: true);
                     break;
+                case "fglight" when g != null:
+                    Lsfg.SetLight(_s, g.Key, !_s.FgLight.Contains(g.Key), ScreenHz);
+                    break;
+                case "audio":
+                    await QuickActions.NextSink();
+                    await ReadAudio();
+                    break;
+                case "voldown" or "volup":
+                    await QuickActions.Step(name == "volup" ? 5 : -5);
+                    await ReadAudio();
+                    break;
+                case "screens":
+                    await QuickActions.OtherScreens(!_screensOff, _screen?.Name);
+                    _screensOff = !_screensOff;
+                    break;
+                case "pad" when !_padConfirm:
+                    _padConfirm = true; // desligar o controle tira o jeito de mexer no menu: pede confirmação
+                    break;
+                case "pad":
+                    _padConfirm = false;
+                    await QuickActions.DisconnectPads();
+                    Close();
+                    return;
                 case "overlay" when g != null:
                     bool hidden = _s.OverlayHidden.TryGetValue(g.Key, out bool h) ? h : ConsoleSetup.MangoHidden(Sys.Read(MangoHudConfig.FilePath) ?? "");
                     _s.OverlayHidden[g.Key] = !hidden;

@@ -1,0 +1,141 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="PharosGaming.StressPage">
+    <Grid ColumnDefinitions="340,14,*" Margin="6">
+        <ScrollViewer>
+            <StackPanel Spacing="10">
+                <TextBlock Classes="dim" Text="Carga máxima com corte automático por temperatura"/>
+                <Border Classes="card" Margin="0">
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="label" Text="COMPONENTES"/>
+                        <WrapPanel>
+                            <CheckBox x:Name="ChkCpu" Content="CPU" IsChecked="True" Margin="0,0,16,0"/>
+                            <CheckBox x:Name="ChkRam" Content="RAM" Margin="0,0,16,0" IsCheckedChanged="Options_Changed"/>
+                            <CheckBox x:Name="ChkGpu" Content="GPU" IsCheckedChanged="Options_Changed"/>
+                        </WrapPanel>
+                        <TextBlock Classes="label" Text="USO DA RAM LIVRE"/>
+                        <WrapPanel x:Name="RamPanel" Classes="chips" IsEnabled="False">
+                            <RadioButton GroupName="StRam" Content="40%" Tag="0.4"/>
+                            <RadioButton GroupName="StRam" Content="60%" Tag="0.6" IsChecked="True"/>
+                            <RadioButton GroupName="StRam" Content="80%" Tag="0.8"/>
+                        </WrapPanel>
+                        <Grid ColumnDefinitions="*,10,*,10,*">
+                            <StackPanel>
+                                <TextBlock Classes="label" Text="LIMITE CPU °C"/>
+                                <NumericUpDown x:Name="CpuLimit" Value="90" Minimum="40" Maximum="110" Increment="1" FormatString="0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="label" Text="LIMITE GPU °C"/>
+                                <NumericUpDown x:Name="GpuLimit" Value="85" Minimum="40" Maximum="100" Increment="1" FormatString="0" IsEnabled="False"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Classes="label" Text="MIN (0 = ∞)"/>
+                                <NumericUpDown x:Name="Minutes" Value="10" Minimum="0" Maximum="1440" Increment="5" FormatString="0"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+                <Border x:Name="GpuOptions" Classes="card" Margin="0" IsEnabled="False">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="GPU · RESOLUÇÃO"/>
+                        <WrapPanel x:Name="ResPanel" Classes="chips">
+                            <RadioButton GroupName="StRes" Content="720p" Tag="1280x720"/>
+                            <RadioButton GroupName="StRes" Content="1080p" Tag="1920x1080" IsChecked="True"/>
+                            <RadioButton GroupName="StRes" Content="1440p" Tag="2560x1440"/>
+                        </WrapPanel>
+                        <TextBlock Classes="label" Text="ANTI-ALIASING"/>
+                        <WrapPanel x:Name="MsaaPanel" Classes="chips">
+                            <RadioButton GroupName="StMsaa" Content="Off" Tag="1"/>
+                            <RadioButton GroupName="StMsaa" Content="4x MSAA" Tag="4" IsChecked="True"/>
+                            <RadioButton GroupName="StMsaa" Content="8x MSAA" Tag="8"/>
+                        </WrapPanel>
+                        <TextBlock Classes="label" Text="INTENSIDADE"/>
+                        <WrapPanel x:Name="IntensityPanel" Classes="chips">
+                            <RadioButton GroupName="StInt" Content="Normal" Tag="96,32"/>
+                            <RadioButton GroupName="StInt" Content="Alta" Tag="128,48" IsChecked="True"/>
+                            <RadioButton GroupName="StInt" Content="Extrema" Tag="160,64"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+                <Button x:Name="BtnRun" Classes="accent" Content="INICIAR" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Run_Click"/>
+                <TextBlock x:Name="Hint" Classes="dim" FontSize="12"/>
+            </StackPanel>
+        </ScrollViewer>
+        <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*,Auto">
+            <UniformGrid Columns="4" Margin="0,0,0,10">
+                <Border x:Name="StatusCard" Classes="card" Margin="0,0,8,8">
+                    <StackPanel>
+                        <TextBlock x:Name="StatusLabel" Classes="label" Text="STATUS"/>
+                        <TextBlock x:Name="StatusText" Classes="big" FontSize="24" Text="Parado"/>
+                    </StackPanel>
+                </Border>
+                <Border Classes="card" Margin="0,0,8,8">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="TEMPO"/>
+                        <TextBlock x:Name="Elapsed" Classes="big" FontSize="24" FontFamily="monospace" Text="00:00:00"/>
+                    </StackPanel>
+                </Border>
+                <Border Classes="card" Margin="0,0,8,8">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="TEMP. CPU"/>
+                        <TextBlock x:Name="CpuTemp" Classes="big" FontSize="24" Text="—"/>
+                        <TextBlock x:Name="CpuTempMax" Classes="dim" FontSize="12" Text="máx. —"/>
+                    </StackPanel>
+                </Border>
+                <Border Classes="card" Margin="0,0,0,8">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="CARGA CPU"/>
+                        <TextBlock x:Name="CpuLoad" Classes="big" FontSize="24" Text="—"/>
+                        <TextBlock x:Name="CpuClock" Classes="dim" FontSize="12" Text="—"/>
+                    </StackPanel>
+                </Border>
+                <Border Classes="card" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="TEMP. GPU"/>
+                        <TextBlock x:Name="GpuTemp" Classes="big" FontSize="24" Text="—"/>
+                        <TextBlock x:Name="GpuTempMax" Classes="dim" FontSize="12" Text="máx. —"/>
+                    </StackPanel>
+                </Border>
+                <Border Classes="card" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="CONSUMO GPU"/>
+                        <TextBlock x:Name="GpuPower" Classes="big" FontSize="24" Text="—"/>
+                        <TextBlock x:Name="GpuCap" Classes="dim" FontSize="12" Text="—"/>
+                    </StackPanel>
+                </Border>
+                <Border Classes="card" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="FPS (GPU)"/>
+                        <TextBlock x:Name="Fps" Classes="big" FontSize="24" Text="—"/>
+                        <TextBlock x:Name="FpsAvg" Classes="dim" FontSize="12" Text="média —"/>
+                    </StackPanel>
+                </Border>
+                <Border Classes="card" Margin="0">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="RAM"/>
+                        <TextBlock x:Name="Ram" Classes="big" FontSize="24" Text="—"/>
+                        <TextBlock Classes="dim" FontSize="12" Text="passes / erros"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+            <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+                <TextBlock Classes="label" Text="TEMPERATURAS · ÚLTIMOS 5 MIN"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="14">
+                    <TextBlock Classes="label" Text="━ CPU" Foreground="{StaticResource Fg}"/>
+                    <TextBlock Classes="label" Text="━ GPU"/>
+                    <TextBlock Classes="label" Text="┄ limites"/>
+                </StackPanel>
+            </Grid>
+            <Border Grid.Row="2" Classes="card" Margin="0" Padding="10">
+                <Panel>
+                    <Canvas x:Name="Chart" ClipToBounds="True"/>
+                    <Image x:Name="Preview" Width="240" Height="135" HorizontalAlignment="Right" VerticalAlignment="Top" IsVisible="False"/>
+                </Panel>
+            </Border>
+            <StackPanel Grid.Row="3" Margin="0,10,0,0">
+                <TextBlock Classes="label" Text="REGISTRO"/>
+                <ListBox x:Name="Log" Height="110" Background="Transparent" FontFamily="monospace" FontSize="12"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

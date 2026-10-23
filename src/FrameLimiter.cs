@@ -75,6 +75,27 @@ public static class FrameLimiter
         return found.DistinctBy(g => g.Key).ToList();
     }
 
+    /// <summary>
+    /// O jogo entre os processos com MangoHud: o que tem janela (o explorer.exe /desktop do Wine também carrega o
+    /// MangoHud, sem janela); sem lista de janelas, o primeiro fora da lista negra do MangoHud.
+    /// </summary>
+    public static RunningGame? Pick(IEnumerable<RunningGame> games, ISet<int> windowPids)
+    {
+        var real = games.Where(g => g.Key != "wine-explorer").ToList();
+        return real.FirstOrDefault(g => windowPids.Contains(g.Pid)) ?? real.FirstOrDefault();
+    }
+
+    /// <summary>PIDs com janela no Hyprland (vazio fora dele).</summary>
+    public static HashSet<int> WindowPids()
+    {
+        try
+        {
+            using var clients = JsonDocument.Parse(Sys.RunAsync("hyprctl", "clients", "-j").GetAwaiter().GetResult().Out);
+            return clients.RootElement.EnumerateArray().Select(c => c.GetProperty("pid").GetInt32()).ToHashSet();
+        }
+        catch (Exception) { return new(); }
+    }
+
     /// <summary>Config do jogo: a base inteira (o arquivo é lido no lugar dela, não junto) + o limite e o log que o PHAROS lê.</summary>
     public static string Build(string key, double limit, IEnumerable<string> baseLines)
     {

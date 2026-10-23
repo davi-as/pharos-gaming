@@ -31,7 +31,7 @@ public partial class LimiterPage : UserControl
             _scanning = true;
             var (game, screen) = await Task.Run(() =>
             {
-                var g = FrameLimiter.Running().FirstOrDefault();
+                var g = FrameLimiter.Pick(FrameLimiter.Running(), FrameLimiter.WindowPids());
                 return (g, g == null ? null : FrameLimiter.ScreenOf(g.Pid));
             });
             _scanning = false;

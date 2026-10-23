@@ -12,6 +12,15 @@ public class LimiterTests
     }
 
     [Fact]
+    public void Pick_PrefersTheGameWindowOverWineExplorer()
+    {
+        var games = new[] { new RunningGame(10, "wine-explorer"), new RunningGame(11, "wine-launcher"), new RunningGame(12, "wine-Hades") };
+        Assert.Equal("wine-Hades", FrameLimiter.Pick(games, new HashSet<int> { 12 })!.Key);
+        Assert.Equal("wine-launcher", FrameLimiter.Pick(games, new HashSet<int>())!.Key); // sem janelas: nunca o explorer
+        Assert.Null(FrameLimiter.Pick(new[] { new RunningGame(10, "wine-explorer") }, new HashSet<int>()));
+    }
+
+    [Fact]
     public void Build_ReplacesLimitLinesAndKeepsTheRest()
     {
         var conf = FrameLimiter.Build("wine-eldenring", 82.5,

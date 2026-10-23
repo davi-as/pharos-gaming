@@ -8,7 +8,7 @@
                     <Panel Width="960" Height="540">
                         <Image x:Name="Img"/>
                         <Canvas x:Name="Buckets"/>
-                        <TextBlock x:Name="Idle" Text="Pressione INICIAR para renderizar a cena" Foreground="{DynamicResource Muted}" FontSize="22"
+                        <TextBlock x:Name="Idle" Text="Pressione “Iniciar” para renderizar a cena" Foreground="{DynamicResource Muted}" FontSize="22"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Panel>
                 </Viewbox>
@@ -34,7 +34,7 @@
                             <RadioButton GroupName="RbDur" Content="1 passada" Tag="0" IsChecked="True"/>
                             <RadioButton GroupName="RbDur" Content="Mínimo 10 min" Tag="10"/>
                         </WrapPanel>
-                        <Button x:Name="BtnRun" Classes="accent" Content="INICIAR" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Run_Click"/>
+                        <Button x:Name="BtnRun" Classes="accent" Content="Iniciar" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Run_Click"/>
                         <TextBlock x:Name="Hint" Classes="dim" FontSize="12" Margin="0,6,0,0"/>
                     </StackPanel>
                 </Border>

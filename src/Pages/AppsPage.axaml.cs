@@ -28,7 +28,7 @@ public partial class AppsPage : UserControl
         var sel = _apps.Where(a => a.Selected && a.CanSelect).ToList();
         if (sel.Count == 0) { AddLog("Nada selecionado."); return; }
         _cts = new CancellationTokenSource();
-        BtnInstall.Content = "CANCELAR";
+        BtnInstall.Content = "Cancelar";
         try { await AppInstaller.Install(sel, AddLog, _cts.Token); AddLog("Concluído."); }
         catch (OperationCanceledException) { AddLog("Cancelado."); }
         catch (Exception ex) { AddLog("Falhou: " + ex.Message); }
@@ -36,7 +36,7 @@ public partial class AppsPage : UserControl
         {
             _cts.Dispose();
             _cts = null;
-            BtnInstall.Content = "INSTALAR SELECIONADOS";
+            BtnInstall.Content = "Instalar selecionados";
         }
     }
 }

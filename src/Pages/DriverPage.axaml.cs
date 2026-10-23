@@ -78,17 +78,17 @@ public partial class DriverPage : UserControl
             // sem caixa de diálogo: o segundo clique confirma
             _confirmUpgrade = true;
             UpgradeLog.Text = "Isto atualiza o sistema inteiro (pede a senha). Feche os jogos antes; se o kernel ou o driver de vídeo mudarem, reinicie o PC no final. Clique de novo para confirmar.";
-            BtnUpgrade.Content = "CONFIRMAR ATUALIZAÇÃO";
+            BtnUpgrade.Content = "Confirmar atualização";
             return;
         }
         _confirmUpgrade = false;
         BtnUpgrade.IsEnabled = false;
-        BtnUpgrade.Content = "ATUALIZANDO…";
+        BtnUpgrade.Content = "Atualizando…";
         UpgradeLog.Text = "Aguardando a senha de administrador…";
         var r = await Sys.RunRootAsync(DriverManager.UpgradeScript());
         var tail = (r.Out + "\n" + r.Err).Split('\n').Where(l => l.Trim().Length > 0).TakeLast(8);
         UpgradeLog.Text = (r.Ok ? "Concluído. Reinicie o PC se o kernel ou o driver de vídeo foram atualizados.\n" : "Falhou: " + Sys.RootError(r) + "\n") + string.Join("\n", tail);
-        BtnUpgrade.Content = "ATUALIZAR O SISTEMA";
+        BtnUpgrade.Content = "Atualizar o sistema";
         await ScanAsync();
     }
 }

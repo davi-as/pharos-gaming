@@ -27,7 +27,7 @@ public class DriverTests
         var g = new GpuDriverStatus { Installed = "615.78.08", Repo = "615.78.08", Latest = "620.10" };
         Assert.Contains("evite o instalador .run", DriverManager.NvidiaAdvice(g));
         g.Repo = "620.10";
-        Assert.Contains("ATUALIZAR O SISTEMA", DriverManager.NvidiaAdvice(g));
+        Assert.Contains("Atualizar o sistema", DriverManager.NvidiaAdvice(g));
         g.Installed = "620.10";
         Assert.Contains("mais recente", DriverManager.NvidiaAdvice(g));
     }

@@ -28,7 +28,7 @@ public partial class MakerDrvPage : UserControl
             row.Children.Add(state);
             if (available && !loaded)
             {
-                var b = new Button { Content = "CARREGAR", FontSize = 11 };
+                var b = new Button { Content = "Carregar", FontSize = 11 };
                 b.Click += async (_, _) =>
                 {
                     LoadResult.Text = "Aguardando a senha de administrador…";

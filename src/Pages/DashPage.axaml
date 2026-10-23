@@ -27,14 +27,11 @@
                     </Grid>
                     <Panel Grid.Row="1" Margin="0,12,0,0">
                         <Canvas x:Name="FpsChart" ClipToBounds="True" MinHeight="80"/>
-                        <!-- Sem FPS: como ligar o MangoHud -->
-                        <StackPanel x:Name="Setup" VerticalAlignment="Center" Spacing="8">
-                            <TextBlock Classes="dim" Text="Nenhum jogo enviando FPS. O PHAROS lê o FPS pelo MangoHud: cole isto nas opções de inicialização do jogo (Steam › Propriedades › Opções de inicialização) e abra o jogo."/>
-                            <Grid ColumnDefinitions="*,Auto">
-                                <TextBox x:Name="LaunchOption" IsReadOnly="True" FontFamily="{StaticResource Sans}" FontSize="12"/>
-                                <Button Grid.Column="1" Content="Copiar" Margin="8,0,0,0" Click="CopyLaunch_Click"/>
-                            </Grid>
-                            <TextBlock Classes="dim" FontSize="11" Text="Se você já liga o log do MangoHud por conta própria (atalho ou autostart_log no MangoHud.conf), o PHAROS também encontra."/>
+                        <!-- Sem FPS: de onde ele vem -->
+                        <StackPanel x:Name="Setup" VerticalAlignment="Center" Spacing="10" Orientation="Horizontal">
+                            <PathIcon Data="{StaticResource ic-speedometer}" Width="28" Height="28" Foreground="{DynamicResource Faint}"/>
+                            <TextBlock Classes="dim" MaxWidth="560" VerticalAlignment="Center"
+                                       Text="Nenhum jogo enviando FPS. O painel lê o log do MangoHud: ligue o overlay do PHAROS (página Overlay) ou um limite no Limitador de FPS e mostre o overlay no jogo (Ctrl + Shift + Q)."/>
                         </StackPanel>
                     </Panel>
                 </Grid>

@@ -6,10 +6,9 @@
         <StackPanel Margin="6,6,16,6" Spacing="12">
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel>
-                    <TextBlock Classes="dim" Text="Driver de vídeo, atualizações do sistema e de firmware, e o driver de cada dispositivo"/>
-                    <TextBlock x:Name="Status" Classes="dim" FontSize="12" Text="Clique em VERIFICAR TUDO."/>
+                    <TextBlock x:Name="Status" Classes="dim" FontSize="12" Text="Clique em “Verificar tudo”."/>
                 </StackPanel>
-                <Button x:Name="BtnScan" Grid.Column="1" Classes="accent" Content="VERIFICAR TUDO" VerticalAlignment="Top" Click="Scan_Click"/>
+                <Button x:Name="BtnScan" Grid.Column="1" Classes="accent" Content="Verificar tudo" VerticalAlignment="Top" Click="Scan_Click"/>
             </Grid>
             <ProgressBar x:Name="Progress" Maximum="1"/>
             <Grid ColumnDefinitions="*,14,*">
@@ -37,7 +36,7 @@
                     <StackPanel Spacing="6">
                         <TextBlock Classes="label" Text="PLACA-MÃE / FABRICANTE"/>
                         <TextBlock x:Name="Board" Classes="dim"/>
-                        <Button x:Name="BtnBoard" Content="ABRIR SUPORTE DO FABRICANTE" IsEnabled="False" Click="Board_Click"/>
+                        <Button x:Name="BtnBoard" Content="Abrir suporte do fabricante" IsEnabled="False" Click="Board_Click"/>
                         <TextBlock Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap"
                                    Text="No Linux o chipset e o áudio da placa já vêm no kernel. Do site do fabricante, o que importa é a BIOS (ou pelo fwupd, quando o fabricante publica no LVFS)."/>
                     </StackPanel>
@@ -58,7 +57,7 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <Button x:Name="BtnUpgrade" Content="ATUALIZAR O SISTEMA" IsEnabled="False" Click="Upgrade_Click"/>
+                        <Button x:Name="BtnUpgrade" Content="Atualizar o sistema" IsEnabled="False" Click="Upgrade_Click"/>
                         <SelectableTextBlock x:Name="UpgradeLog" FontFamily="{StaticResource Sans}" FontSize="11" Foreground="{DynamicResource Muted}" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>

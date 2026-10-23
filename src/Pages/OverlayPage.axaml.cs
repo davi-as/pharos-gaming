@@ -15,7 +15,7 @@ public partial class OverlayPage : UserControl
     {
         InitializeComponent();
         _show = _s.OverlayItems is { } l ? l.ToHashSet() : OverlayMetrics.Defaults();
-        ChkEnabled.IsChecked = _s.OverlayEnabled;
+        ChkEnabled.IsChecked = _s.OverlayManaged;
         ChkVisible.IsChecked = _s.OverlayVisible;
         foreach (var rb in CornerPanel.Children.OfType<RadioButton>()) rb.IsChecked = rb.Tag as string == _s.OverlayCorner;
         foreach (var rb in ScalePanel.Children.OfType<RadioButton>())
@@ -73,7 +73,7 @@ public partial class OverlayPage : UserControl
     private void Save()
     {
         if (_loading) return;
-        _s.OverlayEnabled = ChkEnabled.IsChecked == true;
+        _s.OverlayManaged = ChkEnabled.IsChecked == true;
         _s.OverlayVisible = ChkVisible.IsChecked == true;
         _s.OverlayCorner = CornerPanel.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string ?? "TL";
         _s.OverlayScale = double.Parse(ScalePanel.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string ?? "1", CultureInfo.InvariantCulture);
@@ -83,14 +83,11 @@ public partial class OverlayPage : UserControl
             _s.Save();
             MangoHudConfig.Write(_s);
             FrameLimiter.RewriteAll(_s); // as configs por jogo do limitador levam o overlay junto
-            FileNote.Text = $"Arquivo: {MangoHudConfig.FilePath}. O MangoHud relê o arquivo sozinho: as mudanças aparecem com o jogo aberto.";
+            FileNote.Text = _s.OverlayManaged
+                ? $"Gravado em {MangoHudConfig.FilePath} (o seu está guardado em {MangoHudConfig.BackupPath}). As mudanças aparecem com o jogo aberto."
+                : $"Os jogos usam o seu {MangoHudConfig.FilePath}.";
         }
         catch (Exception ex) { FileNote.Text = "Não consegui gravar a configuração: " + ex.Message; }
-        LaunchLine.Text = MangoHudFrames.LaunchOption;
     }
 
-    private async void Copy_Click(object? sender, RoutedEventArgs e)
-    {
-        if (TopLevel.GetTopLevel(this)?.Clipboard is { } cb) await cb.SetTextAsync(LaunchLine.Text);
-    }
 }

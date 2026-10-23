@@ -170,7 +170,7 @@ public static class DriverManager
         if (g.Installed.Length == 0) return "Driver NVIDIA não carregado.";
         bool repoNewer = g.Repo.Length > 0 && GpuDriverStatus.CompareVersions(g.Repo, g.Installed) > 0;
         bool nvNewer = g.Latest.Length > 0 && GpuDriverStatus.CompareVersions(g.Latest, g.Repo.Length > 0 ? g.Repo : g.Installed) > 0;
-        if (repoNewer) return $"Há um driver mais novo na sua distro: {g.Repo} (instalado: {g.Installed}). Use ATUALIZAR O SISTEMA.";
+        if (repoNewer) return $"Há um driver mais novo na sua distro: {g.Repo} (instalado: {g.Installed}). Use “Atualizar o sistema”.";
         if (nvNewer) return $"A NVIDIA já publicou o {g.Latest}; a sua distro ainda está no {(g.Repo.Length > 0 ? g.Repo : g.Installed)}. Ele chega pelas atualizações normais em alguns dias: evite o instalador .run, que quebra a cada atualização do kernel.";
         return $"Você já está com o mais recente ({g.Installed}).";
     }

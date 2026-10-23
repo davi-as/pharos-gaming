@@ -1,0 +1,162 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="PharosGaming.ConsolePage">
+    <ScrollViewer>
+        <StackPanel Margin="6,0,16,6" Spacing="12">
+            <!-- Resumo: o diagnóstico em uma linha e as ações do dia a dia -->
+            <Border Classes="card" Margin="0" Padding="20">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Border Width="52" Height="52" CornerRadius="14" Background="{DynamicResource NavActive}" VerticalAlignment="Center">
+                        <PathIcon x:Name="HeroIcon" Data="{StaticResource ic-gamepad-variant-outline}" Width="28" Height="28" Foreground="{DynamicResource Flame}"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="16,0" VerticalAlignment="Center" Spacing="2">
+                        <TextBlock x:Name="HeroTitle" Classes="serif" FontSize="20" Foreground="{DynamicResource Fg}" Text="Verificando…"/>
+                        <TextBlock x:Name="HeroText" Classes="dim" Text="O controle liga o PC e a TV, o botão Xbox abre o Hydra e os jogos rodam com MangoHud."/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Button Click="Doctor_Click" ToolTip.Tip="Roda o gaming-doctor de novo">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <PathIcon Data="{StaticResource ic-stethoscope}" Width="15" Height="15"/>
+                                <TextBlock Text="Verificar"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Classes="accent" Click="OpenBp_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <PathIcon Data="{StaticResource ic-play-circle-outline}" Width="15" Height="15"/>
+                                <TextBlock Text="Abrir o Big Picture"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Grid ColumnDefinitions="*,12,*">
+                <StackPanel Spacing="12">
+                    <!-- Controle -->
+                    <Border Classes="card" Margin="0">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Classes="section" Margin="0">
+                                    <PathIcon Data="{StaticResource ic-controller}"/>
+                                    <TextBlock Classes="h2" Text="Controle"/>
+                                </StackPanel>
+                                <Border x:Name="PadBadge" Grid.Column="1" Classes="badge"><TextBlock x:Name="PadState" FontSize="11"/></Border>
+                            </Grid>
+                            <TextBlock x:Name="PadList" Classes="dim" FontSize="12"/>
+                            <TextBlock Classes="label" Text="ATALHOS" Margin="0,4,0,0"/>
+                            <StackPanel x:Name="Gestures" Spacing="8"/>
+                            <ToggleSwitch x:Name="VolSwitch" OnContent="Guide + RB / LB: volume da TV" OffContent="Guide + RB / LB: desligado"/>
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <TextBlock Classes="dim" Text="Segurar o Guide por" VerticalAlignment="Center"/>
+                                <Slider x:Name="HoldSlider" Grid.Column="1" Minimum="1" Maximum="3" TickFrequency="0.5" IsSnapToTickEnabled="True" Margin="12,0"/>
+                                <TextBlock x:Name="HoldText" Grid.Column="2" Classes="val" VerticalAlignment="Center" MinWidth="40"/>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="BtnSavePad" Classes="accent" Content="Salvar atalhos" Click="SavePad_Click"/>
+                                <Button Content="Reiniciar o serviço" Click="RestartPad_Click"/>
+                            </StackPanel>
+                            <TextBlock x:Name="PadNote" Classes="dim" FontSize="12"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- TV -->
+                    <Border Classes="card" Margin="0">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Classes="section" Margin="0">
+                                    <PathIcon Data="{StaticResource ic-television}"/>
+                                    <TextBlock Classes="h2" Text="TV"/>
+                                </StackPanel>
+                                <Border Grid.Column="1" Classes="badge"><TextBlock x:Name="TvState" FontSize="11" Text="…"/></Border>
+                            </Grid>
+                            <TextBlock x:Name="TvText" Classes="dim" FontSize="12"/>
+                            <StackPanel x:Name="TvButtons" Orientation="Horizontal" Spacing="8">
+                                <Button Content="Ligar" Tag="on" Click="Tv_Click"/>
+                                <Button Content="Desligar" Tag="off" Click="Tv_Click"/>
+                                <Button Content="Entrada do PC" Tag="pc" Click="Tv_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Bluetooth -->
+                    <Border Classes="card" Margin="0">
+                        <StackPanel Spacing="8">
+                            <StackPanel Classes="section" Margin="0">
+                                <PathIcon Data="{StaticResource ic-bluetooth}"/>
+                                <TextBlock Classes="h2" Text="Bluetooth"/>
+                            </StackPanel>
+                            <ToggleSwitch x:Name="BtSwitch" OnContent="Reconectar o controle Xbox sozinho" OffContent="Reconexão automática desligada"/>
+                            <TextBlock x:Name="BtNote" Classes="dim" FontSize="12"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Spacing="12">
+                    <!-- Hydra -->
+                    <Border Classes="card" Margin="0">
+                        <StackPanel Spacing="8">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Classes="section" Margin="0">
+                                    <PathIcon Data="{StaticResource ic-bookshelf}"/>
+                                    <TextBlock Classes="h2" Text="Hydra"/>
+                                </StackPanel>
+                                <Border Grid.Column="1" Classes="badge"><TextBlock x:Name="HydraState" FontSize="11"/></Border>
+                            </Grid>
+                            <TextBlock Classes="dim" FontSize="12" Text="A interface do console: todos os jogos abrem por ele."/>
+                            <ToggleSwitch x:Name="HydraBoot" OnContent="Abre com o sistema, na bandeja" OffContent="Não abre com o sistema"/>
+                            <ToggleSwitch x:Name="HydraMango" OnContent="MangoHud nos jogos do Hydra" OffContent="Jogos do Hydra sem MangoHud"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Abrir o Hydra" Click="OpenHydra_Click"/>
+                            </StackPanel>
+                            <TextBlock x:Name="HydraNote" Classes="dim" FontSize="12"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Steam -->
+                    <Border Classes="card" Margin="0">
+                        <StackPanel Spacing="8">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Classes="section" Margin="0">
+                                    <PathIcon Data="{StaticResource ic-steam}"/>
+                                    <TextBlock Classes="h2" Text="Steam"/>
+                                </StackPanel>
+                                <Border Grid.Column="1" Classes="badge"><TextBlock x:Name="SteamState" FontSize="11"/></Border>
+                            </Grid>
+                            <TextBlock Classes="dim" FontSize="12" Text="Jogos da Steam abertos pelo Hydra nascem da Steam: o MangoHud precisa vir dela."/>
+                            <ToggleSwitch x:Name="SteamMango" OnContent="MangoHud nos jogos da Steam" OffContent="Jogos da Steam sem MangoHud"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="BtnSteamRestart" Content="Reiniciar a Steam" Click="SteamRestart_Click"
+                                        ToolTip.Tip="Fecha a Steam (e os jogos dela) e abre de novo com a configuração atual"/>
+                            </StackPanel>
+                            <TextBlock x:Name="SteamNote" Classes="dim" FontSize="12"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- MangoHud -->
+                    <Border Classes="card" Margin="0">
+                        <StackPanel Spacing="8">
+                            <StackPanel Classes="section" Margin="0">
+                                <PathIcon Data="{StaticResource ic-layers-outline}"/>
+                                <TextBlock Classes="h2" Text="MangoHud"/>
+                            </StackPanel>
+                            <ToggleSwitch x:Name="MangoHidden" OnContent="Começa escondido no jogo" OffContent="Aparece ao abrir o jogo"/>
+                            <TextBlock x:Name="MangoNote" Classes="dim" FontSize="12"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <!-- Diagnóstico -->
+            <Border Classes="card" Margin="0">
+                <StackPanel>
+                    <StackPanel Classes="section">
+                        <PathIcon Data="{StaticResource ic-stethoscope}"/>
+                        <TextBlock Classes="h2" Text="Diagnóstico"/>
+                        <TextBlock Classes="dim" FontSize="12" Text="(gaming-doctor)" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <WrapPanel x:Name="Doctor"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

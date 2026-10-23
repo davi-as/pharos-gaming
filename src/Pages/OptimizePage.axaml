@@ -4,7 +4,6 @@
              x:Class="PharosGaming.OptimizePage">
     <ScrollViewer>
         <StackPanel Margin="6,6,16,6" Spacing="12">
-            <TextBlock Classes="dim" Text="Libera memória, fecha o que atrapalha e ajusta o sistema para jogos"/>
             <Border Classes="card" Margin="0">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
@@ -14,14 +13,14 @@
                         <TextBlock x:Name="Result" Classes="dim" FontSize="12"/>
                         <TextBlock x:Name="Confirm" Classes="dim" FontSize="12" Foreground="{DynamicResource Fg}" IsVisible="False"/>
                     </StackPanel>
-                    <Button x:Name="BtnOptimize" Grid.Column="1" Classes="accent" Content="PHAROS OTIMIZA" Margin="16,0,0,0" VerticalAlignment="Center" Click="Optimize_Click"/>
+                    <Button x:Name="BtnOptimize" Grid.Column="1" Classes="accent" Content="PHAROS otimiza" Margin="16,0,0,0" VerticalAlignment="Center" Click="Optimize_Click"/>
                 </Grid>
             </Border>
             <Border Classes="card" Margin="0">
                 <StackPanel>
                     <Grid ColumnDefinitions="*,Auto">
                         <TextBlock Classes="label" Text="PROGRAMAS PARA FECHAR"/>
-                        <Button Grid.Column="1" Content="ATUALIZAR" FontSize="11" Click="RefreshApps_Click"/>
+                        <Button Grid.Column="1" Content="Atualizar" FontSize="11" Click="RefreshApps_Click"/>
                     </Grid>
                     <TextBlock x:Name="AppsEmpty" Classes="dim" Text="Nada para fechar: nenhum programa aberto além do sistema." IsVisible="False" Margin="0,6,0,0"/>
                     <ItemsControl x:Name="Apps" Margin="0,6,0,0">
@@ -46,7 +45,7 @@
                 <StackPanel>
                     <Grid ColumnDefinitions="*,Auto">
                         <TextBlock Classes="label" Text="AJUSTES DO SISTEMA PARA JOGOS"/>
-                        <Button Grid.Column="1" Content="RESTAURAR ORIGINAIS" FontSize="11" Click="Restore_Click"/>
+                        <Button Grid.Column="1" Content="Restaurar originais" FontSize="11" Click="Restore_Click"/>
                     </Grid>
                     <TextBlock x:Name="TweaksResult" Classes="dim" FontSize="12"/>
                     <ItemsControl x:Name="Tweaks" Margin="0,6,0,0">

@@ -16,6 +16,9 @@ public static class Sys
 
     public static string Home => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
+    /// <summary>~/.config (ou XDG_CONFIG_HOME): os testes apontam para uma pasta temporária e nunca tocam na config de verdade.</summary>
+    public static string ConfigHome => Environment.GetEnvironmentVariable("XDG_CONFIG_HOME") is { Length: > 0 } x ? x : Path.Combine(Home, ".config");
+
     public static bool Has(string command) =>
         (Environment.GetEnvironmentVariable("PATH") ?? "").Split(':', StringSplitOptions.RemoveEmptyEntries)
             .Any(d => File.Exists(Path.Combine(d, command)));

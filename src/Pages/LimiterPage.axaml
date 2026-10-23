@@ -3,8 +3,6 @@
              x:Class="PharosGaming.LimiterPage">
     <ScrollViewer>
         <StackPanel Margin="6,6,16,6">
-            <TextBlock Classes="dim" Margin="0,0,0,14" TextWrapping="Wrap"
-                       Text="Trava o FPS num valor que o PC segura e entrega cada quadro no mesmo intervalo: some o engasgo e a placa trabalha menos. Quem limita é o MangoHud, então vale para jogos abertos pelo Hydra, pela Steam ou por qualquer launcher que ligue o MangoHud. O limite fica guardado por jogo e muda com o jogo aberto."/>
             <Border Classes="card" Margin="0,0,0,12">
                 <StackPanel Spacing="6">
                     <TextBlock Classes="label" Text="JOGO"/>

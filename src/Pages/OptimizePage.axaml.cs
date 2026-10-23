@@ -52,18 +52,18 @@ public partial class OptimizePage : UserControl
             Confirm.Text = "O PHAROS OTIMIZA vai devolver ao sistema o cache de disco guardado na RAM (pede a senha) e fechar: " +
                            (toClose.Count == 0 ? "nenhum programa marcado" : string.Join(", ", toClose.Select(a => a.Title))) +
                            ". Salve o que estiver aberto nesses programas. Clique de novo para confirmar.";
-            BtnOptimize.Content = "CONFIRMAR";
+            BtnOptimize.Content = "Confirmar";
             return;
         }
         _confirm = false;
         Confirm.IsVisible = false;
         BtnOptimize.IsEnabled = false;
-        BtnOptimize.Content = "OTIMIZANDO…";
+        BtnOptimize.Content = "Otimizando…";
         Result.Text = "";
         var closeResult = await Task.Run(() => Optimizer.CloseApps(toClose));
         var mem = await Optimizer.CleanMemory(); // depois de fechar, para contar a memória liberada por eles também
         BtnOptimize.IsEnabled = true;
-        BtnOptimize.Content = "PHAROS OTIMIZA";
+        BtnOptimize.Content = "PHAROS otimiza";
         var parts = new List<string> { $"Memória livre a mais: {mem.FreedBytes / 1048576.0:N0} MB" };
         parts.Add(mem.Dropped ? "cache de disco devolvido" : $"cache não limpo ({mem.Error})");
         if (closeResult.Closed.Count > 0) parts.Add($"fechados: {string.Join(", ", closeResult.Closed)}");

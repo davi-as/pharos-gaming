@@ -40,7 +40,7 @@ public partial class RenderBench : UserControl
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
         BenchLog.Busy = "Render (CPU)";
-        BtnRun.Content = "PARAR";
+        BtnRun.Content = "Parar";
         ModePanel.IsEnabled = DurationPanel.IsEnabled = false;
         Hint.Text = "";
         Idle.IsVisible = false;
@@ -70,7 +70,7 @@ public partial class RenderBench : UserControl
         bool cancelled = ct.IsCancellationRequested;
         _cts = null;
         BenchLog.Busy = null;
-        BtnRun.Content = "INICIAR";
+        BtnRun.Content = "Iniciar";
         ModePanel.IsEnabled = DurationPanel.IsEnabled = true;
         Buckets.Children.Clear();
         if (cancelled) { Status.Text = "Cancelado"; return; }

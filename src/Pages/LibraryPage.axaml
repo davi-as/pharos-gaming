@@ -10,8 +10,8 @@
                     <StackPanel Grid.Row="1" Spacing="8" Margin="0,0,0,10">
                         <TextBox x:Name="LGameSearch" Watermark="Buscar jogo…" TextChanged="LGameSearch_Changed"/>
                         <WrapPanel>
-                            <Button x:Name="BtnScanGames" Content="ATUALIZAR LISTA" Margin="0,0,8,0" Click="BtnScanGames_Click"/>
-                            <Button Content="+ ADICIONAR JOGO" Click="BtnAddExe_Click"/>
+                            <Button x:Name="BtnScanGames" Content="Atualizar lista" Margin="0,0,8,0" Click="BtnScanGames_Click"/>
+                            <Button Content="+ Adicionar jogo" Click="BtnAddExe_Click"/>
                         </WrapPanel>
                     </StackPanel>
                     <ListBox x:Name="LGameList" Grid.Row="2" Background="Transparent" SelectionChanged="LGameList_Changed">
@@ -27,7 +27,12 @@
                 </Grid>
 
                 <!-- Detalhes do jogo -->
-                <TextBlock x:Name="LEmpty" Grid.Column="2" Classes="dim" Text="Escolha um jogo na lista." Margin="0,60,0,0"/>
+                <StackPanel x:Name="LEmpty" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+                    <PathIcon Data="{StaticResource ic-gamepad-variant-outline}" Width="44" Height="44" Foreground="{DynamicResource Faint}"/>
+                    <TextBlock Classes="dim" Text="Escolha um jogo na lista" HorizontalAlignment="Center"/>
+                    <TextBlock Classes="dim" FontSize="12" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center"
+                               Text="Modo de janela, resolução, argumentos e programas que abrem junto"/>
+                </StackPanel>
                 <ScrollViewer x:Name="LDetail" Grid.Column="2" IsVisible="False">
                     <StackPanel Margin="0,0,12,0">
                         <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6">
@@ -35,7 +40,7 @@
                                 <TextBlock x:Name="LTitle" Classes="big" FontSize="26" TextWrapping="Wrap"/>
                                 <TextBlock x:Name="LSub" Classes="dim"/>
                             </StackPanel>
-                            <Button x:Name="BtnPlay" Grid.Column="1" Classes="accent" Content="JOGAR" Padding="40,14" FontSize="16"
+                            <Button x:Name="BtnPlay" Grid.Column="1" Classes="accent" Content="Jogar" Padding="40,14" FontSize="16"
                                     VerticalAlignment="Top" Click="BtnPlay_Click"/>
                         </Grid>
                         <TextBlock x:Name="LStatus" Classes="dim" Margin="0,0,0,10"/>
@@ -92,7 +97,7 @@
                                                      Foreground="{DynamicResource Fg}"/>
                                 <StackPanel x:Name="LSteamBox" IsVisible="False" Spacing="8">
                                     <TextBlock x:Name="LSteamNow" Classes="dim" FontSize="12"/>
-                                    <Button x:Name="BtnSteamApply" Classes="accent" Content="APLICAR NAS OPÇÕES DA STEAM" Click="BtnSteamApply_Click"/>
+                                    <Button x:Name="BtnSteamApply" Classes="accent" Content="Aplicar nas opções da Steam" Click="BtnSteamApply_Click"/>
                                 </StackPanel>
                                 <TextBlock x:Name="LGfxNote" Classes="dim" FontSize="11" Margin="0,8,0,0"/>
                             </StackPanel>
@@ -103,19 +108,19 @@
                             <StackPanel>
                                 <TextBlock Classes="label" Text="PROGRAMAS AUXILIARES"/>
                                 <TextBlock Classes="dim" FontSize="12" Margin="0,6,0,10"
-                                           Text="Ferramentas que abrem antes do jogo (monitoramento, comandos, mixer de áudio, script...). O PHAROS as abre ao clicar em JOGAR e pode fechá-las junto com o jogo. Nada é escrito nas opções da Steam."/>
+                                           Text="Ferramentas que abrem antes do jogo (monitoramento, comandos, mixer de áudio, script...). O PHAROS as abre ao clicar em “Jogar” e pode fechá-las junto com o jogo. Nada é escrito nas opções da Steam."/>
                                 <ItemsControl x:Name="LHelpers">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate x:DataType="local:HelperProgram">
                                             <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6">
                                                 <TextBlock Text="{Binding Display}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                                <Button Grid.Column="1" Content="REMOVER" FontSize="11" Tag="{Binding}" Click="BtnRemoveHelper_Click"/>
+                                                <Button Grid.Column="1" Content="Remover" FontSize="11" Tag="{Binding}" Click="BtnRemoveHelper_Click"/>
                                             </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                                 <WrapPanel Margin="0,6,0,0">
-                                    <Button Content="+ ADICIONAR PROGRAMA" Margin="0,0,14,0" Click="BtnAddHelper_Click"/>
+                                    <Button Content="+ Adicionar programa" Margin="0,0,14,0" Click="BtnAddHelper_Click"/>
                                     <CheckBox x:Name="LHelperClose" Content="Fechar junto com o jogo" IsChecked="True" VerticalAlignment="Center"/>
                                 </WrapPanel>
                             </StackPanel>

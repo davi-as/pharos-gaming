@@ -7,7 +7,7 @@
                 <StackPanel>
                     <TextBlock Classes="label" Text="RESULTADOS"/>
                     <ItemsControl x:Name="Result"/>
-                    <TextBlock x:Name="Empty" Classes="dim" Text="Pressione INICIAR." Margin="0,8,0,0"/>
+                    <TextBlock x:Name="Empty" Classes="dim" Text="Pressione “Iniciar”." Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
             <ProgressBar x:Name="Progress" Maximum="1" Margin="0,10,0,4"/>
@@ -28,7 +28,7 @@
                                 <RadioButton GroupName="DiskSize" Content="4 GB" Tag="4096"/>
                             </WrapPanel>
                         </StackPanel>
-                        <Button x:Name="BtnRun" Classes="accent" Content="INICIAR" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Run_Click"/>
+                        <Button x:Name="BtnRun" Classes="accent" Content="Iniciar" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Run_Click"/>
                     </StackPanel>
                 </Border>
                 <Border Classes="card" Margin="0">

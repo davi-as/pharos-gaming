@@ -59,7 +59,7 @@ public partial class LibraryPage : UserControl
             ApplyGameFilter();
             var byStore = _libGames.GroupBy(g => g.Store).Select(x => $"{x.Key} {x.Count()}");
             LGameCount.Text = _libGames.Count == 0
-                ? "Nenhum jogo encontrado. Use + ADICIONAR JOGO para incluir um à mão."
+                ? "Nenhum jogo encontrado. Use “+ Adicionar jogo” para incluir um à mão."
                 : $"{_libGames.Count} jogos · {string.Join(" · ", byStore)}";
         }
         catch (Exception ex) { LGameCount.Text = "Falhou: " + ex.Message; }
@@ -122,7 +122,7 @@ public partial class LibraryPage : UserControl
     {
         _lg = LGameList.SelectedItem as LibGame;
         _steamConfirm = false;
-        BtnSteamApply.Content = "APLICAR NAS OPÇÕES DA STEAM";
+        BtnSteamApply.Content = "Aplicar nas opções da Steam";
         LDetail.IsVisible = _lg != null;
         LEmpty.IsVisible = _lg == null;
         if (_lg == null) { _lp = null; return; }
@@ -145,8 +145,8 @@ public partial class LibraryPage : UserControl
         LSteamBox.IsVisible = g.IsSteam;
         ShowSteamNow(g);
         LGfxNote.Text = g.IsSteam
-            ? "A linha só passa a valer na Steam depois de APLICAR NAS OPÇÕES DA STEAM (a Steam precisa ser fechada nessa hora). Depois, o JOGAR abre pela Steam normalmente."
-            : "Ao clicar em JOGAR, o PHAROS roda esta linha com %command% trocado pelo executável do jogo.";
+            ? "A linha só passa a valer na Steam depois de “Aplicar nas opções da Steam” (a Steam precisa ser fechada nessa hora). Depois, o “Jogar” abre pela Steam normalmente."
+            : "Ao clicar em “Jogar”, o PHAROS roda esta linha com %command% trocado pelo executável do jogo.";
         LStatus.Text = "";
         _lLoading = false;
         UpdateLauncherPreview();
@@ -222,14 +222,14 @@ public partial class LibraryPage : UserControl
         {
             // sem caixa de diálogo no Avalonia: o segundo clique confirma
             _steamConfirm = true;
-            BtnSteamApply.Content = SteamInfo.IsRunning ? "FECHAR A STEAM E GRAVAR" : "SUBSTITUIR E GRAVAR";
+            BtnSteamApply.Content = SteamInfo.IsRunning ? "Fechar a Steam e gravar" : "Substituir e gravar";
             LStatus.Text = (replaces ? $"Isto substitui as opções atuais do jogo ({cur}). Se quiser mantê-las, copie o que precisar para os Extras. " : "") +
                            (SteamInfo.IsRunning ? "A Steam precisa ser fechada para gravar (senão ela sobrescreve as opções ao sair). Jogos abertos serão encerrados. " : "") +
                            "Clique de novo para confirmar. Um backup do arquivo é feito antes.";
             return;
         }
         _steamConfirm = false;
-        BtnSteamApply.Content = "APLICAR NAS OPÇÕES DA STEAM";
+        BtnSteamApply.Content = "Aplicar nas opções da Steam";
         BtnSteamApply.IsEnabled = false;
         try
         {
@@ -239,7 +239,7 @@ public partial class LibraryPage : UserControl
                 if (!await SteamInfo.ShutdownAsync()) { LStatus.Text = "A Steam não fechou. Feche-a manualmente e tente de novo."; return; }
             }
             string? err = await Task.Run(() => SteamInfo.SetLaunchOptions(g.Id, opts));
-            LStatus.Text = err ?? (opts.Length > 0 ? $"Opções gravadas na Steam: {opts}. Clique em JOGAR (a Steam abre sozinha)." : "Opções da Steam limpas para este jogo.");
+            LStatus.Text = err ?? (opts.Length > 0 ? $"Opções gravadas na Steam: {opts}. Clique em “Jogar” (a Steam abre sozinha)." : "Opções da Steam limpas para este jogo.");
             if (_lg == g) ShowSteamNow(g);
         }
         finally { BtnSteamApply.IsEnabled = true; }
@@ -255,7 +255,7 @@ public partial class LibraryPage : UserControl
         if (g == null || p == null) return;
 
         _launchCts = new CancellationTokenSource();
-        BtnPlay.Content = "PARAR ACOMPANHAMENTO";
+        BtnPlay.Content = "Parar acompanhamento";
         try
         {
             await GameLauncher.RunAsync(g, p, t => Dispatcher.UIThread.Post(() => LStatus.Text = t), _launchCts.Token);
@@ -264,7 +264,7 @@ public partial class LibraryPage : UserControl
         {
             _launchCts.Dispose();
             _launchCts = null;
-            BtnPlay.Content = "JOGAR";
+            BtnPlay.Content = "Jogar";
         }
     }
 }

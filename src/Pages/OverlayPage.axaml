@@ -3,15 +3,14 @@
              x:Class="PharosGaming.OverlayPage">
     <ScrollViewer>
         <StackPanel Margin="6,6,16,6">
-            <TextBlock Classes="dim" Margin="0,0,0,14"
-                       Text="FPS, frametime e sensores por cima do jogo. No Linux quem desenha o overlay é o MangoHud: o PHAROS gera a configuração dele com o que você escolher aqui."/>
             <Border Classes="card" Margin="0,0,0,12">
                 <StackPanel Spacing="8">
-                    <CheckBox x:Name="ChkEnabled" Content="Usar o overlay do PHAROS nos jogos abertos pelo PHAROS" IsCheckedChanged="Enabled_Changed"/>
+                    <ToggleSwitch x:Name="ChkEnabled" OnContent="Overlay do PHAROS em todos os jogos" OffContent="Overlay do PHAROS desligado" IsCheckedChanged="Enabled_Changed"/>
                     <TextBlock Classes="dim" FontSize="12"
-                               Text="Desligado, o jogo usa o seu próprio MangoHud.conf (GOverlay, por exemplo). Ligado, o PHAROS usa um arquivo próprio e não mexe no seu."/>
-                    <CheckBox x:Name="ChkVisible" Content="Mostrar ao abrir o jogo (Ctrl + Shift + Q liga e desliga)" IsCheckedChanged="Option_Changed"/>
+                               Text="Vale para os jogos do Hydra e da Steam (os dois já carregam o MangoHud). Ligado, o PHAROS grava o MangoHud.conf e guarda o seu (GOverlay, por exemplo); desligado, o seu volta."/>
+                    <CheckBox x:Name="ChkVisible" Content="Mostrar ao abrir o jogo (Ctrl + Shift + Q ou View + Start no controle liga e desliga)" IsCheckedChanged="Option_Changed"/>
                     <TextBlock x:Name="ToolNote" Classes="dim" FontSize="12"/>
+                    <TextBlock x:Name="FileNote" Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
             <Grid ColumnDefinitions="*,14,*" Margin="0,0,0,12">
@@ -42,23 +41,12 @@
                     <Grid ColumnDefinitions="*,Auto">
                         <TextBlock Classes="label" Text="O QUE MOSTRAR"/>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
-                            <Button Content="SÓ FPS" Tag="min" FontSize="11" Click="Preset_Click"/>
-                            <Button Content="PADRÃO" Tag="default" FontSize="11" Click="Preset_Click"/>
-                            <Button Content="TUDO" Tag="all" FontSize="11" Click="Preset_Click"/>
+                            <Button Content="Só FPS" Tag="min" FontSize="11" Click="Preset_Click"/>
+                            <Button Content="Padrão" Tag="default" FontSize="11" Click="Preset_Click"/>
+                            <Button Content="Tudo" Tag="all" FontSize="11" Click="Preset_Click"/>
                         </StackPanel>
                     </Grid>
                     <StackPanel x:Name="Items"/>
-                </StackPanel>
-            </Border>
-            <Border Classes="card" Margin="0">
-                <StackPanel Spacing="6">
-                    <TextBlock Classes="label" Text="COMO LIGAR NO JOGO"/>
-                    <TextBlock Classes="dim" Text="Jogos da Biblioteca do PHAROS já recebem tudo ao clicar em APLICAR NAS OPÇÕES DA STEAM (ou JOGAR, nos jogos manuais). Para outros launchers (Lutris, Heroic), use esta linha:"/>
-                    <Grid ColumnDefinitions="*,Auto">
-                        <TextBox x:Name="LaunchLine" IsReadOnly="True" FontFamily="{StaticResource Sans}" FontSize="12" TextWrapping="Wrap"/>
-                        <Button Grid.Column="1" Content="Copiar" Margin="8,0,0,0" VerticalAlignment="Top" Click="Copy_Click"/>
-                    </Grid>
-                    <TextBlock x:Name="FileNote" Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
         </StackPanel>

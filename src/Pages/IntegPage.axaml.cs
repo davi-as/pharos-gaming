@@ -101,7 +101,7 @@ public partial class IntegPage : UserControl
         _last.Clear();
         _smooth = float.NaN;
         _running = true;
-        BtnRun.Content = "DEVOLVER AO ORIGINAL";
+        BtnRun.Content = "Devolver ao original";
         RunHint.Text = fail.Count == 0 ? $"Controlando {sel.Count} dispositivo(s)." : "Controle ativo, mas sem resposta de: " + string.Join(", ", fail);
         _timer.Start();
     }
@@ -110,7 +110,7 @@ public partial class IntegPage : UserControl
     {
         _timer.Stop();
         _running = false;
-        BtnRun.Content = "ATIVAR CONTROLE";
+        BtnRun.Content = "Ativar controle";
         LiveText.Text = "";
         foreach (var d in _devices.Where(d => d.Selected)) _orgb.Release(d);
         RunHint.Text = "Controle devolvido: os dispositivos voltaram ao modo que estavam.";

@@ -195,7 +195,7 @@ public static class DiskHealth
         var reasons = crit.Concat(warn).ToList();
         if (reasons.Count == 0)
             reasons.Add(v == Verdict.Good
-                ? "Nenhum problema encontrado nas leituras disponíveis." + (r.Full ? "" : " Para ver desgaste e total gravado, use LEITURA COMPLETA.")
+                ? "Nenhum problema encontrado nas leituras disponíveis." + (r.Full ? "" : " Para ver desgaste e total gravado, use “Leitura completa”.")
                 : "Este disco não informa dados de saúde (comum em pendrives e alguns HDs externos).");
 
         var metrics = new List<KeyValuePair<string, string>>();

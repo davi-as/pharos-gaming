@@ -78,7 +78,7 @@ public partial class FpsPage : UserControl
             SourceTitle.Text = "Fonte: HowManyFPS (dados reais)";
             SourceText.Text = "FPS médio e 1% low medidos em sessões reais de jogo (no Windows). Respostas ficam em cache por 7 dias. " +
                               "A API usa as configurações gráficas dela; \"Gráficos\" vale só para a estimativa.";
-            BtnKey.Content = "ATUALIZAR CHAVE";
+            BtnKey.Content = "Atualizar chave";
             _fetch = new CancellationTokenSource();
             _ = FetchAsync(res, up, _fetch.Token);
         }
@@ -87,7 +87,7 @@ public partial class FpsPage : UserControl
             SourceTitle.Text = "Fonte: estimativa local (aproximada)";
             SourceText.Text = "Calculada a partir do desempenho relativo da sua GPU e CPU. Para FPS medido em jogo, " +
                               "peça uma chave da API em info@howmanyfps.com e cole ao lado.";
-            BtnKey.Content = "SALVAR CHAVE";
+            BtnKey.Content = "Salvar chave";
         }
     }
 

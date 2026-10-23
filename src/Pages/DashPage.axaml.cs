@@ -22,13 +22,7 @@ public partial class DashPage : UserControl
     public DashPage()
     {
         InitializeComponent();
-        LaunchOption.Text = MangoHudFrames.LaunchOption;
         Live.Tick += Tick;
-    }
-
-    private async void CopyLaunch_Click(object? sender, RoutedEventArgs e)
-    {
-        if (TopLevel.GetTopLevel(this)?.Clipboard is { } cb) await cb.SetTextAsync(LaunchOption.Text);
     }
 
     private void Tick()

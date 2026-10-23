@@ -46,7 +46,7 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0" Spacing="8">
                     <TextBox x:Name="ApiKey" Width="240" PasswordChar="•" Watermark="Chave da API HowManyFPS"/>
-                    <Button x:Name="BtnKey" Content="SALVAR CHAVE" Click="Key_Click"/>
+                    <Button x:Name="BtnKey" Content="Salvar chave" Click="Key_Click"/>
                 </StackPanel>
             </Grid>
         </Border>

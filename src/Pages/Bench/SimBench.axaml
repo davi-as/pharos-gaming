@@ -25,7 +25,7 @@
                             <RadioButton GroupName="SimDur" Content="20 s" Tag="20" IsChecked="True"/>
                             <RadioButton GroupName="SimDur" Content="60 s" Tag="60"/>
                         </WrapPanel>
-                        <Button x:Name="BtnRun" Classes="accent" Content="INICIAR" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Run_Click"/>
+                        <Button x:Name="BtnRun" Classes="accent" Content="Iniciar" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Run_Click"/>
                     </StackPanel>
                 </Border>
                 <Border Classes="card" Margin="0">

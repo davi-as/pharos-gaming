@@ -17,7 +17,7 @@ public sealed record RunningGame(int Pid, string Key)
 /// </summary>
 public static class FrameLimiter
 {
-    public static string Dir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MangoHud");
+    public static string Dir => Path.Combine(Sys.ConfigHome, "MangoHud");
     private static string UserConf => Path.Combine(Dir, "MangoHud.conf");
     public static string FileFor(string key) => Path.Combine(Dir, key + ".conf");
 
@@ -113,11 +113,9 @@ public static class FrameLimiter
         return string.Join("\n", lines) + "\n";
     }
 
-    /// <summary>Base: o overlay do PHAROS quando ligado, senão o MangoHud.conf do usuário (o que o jogo usaria sem o arquivo por jogo).</summary>
-    private static IEnumerable<string> BaseLines(AppSettings s)
+    /// <summary>Base: o MangoHud.conf (o do usuário, ou o do PHAROS quando o overlay dele está ligado) — o que o jogo usaria sem o arquivo por jogo.</summary>
+    private static IEnumerable<string> BaseLines()
     {
-        if (s.OverlayEnabled)
-            return MangoHudConfig.Build(s.OverlayItems ?? (IEnumerable<string>)OverlayMetrics.Defaults(), s.OverlayCorner, s.OverlayScale, s.OverlayVisible).Split('\n');
         try { return File.ReadAllLines(UserConf); }
         catch (IOException) { return Array.Empty<string>(); }
     }
@@ -154,7 +152,7 @@ public static class FrameLimiter
         bool existed = File.Exists(f);
         if (existed && !IsOurs(f) && !File.Exists(f + ".pharos-bak")) File.Copy(f, f + ".pharos-bak"); // config por jogo feita à mão: guarda antes
         // troca atômica: o MangoHud relê no IN_DELETE_SELF (espera 100 ms pelo arquivo novo) e nunca vê o arquivo pela metade
-        File.WriteAllText(f + ".tmp", Build(key, s.FpsLimits[key], BaseLines(s)));
+        File.WriteAllText(f + ".tmp", Build(key, s.FpsLimits[key], BaseLines()));
         File.Move(f + ".tmp", f, overwrite: true);
         if (!existed) Poke();
     }

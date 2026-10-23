@@ -16,9 +16,6 @@ public sealed partial class MangoHudFrames
     public static readonly string OwnFolder = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "pharos-gaming", "mangohud");
 
-    /// <summary>Opção de inicialização (Steam/Lutris/Heroic) que liga o log automático sem mexer no MangoHud.conf.</summary>
-    public static string LaunchOption => $"{MangoHudConfig.EnvPrefix}MANGOHUD_CONFIG=\"{LogConfig}\" mangohud %command%";
-
     // read_cfg primeiro: sem ele o MangoHud ignora o MangoHud.conf do usuário quando MANGOHUD_CONFIG está definido
     public static string LogConfig => $"read_cfg,autostart_log=1,log_interval=250,output_folder={OwnFolder}";
 

@@ -29,7 +29,7 @@ public partial class SimBench : UserControl
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
         BenchLog.Busy = "Simulação de jogo (CPU)";
-        BtnRun.Content = "CANCELAR";
+        BtnRun.Content = "Cancelar";
         DurPanel.IsEnabled = false;
         Result.ItemsSource = null;
         Idle.IsVisible = false;
@@ -47,7 +47,7 @@ public partial class SimBench : UserControl
         bool cancelled = ct.IsCancellationRequested;
         _cts = null;
         BenchLog.Busy = null;
-        BtnRun.Content = "INICIAR";
+        BtnRun.Content = "Iniciar";
         DurPanel.IsEnabled = true;
         Progress.Value = 0;
         FpsNow.Text = "";

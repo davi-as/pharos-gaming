@@ -36,7 +36,7 @@
                             <RadioButton GroupName="GbDur" Content="30 s" Tag="30"/>
                             <RadioButton GroupName="GbDur" Content="60 s" Tag="60" IsChecked="True"/>
                         </WrapPanel>
-                        <Button x:Name="BtnRun" Classes="accent" Content="INICIAR" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Run_Click"/>
+                        <Button x:Name="BtnRun" Classes="accent" Content="Iniciar" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Run_Click"/>
                     </StackPanel>
                 </Border>
                 <Border Classes="card" Margin="0">

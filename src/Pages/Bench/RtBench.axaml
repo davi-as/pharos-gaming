@@ -49,7 +49,7 @@
                             <RadioButton GroupName="RtMode" Content="Padrão (110 s)" Tag="std" IsChecked="True"/>
                             <RadioButton GroupName="RtMode" Content="Rápido (35 s)" Tag="quick"/>
                         </WrapPanel>
-                        <Button x:Name="BtnRun" Classes="accent" Content="INICIAR" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Run_Click"/>
+                        <Button x:Name="BtnRun" Classes="accent" Content="Iniciar" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Run_Click"/>
                     </StackPanel>
                 </Border>
                 <Border Classes="card" Margin="0">

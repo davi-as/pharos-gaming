@@ -28,7 +28,7 @@ public sealed class SerialPortInfo
         get
         {
             var p = new List<string>();
-            if (!UserHasAccess) p.Add($"Seu usuário não está no grupo \"{Group}\": a IDE vai dar \"Permission denied\" ao enviar. Use LIBERAR ACESSO (vale depois de sair e entrar de novo na sessão).");
+            if (!UserHasAccess) p.Add($"Seu usuário não está no grupo \"{Group}\": a IDE vai dar \"Permission denied\" ao enviar. Use “Liberar acesso às portas seriais” (vale depois de sair e entrar de novo na sessão).");
             if (Holders.Count > 0) p.Add($"A porta está aberta por: {string.Join(", ", Holders.Select(h => $"{h.Name} ({h.Pid})"))}. Feche o monitor serial ou o programa antes de enviar.");
             if (p.Count == 0) p.Add("Tudo certo para enviar código.");
             if (ById != null) p.Add($"Nome fixo desta placa (não muda ao replugar): {ById}");

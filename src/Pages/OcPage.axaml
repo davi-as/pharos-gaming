@@ -4,7 +4,6 @@
              x:Class="PharosGaming.OcPage">
     <ScrollViewer>
         <StackPanel Margin="6,6,16,6" Spacing="12">
-            <TextBlock Classes="dim" Text="Ajustes da GPU, verificador de estabilidade e guia de overclock na BIOS"/>
             <Grid ColumnDefinitions="*,14,*">
                 <!-- GPU -->
                 <Border Classes="card" Margin="0">
@@ -19,8 +18,8 @@
                         <TextBlock x:Name="ClockLabel" Classes="label" Text="TETO DE CLOCK (UNDERVOLT)"/>
                         <WrapPanel x:Name="ClockPanel" Classes="chips"/>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button x:Name="BtnApply" Classes="accent" Content="APLICAR" Click="Apply_Click"/>
-                            <Button x:Name="BtnReset" Content="RESTAURAR PADRÃO" Click="Reset_Click"/>
+                            <Button x:Name="BtnApply" Classes="accent" Content="Aplicar" Click="Apply_Click"/>
+                            <Button x:Name="BtnReset" Content="Restaurar padrão" Click="Reset_Click"/>
                         </StackPanel>
                         <TextBlock x:Name="GpuResult" Classes="dim" FontSize="12"/>
                         <TextBlock Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap"
@@ -46,7 +45,7 @@
                             <RadioButton GroupName="OcDur" Content="15 min" Tag="15" IsChecked="True"/>
                             <RadioButton GroupName="OcDur" Content="30 min" Tag="30"/>
                         </WrapPanel>
-                        <Button x:Name="BtnCheck" Classes="accent" Content="INICIAR VERIFICAÇÃO" Click="Check_Click"/>
+                        <Button x:Name="BtnCheck" Classes="accent" Content="Iniciar verificação" Click="Check_Click"/>
                         <ProgressBar x:Name="Progress" Maximum="1"/>
                         <TextBlock x:Name="Status" Classes="dim" FontSize="12"/>
                     </StackPanel>

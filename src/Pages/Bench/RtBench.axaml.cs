@@ -36,7 +36,7 @@ public partial class RtBench : UserControl
             Warmup = TimeSpan.FromSeconds(quick ? 5 : 20), PassDuration = TimeSpan.FromSeconds(quick ? 10 : 30),
         };
         BenchLog.Busy = "Ray tracing (GPU)";
-        BtnRun.Content = "CANCELAR";
+        BtnRun.Content = "Cancelar";
         ResPanel.IsEnabled = PresetPanel.IsEnabled = ModePanel.IsEnabled = false;
         Result.ItemsSource = null;
         Verdict.Text = "";
@@ -56,7 +56,7 @@ public partial class RtBench : UserControl
         Live.Paused = false;
         BenchLog.Busy = null;
         _bench = null;
-        BtnRun.Content = "INICIAR";
+        BtnRun.Content = "Iniciar";
         ResPanel.IsEnabled = PresetPanel.IsEnabled = ModePanel.IsEnabled = true;
         Progress.Value = 0;
         FpsNow.Text = "—";

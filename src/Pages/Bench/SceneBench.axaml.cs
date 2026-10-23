@@ -30,7 +30,7 @@ public partial class SceneBench : UserControl
         var gpus = await Task.Run(GpuInfoCollector.Collect);
         var bench = _bench = new GpuGameBench { Width = size[0], Height = size[1], Duration = TimeSpan.FromSeconds(secs), AdapterName = gpus.FirstOrDefault()?.Name ?? "" };
         BenchLog.Busy = "Cena de jogo (GPU)";
-        BtnRun.Content = "CANCELAR";
+        BtnRun.Content = "Cancelar";
         ResPanel.IsEnabled = DurPanel.IsEnabled = false;
         Result.ItemsSource = null;
         Idle.IsVisible = false;
@@ -49,7 +49,7 @@ public partial class SceneBench : UserControl
         Live.Paused = false;
         BenchLog.Busy = null;
         _bench = null;
-        BtnRun.Content = "INICIAR";
+        BtnRun.Content = "Iniciar";
         ResPanel.IsEnabled = DurPanel.IsEnabled = true;
         Progress.Value = 0;
         FpsNow.Text = "—";

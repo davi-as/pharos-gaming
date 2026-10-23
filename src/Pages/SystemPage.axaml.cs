@@ -59,7 +59,7 @@ public partial class SystemPage : UserControl
         string? path = file?.TryGetLocalPath();
         if (path == null) return;
         BtnReport.IsEnabled = false;
-        BtnReport.Content = "GERANDO…";
+        BtnReport.Content = "Gerando…";
         try
         {
             var data = await Report.CollectAsync(_info);
@@ -71,7 +71,7 @@ public partial class SystemPage : UserControl
         catch (Exception ex) { Sub.Text = "Não foi possível gerar o relatório: " + ex.Message; }
         finally
         {
-            BtnReport.Content = "EXPORTAR RELATÓRIO";
+            BtnReport.Content = "Exportar relatório";
             BtnReport.IsEnabled = true;
         }
     }

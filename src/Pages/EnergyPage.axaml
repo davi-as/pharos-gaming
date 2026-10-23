@@ -5,7 +5,7 @@
         <StackPanel Margin="6,6,16,6">
             <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,14">
                 <TextBlock x:Name="Status" Classes="dim" Text="Bateria, fonte de energia e consumo" VerticalAlignment="Center"/>
-                <Button x:Name="BtnRefresh" Grid.Column="1" Content="ATUALIZAR" Click="Refresh_Click"/>
+                <Button x:Name="BtnRefresh" Grid.Column="1" Content="Atualizar" Click="Refresh_Click"/>
             </Grid>
             <ItemsControl x:Name="Cards"/>
             <TextBlock Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap"

@@ -19,7 +19,7 @@ public partial class NetPage : UserControl
     {
         if (_cts != null) { _cts.Cancel(); return; }
         _cts = new CancellationTokenSource();
-        BtnTest.Content = "CANCELAR";
+        BtnTest.Content = "Cancelar";
         Cards.ItemsSource = null;
         Progress.Value = 0;
         try
@@ -38,7 +38,7 @@ public partial class NetPage : UserControl
         {
             _cts.Dispose();
             _cts = null;
-            BtnTest.Content = "TESTAR";
+            BtnTest.Content = "Testar";
         }
     }
 }

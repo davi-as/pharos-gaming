@@ -6,10 +6,9 @@
         <StackPanel Margin="6,6,16,6" Spacing="12">
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel>
-                    <TextBlock Classes="dim" Text="CH340 · CP2102/CP210x · FTDI · Prolific · Arduino: os drivers vêm no kernel; aqui você confere se estão disponíveis e carregados"/>
                     <TextBlock x:Name="Status" Classes="dim" FontSize="12"/>
                 </StackPanel>
-                <Button Grid.Column="1" Content="VERIFICAR" VerticalAlignment="Top" Click="Scan_Click"/>
+                <Button Grid.Column="1" Content="Verificar" VerticalAlignment="Top" Click="Scan_Click"/>
             </Grid>
             <Border Classes="card" Margin="0">
                 <StackPanel>
@@ -23,7 +22,7 @@
             <Border Classes="card" Margin="0">
                 <StackPanel>
                     <TextBlock Classes="label" Text="PLACAS E CONVERSORES CONECTADOS"/>
-                    <TextBlock x:Name="NoDevices" Classes="dim" Text="Nenhuma placa ou conversor serial conectado. Plugue a placa e clique em VERIFICAR." Margin="0,6,0,0"/>
+                    <TextBlock x:Name="NoDevices" Classes="dim" Text="Nenhuma placa ou conversor serial conectado. Plugue a placa e clique em “Verificar”." Margin="0,6,0,0"/>
                     <ItemsControl x:Name="Devices" Margin="0,6,0,0"/>
                 </StackPanel>
             </Border>
@@ -32,8 +31,8 @@
                     <TextBlock Classes="label" Text="ARDUINO IDE"/>
                     <TextBlock x:Name="Ide" Classes="dim"/>
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button x:Name="BtnIde" Content="INSTALAR A IDE" Click="Ide_Click"/>
-                        <Button Content="LIMPAR CACHE DA IDE" Click="Cache_Click"/>
+                        <Button x:Name="BtnIde" Content="Instalar a IDE" Click="Ide_Click"/>
+                        <Button Content="Limpar cache da IDE" Click="Cache_Click"/>
                     </StackPanel>
                     <TextBlock x:Name="IdeResult" Foreground="{DynamicResource Fg}" FontSize="12" TextWrapping="Wrap"/>
                 </StackPanel>

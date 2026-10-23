@@ -82,14 +82,14 @@ public partial class BottleneckPage : UserControl
         if (_session != null)
         {
             _session = null;
-            BtnSession.Content = "INICIAR ANÁLISE";
+            BtnSession.Content = "Iniciar análise";
             SessionStatus.Text = "Análise cancelada.";
             return;
         }
         int minutes = int.Parse(DurationPanel.Children.OfType<RadioButton>().First(r => r.IsChecked == true).Tag as string ?? "1");
         _session = new BottleneckSession { Duration = TimeSpan.FromMinutes(minutes) };
         Result.IsVisible = false;
-        BtnSession.Content = "CANCELAR";
+        BtnSession.Content = "Cancelar";
         SessionStatus.Text = "Coletando… abra o jogo agora.";
     }
 
@@ -97,7 +97,7 @@ public partial class BottleneckPage : UserControl
     {
         var sess = _session!;
         _session = null;
-        BtnSession.Content = "INICIAR ANÁLISE";
+        BtnSession.Content = "Iniciar análise";
         SessionStatus.Text = $"Análise concluída às {DateTime.Now:HH:mm} ({sess.Count} amostras).";
         var main = sess.Main ?? Limiter.Capped;
         ResultTitle.Text = $"Resultado: {BottleneckAnalyzer.Title(main)}";

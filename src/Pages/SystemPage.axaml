@@ -5,7 +5,7 @@
     <Grid RowDefinitions="Auto,*" Margin="6">
         <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,14">
             <TextBlock x:Name="Sub" Classes="dim" Text="Lendo informações do sistema…" VerticalAlignment="Center"/>
-            <Button x:Name="BtnReport" Grid.Column="1" Content="EXPORTAR RELATÓRIO" Click="Report_Click"
+            <Button x:Name="BtnReport" Grid.Column="1" Content="Exportar relatório" Click="Report_Click"
                     ToolTip.Tip="Salva um relatório (HTML ou JSON) com sistema, RAM, discos, GPU, sensores e benchmarks. Números de série são omitidos."/>
         </Grid>
         <Grid Grid.Row="1" ColumnDefinitions="220,18,*">

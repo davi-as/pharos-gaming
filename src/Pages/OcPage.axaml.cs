@@ -120,7 +120,7 @@ public partial class OcPage : UserControl
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
         BenchLog.Busy = "Verificador de estabilidade";
-        BtnCheck.Content = "CANCELAR";
+        BtnCheck.Content = "Cancelar";
         VerdictCard.IsVisible = false;
         TargetPanel.IsEnabled = DurPanel.IsEnabled = false;
         var start = DateTime.Now;
@@ -189,7 +189,7 @@ public partial class OcPage : UserControl
             BenchLog.Busy = null;
         }
         _cts = null;
-        BtnCheck.Content = "INICIAR VERIFICAÇÃO";
+        BtnCheck.Content = "Iniciar verificação";
         TargetPanel.IsEnabled = DurPanel.IsEnabled = true;
         Progress.Value = 0;
         if (ct.IsCancellationRequested && fail == null) { Status.Text = "Verificação cancelada."; return; }

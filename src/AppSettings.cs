@@ -65,8 +65,9 @@ public sealed class AppSettings
     // Aparência: "system" (segue o tema do sistema), "light" (papiro) ou "dark" (noite do Nilo)
     public string Theme { get; set; } = "system";
 
-    // Overlay (MangoHud com o arquivo do PHAROS)
-    public bool OverlayEnabled { get; set; }
+    // Overlay: ligado, o PHAROS grava o MangoHud.conf (o do usuário fica guardado e volta ao desligar).
+    // Nome novo de propósito: o antigo OverlayEnabled só valia para jogos abertos pelo PHAROS e não deve ligar isto sozinho.
+    public bool OverlayManaged { get; set; }
     public bool OverlayVisible { get; set; } = true;
     public string OverlayCorner { get; set; } = "TL";
     public double OverlayScale { get; set; } = 1.0;

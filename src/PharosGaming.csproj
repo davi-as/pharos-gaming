@@ -9,7 +9,7 @@
     <AssemblyName>pharos-gaming</AssemblyName>
     <RootNamespace>PharosGaming</RootNamespace>
     <Product>PHAROS GAMING</Product>
-    <Version>0.17.0</Version>
+    <Version>0.18.0</Version>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
 

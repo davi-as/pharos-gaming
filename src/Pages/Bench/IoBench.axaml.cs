@@ -44,7 +44,7 @@ public partial class IoBench : UserControl
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
         BenchLog.Busy = _disk ? "Disco" : "Memória e carregamento";
-        BtnRun.Content = "CANCELAR";
+        BtnRun.Content = "Cancelar";
         DiskOptions.IsEnabled = false;
         Empty.IsVisible = false;
         var rows = new List<Kv>();
@@ -107,7 +107,7 @@ public partial class IoBench : UserControl
             Progress.Value = 0;
             _cts = null;
             BenchLog.Busy = null;
-            BtnRun.Content = "INICIAR";
+            BtnRun.Content = "Iniciar";
             DiskOptions.IsEnabled = true;
         }
     }

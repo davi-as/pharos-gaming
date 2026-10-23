@@ -5,8 +5,7 @@
     <ScrollViewer>
         <StackPanel Margin="6,6,16,6" Spacing="12">
             <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Classes="dim" Text="Arduino, ESP32 e conversores seriais: acesso à porta, programas que a prendem e nomes fixos" VerticalAlignment="Center"/>
-                <Button Grid.Column="1" Content="PROCURAR" Click="Scan_Click"/>
+                <Button Grid.Column="1" Content="Procurar" Click="Scan_Click"/>
             </Grid>
             <Border Classes="card" Margin="0">
                 <StackPanel Spacing="6">
@@ -35,12 +34,12 @@
                 <StackPanel Spacing="8">
                     <TextBlock Classes="label" Text="CORREÇÕES"/>
                     <TextBlock x:Name="AccessText" Classes="dim"/>
-                    <Button x:Name="BtnAccess" Content="LIBERAR ACESSO ÀS PORTAS SERIAIS" Click="Access_Click"/>
+                    <Button x:Name="BtnAccess" Content="Liberar acesso às portas seriais" Click="Access_Click"/>
                     <TextBlock x:Name="ModemText" Classes="dim"/>
-                    <Button x:Name="BtnModem" Content="DESLIGAR O MODEMMANAGER" Click="Modem_Click"/>
+                    <Button x:Name="BtnModem" Content="Desligar o modemmanager" Click="Modem_Click"/>
                     <TextBlock x:Name="BrlttyText" Classes="dim"/>
-                    <Button x:Name="BtnBrltty" Content="IMPEDIR O BRLTTY DE PEGAR O CH340" Click="Brltty_Click"/>
-                    <Button x:Name="BtnHolders" Content="FECHAR PROGRAMAS QUE PRENDEM A PORTA" Click="Holders_Click"/>
+                    <Button x:Name="BtnBrltty" Content="Impedir o brltty de pegar o ch340" Click="Brltty_Click"/>
+                    <Button x:Name="BtnHolders" Content="Fechar programas que prendem a porta" Click="Holders_Click"/>
                     <TextBlock x:Name="Result" Foreground="{DynamicResource Fg}" FontSize="12" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>

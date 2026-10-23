@@ -28,7 +28,7 @@
             <Border Classes="card" Margin="0">
                 <StackPanel Spacing="8">
                     <TextBlock x:Name="Manager" Classes="label"/>
-                    <Button x:Name="BtnInstall" Classes="accent" Content="INSTALAR SELECIONADOS" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Install_Click"/>
+                    <Button x:Name="BtnInstall" Classes="accent" Content="Instalar selecionados" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Install_Click"/>
                     <TextBlock Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap"
                                Text="Os pacotes da distro são instalados juntos, com uma senha só. Os do Flathub ficam só para o seu usuário e não pedem senha. Nada é baixado de sites de terceiros."/>
                 </StackPanel>

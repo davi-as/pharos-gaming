@@ -3,7 +3,7 @@
         x:Class="PharosGaming.MainWindow"
         Title="Pharos Gaming" Icon="/Assets/icon-192.png" Width="1360" Height="860" MinWidth="980" MinHeight="620"
         Background="{DynamicResource Bg}">
-    <Grid ColumnDefinitions="230,*">
+    <Grid ColumnDefinitions="236,*">
 
         <!-- Menu lateral por categorias -->
         <Border Background="{DynamicResource Card}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0">
@@ -23,17 +23,29 @@
                     <Button x:Name="BtnTheme" Grid.Column="1" FontSize="12" Padding="12,4" Click="Theme_Click"/>
                 </Grid>
                 <ScrollViewer>
-                    <StackPanel x:Name="Nav" Margin="8,0,8,10"/>
+                    <StackPanel x:Name="Nav" Margin="10,0,10,10" Spacing="1"/>
                 </ScrollViewer>
             </DockPanel>
         </Border>
 
         <!-- Conteúdo -->
         <Grid Grid.Column="1" RowDefinitions="Auto,*" Margin="14">
-            <DockPanel Margin="6,0,6,8">
-                <TextBlock x:Name="PageTitle" DockPanel.Dock="Left" Classes="serif" FontSize="22" Foreground="{DynamicResource Fg}"
-                           VerticalAlignment="Center"/>
-                <TextBlock x:Name="Status" Classes="dim" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            <DockPanel Margin="6,2,6,12">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <Border Width="38" Height="38" CornerRadius="10" Background="{DynamicResource Card}" BorderBrush="{DynamicResource Line}" BorderThickness="1">
+                        <PathIcon x:Name="PageIcon" Width="20" Height="20" Foreground="{DynamicResource Flame}"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="PageTitle" Classes="serif" FontSize="22" Foreground="{DynamicResource Fg}"/>
+                        <TextBlock x:Name="PageSub" Classes="dim" FontSize="12.5" Margin="0,-1,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+                <Border HorizontalAlignment="Right" VerticalAlignment="Center" Classes="badge" Padding="10,4">
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                        <Ellipse x:Name="StatusDot" Width="8" Height="8" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="Status" FontSize="12" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
             </DockPanel>
             <Panel x:Name="Pages" Grid.Row="1"/>
         </Grid>

@@ -24,7 +24,7 @@ public partial class StartupPage : UserControl
         int on = list.Count(e => e.Enabled);
         Summary.Text = list.Count == 0 ? "NENHUM PROGRAMA NA INICIALIZAÇÃO" : $"{list.Count} ITENS · {on} ATIVADOS · {list.Count - on} DESATIVADOS";
         BtnRestore.IsEnabled = _settings.StartupRemoved.Count > 0;
-        BtnRestore.Content = _settings.StartupRemoved.Count > 0 ? $"RESTAURAR REMOVIDOS ({_settings.StartupRemoved.Count})" : "RESTAURAR REMOVIDOS";
+        BtnRestore.Content = _settings.StartupRemoved.Count > 0 ? $"Restaurar removidos ({_settings.StartupRemoved.Count})" : "Restaurar removidos";
     }
 
     private async void Scan_Click(object? sender, RoutedEventArgs e) { Result.Text = ""; await ScanAsync(); }

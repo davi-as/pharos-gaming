@@ -65,7 +65,7 @@ public partial class StressPage : UserControl
         if (missing.Count > 0 && !_confirmNoSensor)
         {
             _confirmNoSensor = true;
-            Hint.Text = $"Sem sensor de temperatura da {string.Join(" e da ", missing)}: o corte automático NÃO vai funcionar. Clique em INICIAR de novo para continuar mesmo assim.";
+            Hint.Text = $"Sem sensor de temperatura da {string.Join(" e da ", missing)}: o corte automático NÃO vai funcionar. Clique em “Iniciar” de novo para continuar mesmo assim.";
             return;
         }
         _confirmNoSensor = false;
@@ -119,7 +119,7 @@ public partial class StressPage : UserControl
 
     private void SetControls(bool running)
     {
-        BtnRun.Content = running ? "PARAR" : "INICIAR";
+        BtnRun.Content = running ? "Parar" : "Iniciar";
         ChkCpu.IsEnabled = ChkRam.IsEnabled = ChkGpu.IsEnabled = CpuLimit.IsEnabled = Minutes.IsEnabled = !running;
         RamPanel.IsEnabled = !running && ChkRam.IsChecked == true;
         GpuOptions.IsEnabled = GpuLimit.IsEnabled = !running && ChkGpu.IsChecked == true;

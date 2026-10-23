@@ -2,6 +2,11 @@ using System.Text.Json;
 
 namespace PharosGaming;
 
+public sealed record BenchRun(DateTime Date, double? Multi, double? Single, bool Sustained, string Cpu);
+
+/// <summary>Resultado dos benchmarks (Test = "gpu", "rt:preset:altura", "sim", "mem", "disk", "oc"). Score é usado para a barra do histórico.</summary>
+public sealed record BenchRecord(DateTime Date, string Test, double Score, string Summary);
+
 /// <summary>Programa extra que abre antes do jogo (ex.: ferramenta de comando/monitoramento) e pode fechar junto com ele.</summary>
 public sealed class HelperProgram
 {
@@ -42,6 +47,10 @@ public sealed class AppSettings
 
     /// <summary>Instância única, compartilhada pelas páginas (cada uma grava a sua parte).</summary>
     public static AppSettings Current { get; } = Load();
+
+    // PHAROS BENCH: últimos resultados (mais recente primeiro)
+    public List<BenchRun> BenchRuns { get; set; } = new();
+    public List<BenchRecord> BenchRecords { get; set; } = new();
 
     // FPS estimado: a chave fica neste arquivo, que só o usuário lê (permissão 600)
     public string? HowManyFpsKey { get; set; }

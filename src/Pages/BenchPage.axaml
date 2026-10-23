@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="PharosGaming.BenchPage">
+    <Grid RowDefinitions="Auto,Auto,*" Margin="6">
+        <WrapPanel x:Name="Tests" Classes="chips">
+            <RadioButton GroupName="BenchTest" Content="Render (CPU)" Tag="render" IsChecked="True" IsCheckedChanged="Test_Changed"/>
+            <RadioButton GroupName="BenchTest" Content="Cena de jogo (GPU)" Tag="gpu" IsCheckedChanged="Test_Changed"/>
+            <RadioButton GroupName="BenchTest" Content="Ray tracing (GPU)" Tag="rt" IsCheckedChanged="Test_Changed"/>
+            <RadioButton GroupName="BenchTest" Content="Simulação de jogo (CPU)" Tag="sim" IsCheckedChanged="Test_Changed"/>
+            <RadioButton GroupName="BenchTest" Content="Memória e carregamento" Tag="mem" IsCheckedChanged="Test_Changed"/>
+            <RadioButton GroupName="BenchTest" Content="Disco" Tag="disk" IsCheckedChanged="Test_Changed"/>
+        </WrapPanel>
+        <TextBlock x:Name="Sub" Grid.Row="1" Classes="dim" Margin="0,0,0,12"/>
+        <Panel x:Name="Host" Grid.Row="2"/>
+    </Grid>
+</UserControl>

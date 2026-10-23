@@ -1,0 +1,70 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="PharosGaming.RtBench">
+    <Grid ColumnDefinitions="*,14,330">
+        <StackPanel>
+            <Border Classes="card" Margin="0" Padding="0" ClipToBounds="True">
+                <Panel>
+                    <Image x:Name="Img" Stretch="Uniform"/>
+                    <TextBlock x:Name="Idle" Text="CIDADE DE OBJETOS · RAY TRACING" Foreground="{StaticResource Muted}" FontSize="22" Margin="0,120"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Border Background="#99000000" CornerRadius="6" Padding="12,6" Margin="10" HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Classes="label" Text="FPS AGORA"/>
+                            <TextBlock x:Name="FpsNow" Classes="big" Text="—"/>
+                            <TextBlock x:Name="Phase" Classes="dim" FontSize="12"/>
+                        </StackPanel>
+                    </Border>
+                </Panel>
+            </Border>
+            <ProgressBar x:Name="Progress" Maximum="1" Margin="0,10,0,4"/>
+            <TextBlock x:Name="Status" Classes="dim" Text="Pronto"/>
+            <TextBlock x:Name="Verdict" Foreground="{StaticResource Fg}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+            <Border Classes="card" Margin="0,12,0,0">
+                <StackPanel Spacing="4">
+                    <TextBlock Classes="label" Text="COMO COMPARAR COM CONFIANÇA"/>
+                    <TextBlock Classes="dim" FontSize="12" Text="O teste aquece a GPU sem medir e depois roda 3 passadas iguais. A nota é a mediana; se as passadas variarem mais de 3%, algo atrapalhou (programa em segundo plano, temperatura, limite de energia) e o resultado não deve ser comparado."/>
+                    <TextBlock Classes="dim" FontSize="12" Text="No Linux o path tracer roda num compute shader OpenGL: os raios são calculados pelos shaders, sem os núcleos RT (que pediriam Vulkan com ray query). A nota não se compara com a do PHAROS para Windows."/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+        <ScrollViewer Grid.Column="2">
+            <StackPanel Spacing="10">
+                <Border Classes="card" Margin="0">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="RESOLUÇÃO"/>
+                        <WrapPanel x:Name="ResPanel" Classes="chips">
+                            <RadioButton GroupName="RtRes" Content="1080p" Tag="1920x1080"/>
+                            <RadioButton GroupName="RtRes" Content="1440p" Tag="2560x1440" IsChecked="True"/>
+                            <RadioButton GroupName="RtRes" Content="4K" Tag="3840x2160"/>
+                        </WrapPanel>
+                        <TextBlock Classes="label" Text="PRESET"/>
+                        <WrapPanel x:Name="PresetPanel" Classes="chips">
+                            <RadioButton GroupName="RtPreset" Content="Normal" Tag="normal"/>
+                            <RadioButton GroupName="RtPreset" Content="Alta" Tag="alta" IsChecked="True"/>
+                            <RadioButton GroupName="RtPreset" Content="Extrema" Tag="extrema"/>
+                        </WrapPanel>
+                        <TextBlock Classes="label" Text="MODO"/>
+                        <WrapPanel x:Name="ModePanel" Classes="chips">
+                            <RadioButton GroupName="RtMode" Content="Padrão (110 s)" Tag="std" IsChecked="True"/>
+                            <RadioButton GroupName="RtMode" Content="Rápido (35 s)" Tag="quick"/>
+                        </WrapPanel>
+                        <Button x:Name="BtnRun" Classes="accent" Content="INICIAR" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Run_Click"/>
+                    </StackPanel>
+                </Border>
+                <Border Classes="card" Margin="0">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="RESULTADO"/>
+                        <ItemsControl x:Name="Result"/>
+                    </StackPanel>
+                </Border>
+                <Border Classes="card" Margin="0">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="HISTÓRICO (BARRA = MESMO PRESET E RESOLUÇÃO)"/>
+                        <ItemsControl x:Name="History"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

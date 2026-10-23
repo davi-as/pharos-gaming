@@ -20,6 +20,7 @@ public partial class MainWindow : Window
         new("PHAROS JOGOS", "FPS estimado", () => new FpsPage()),
         new("PHAROS JOGOS", "Gargalo", () => new BottleneckPage()),
         new("PHAROS JOGOS", "Overlay", () => new OverlayPage()),
+        new("PHAROS DESEMPENHO", "Benchmark", () => new BenchPage()),
     };
 
     private readonly Dictionary<PageDef, Control> _made = new();

@@ -23,6 +23,17 @@ public static class Report
         var sensors = SensorMonitor.Shared;
         sensors.Refresh();
         data.Sensors.AddRange(sensors.Rows.Select(s => new ReportSensor(s.Hardware, s.Category, s.Name, s.Value, s.Min, s.Max)));
+        var set = AppSettings.Current;
+        data.Benchmarks.AddRange(set.BenchRecords.Select(r => new ReportBench(r.Date, BenchLog.TestName(r.Test), r.Summary)));
+        foreach (var r in set.BenchRuns)
+        {
+            var parts = new List<string>();
+            if (r.Multi is double mt) parts.Add($"multi-core {mt:N0} pts");
+            if (r.Single is double st) parts.Add($"single-core {st:N0} pts");
+            if (r.Sustained) parts.Add("sustentado");
+            data.Benchmarks.Add(new ReportBench(r.Date, "Render (CPU)", string.Join(" · ", parts) + (r.Cpu.Length > 0 ? $" · {r.Cpu}" : "")));
+        }
+        data.Benchmarks.Sort((a, b) => b.Date.CompareTo(a.Date));
         return data;
     }
 }

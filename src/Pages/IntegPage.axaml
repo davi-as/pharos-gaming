@@ -1,0 +1,88 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:PharosGaming"
+             x:Class="PharosGaming.IntegPage">
+    <Grid ColumnDefinitions="*,14,380" Margin="6">
+        <ScrollViewer>
+            <StackPanel Spacing="12" Margin="0,0,10,0">
+                <TextBlock Classes="dim" Text="Iluminação RGB de placa-mãe, memória, GPU, teclado, mouse e fans pelo OpenRGB, com efeitos que reagem ao jogo"/>
+                <Border Classes="card" Margin="0">
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="label" Text="OPENRGB"/>
+                        <TextBlock x:Name="OrgbStatus" Classes="dim" Text="Conectando…"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button x:Name="BtnConnect" Content="CONECTAR" Click="Connect_Click"/>
+                            <Button x:Name="BtnServer" Content="ABRIR O SERVIDOR DO OPENRGB" Click="Server_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                <Border Classes="card" Margin="0">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="DISPOSITIVOS"/>
+                        <TextBlock x:Name="DevicesHint" Classes="dim" FontSize="12" Margin="0,4,0,8"/>
+                        <ItemsControl x:Name="Devices">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:LightDevice">
+                                    <CheckBox IsChecked="{Binding Selected}" Margin="0,2">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" Foreground="{StaticResource Fg}"/>
+                                            <TextBlock Text="{Binding Detail}" Classes="dim" FontSize="11"/>
+                                        </StackPanel>
+                                    </CheckBox>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+                <Border Classes="card" Margin="0">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="DIAGNÓSTICO"/>
+                        <SelectableTextBlock x:Name="Diag" FontFamily="monospace" FontSize="11" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+        <ScrollViewer Grid.Column="2">
+            <Border Classes="card" Margin="0">
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="label" Text="EFEITO"/>
+                    <WrapPanel x:Name="FxPanel" Classes="chips">
+                        <RadioButton GroupName="Fx" Content="Estático" Tag="static" IsChecked="True" IsCheckedChanged="Fx_Changed"/>
+                        <RadioButton GroupName="Fx" Content="Respiração" Tag="breath" IsCheckedChanged="Fx_Changed"/>
+                        <RadioButton GroupName="Fx" Content="Arco-íris" Tag="rainbow" IsCheckedChanged="Fx_Changed"/>
+                        <RadioButton GroupName="Fx" Content="Temp. CPU" Tag="cpu" IsCheckedChanged="Fx_Changed"/>
+                        <RadioButton GroupName="Fx" Content="Temp. GPU" Tag="gpu" IsCheckedChanged="Fx_Changed"/>
+                        <RadioButton GroupName="Fx" Content="Carga CPU" Tag="load" IsCheckedChanged="Fx_Changed"/>
+                        <RadioButton GroupName="Fx" Content="Desligado" Tag="off" IsCheckedChanged="Fx_Changed"/>
+                    </WrapPanel>
+                    <TextBlock Classes="label" Text="COR"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border x:Name="Preview" Width="46" Height="46" CornerRadius="6" BorderBrush="{StaticResource LineStrong}" BorderThickness="1"/>
+                        <WrapPanel x:Name="Swatches" Width="280"/>
+                    </StackPanel>
+                    <TextBlock Classes="dim" FontSize="11" Text="R"/>
+                    <Slider x:Name="R" Minimum="0" Maximum="255" Value="255" ValueChanged="Color_Changed"/>
+                    <TextBlock Classes="dim" FontSize="11" Text="G"/>
+                    <Slider x:Name="G" Minimum="0" Maximum="255" Value="255" ValueChanged="Color_Changed"/>
+                    <TextBlock Classes="dim" FontSize="11" Text="B"/>
+                    <Slider x:Name="B" Minimum="0" Maximum="255" Value="255" ValueChanged="Color_Changed"/>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Classes="label" Text="BRILHO"/>
+                        <TextBlock x:Name="BrightText" Grid.Column="1" FontFamily="monospace" Foreground="{StaticResource Fg}"/>
+                    </Grid>
+                    <Slider x:Name="Bright" Minimum="0" Maximum="100" Value="100" ValueChanged="Color_Changed"/>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Classes="label" Text="VELOCIDADE"/>
+                        <TextBlock x:Name="SpeedText" Grid.Column="1" FontFamily="monospace" Foreground="{StaticResource Fg}"/>
+                    </Grid>
+                    <Slider x:Name="Speed" Minimum="1" Maximum="10" Value="5" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="Color_Changed"/>
+                    <Grid ColumnDefinitions="Auto,*" Margin="0,8,0,0">
+                        <Button x:Name="BtnRun" Classes="accent" Content="ATIVAR CONTROLE" Click="Run_Click"/>
+                        <TextBlock x:Name="LiveText" Grid.Column="1" FontFamily="monospace" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    </Grid>
+                    <TextBlock x:Name="RunHint" Classes="dim" FontSize="12"/>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

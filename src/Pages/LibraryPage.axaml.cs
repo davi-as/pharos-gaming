@@ -55,7 +55,8 @@ public partial class LibraryPage : UserControl
         try
         {
             var custom = _settings.CustomGames.ToList();
-            _libGames = await Task.Run(() => GameLibrary.Scan(custom));
+            var known = new Dictionary<string, KnownGame>(_settings.KnownGames);
+            _libGames = await Task.Run(() => GameLibrary.Scan(custom, known));
             ApplyGameFilter();
             var byStore = _libGames.GroupBy(g => g.Store).Select(x => $"{x.Key} {x.Count()}");
             LGameCount.Text = _libGames.Count == 0
@@ -106,6 +107,42 @@ public partial class LibraryPage : UserControl
         try { _settings.Save(); } catch { }
     }
 
+    // ---------------- Limite e sessões (a ficha única do jogo) ----------------
+
+    private void ShowMango(LibGame g)
+    {
+        LLimits.Children.Clear();
+        LSessions.Children.Clear();
+        if (g.MangoKey is not { } key)
+        {
+            LMangoNote.Text = "Abra o jogo uma vez (pelo Hydra ou pela Steam): o PHAROS reconhece o processo e o limite de FPS e o histórico dele aparecem aqui.";
+            return;
+        }
+        double cur = _settings.FpsLimits.GetValueOrDefault(key);
+        LMangoNote.Text = (cur > 0 ? $"Limite: {cur:0.##} FPS" : "Sem limite") + " · vale com o jogo aberto (Shift + F1 alterna no jogo).";
+        var screen = FrameLimiter.ScreenOf(-1);
+        foreach (double v in (screen != null ? FrameLimiter.Candidates(screen.Hz, screen.Vrr) : new() { 144, 120, 60, 40, 30 }).Append(0))
+        {
+            var b = new Button { Content = v > 0 ? v.ToString("0.##") : "Sem limite", Margin = new Thickness(0, 0, 6, 6), MinWidth = 52 };
+            if (Math.Abs(cur - v) < 0.01) b.Classes.Add("accent");
+            b.Click += (_, _) =>
+            {
+                try { FrameLimiter.Set(_settings, key, v); } catch (Exception ex) { LMangoNote.Text = "Não consegui gravar: " + ex.Message; return; }
+                ShowMango(g);
+            };
+            LLimits.Children.Add(b);
+        }
+        var sessions = SessionLog.Load().Sessions.Where(s => s.Game == FrameLimiter.Display(key)).OrderByDescending(s => s.Start).Take(3).ToList();
+        foreach (var s in sessions)
+            LSessions.Children.Add(new TextBlock
+            {
+                Classes = { "dim" }, FontSize = 12.5,
+                Text = $"{s.Start:dd/MM HH:mm} · {s.Minutes:0} min · {s.AvgFps:0} FPS médio · 1% low {s.Low1Fps:0} · ritmo ±{s.PacingMs:0.0} ms"
+                       + (s.GpuTempMax is double t ? $" · GPU {t:0} °C" : ""),
+            });
+        if (sessions.Count == 0) LSessions.Children.Add(new TextBlock { Classes = { "dim" }, FontSize = 12, Text = "Nenhuma sessão registrada ainda." });
+    }
+
     // ---------------- Perfil ----------------
 
     private static void SetChip(Panel panel, string tag)
@@ -132,7 +169,11 @@ public partial class LibraryPage : UserControl
         _lLoading = true;
         _lp = p;
         LTitle.Text = g.Name;
-        LSub.Text = $"{g.Store} · {g.InstallDir}";
+        LSub.Text = g.Store == "Hydra" ? "Visto rodando pelo Hydra (fora da Steam)" : $"{g.Store} · {g.InstallDir}";
+        // jogo do Hydra fora da Steam: o PHAROS não abre nem grava opções dele, só limite e sessões
+        bool own = g.Store != "Hydra";
+        LPerfCard.IsVisible = LGfxCard.IsVisible = LHelpCard.IsVisible = BtnPlay.IsVisible = own;
+        ShowMango(g);
         LChkMango.IsChecked = p.MangoHud;
         LChkGameMode.IsChecked = p.GameMode;
         SetChip(LModePanel, p.WinMode);

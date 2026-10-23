@@ -48,6 +48,17 @@
                         <!-- Desempenho -->
                         <Border Classes="card" Margin="0,0,0,12">
                             <StackPanel Spacing="8">
+                                <StackPanel Classes="section" Margin="0">
+                                    <PathIcon Data="{StaticResource ic-timer-outline}"/>
+                                    <TextBlock Classes="label" Text="LIMITE E SESSÕES"/>
+                                </StackPanel>
+                                <TextBlock x:Name="LMangoNote" Classes="dim" FontSize="12"/>
+                                <WrapPanel x:Name="LLimits"/>
+                                <StackPanel x:Name="LSessions" Spacing="4"/>
+                            </StackPanel>
+                        </Border>
+                        <Border x:Name="LPerfCard" Classes="card" Margin="0,0,0,12">
+                            <StackPanel Spacing="8">
                                 <TextBlock Classes="label" Text="DESEMPENHO"/>
                                 <CheckBox x:Name="LChkMango" Content="Mandar o FPS para o painel do PHAROS (log do MangoHud)" IsCheckedChanged="LProfile_Changed"/>
                                 <CheckBox x:Name="LChkGameMode" Content="GameMode: CPU em desempenho máximo enquanto joga (gamemoderun)" IsCheckedChanged="LProfile_Changed"/>
@@ -56,7 +67,7 @@
                         </Border>
 
                         <!-- Gráficos -->
-                        <Border Classes="card" Margin="0,0,0,12">
+                        <Border x:Name="LGfxCard" Classes="card" Margin="0,0,0,12">
                             <StackPanel>
                                 <TextBlock Classes="label" Text="GRÁFICOS (ARGUMENTOS DE INICIALIZAÇÃO)"/>
                                 <TextBlock Classes="dim" FontSize="12" Text="Modo de janela" Margin="0,8,0,0"/>
@@ -104,7 +115,7 @@
                         </Border>
 
                         <!-- Programas auxiliares -->
-                        <Border Classes="card" Margin="0,0,0,12">
+                        <Border x:Name="LHelpCard" Classes="card" Margin="0,0,0,12">
                             <StackPanel>
                                 <TextBlock Classes="label" Text="PROGRAMAS AUXILIARES"/>
                                 <TextBlock Classes="dim" FontSize="12" Margin="0,6,0,10"

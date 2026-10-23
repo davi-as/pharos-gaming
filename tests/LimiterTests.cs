@@ -56,3 +56,29 @@ public class LimiterTests
         Assert.Equal("Ritmo irregular", FrameLimiter.Judge(jittery, 0)!.Title);
     }
 }
+
+public class KnownGameTests
+{
+    [Fact]
+    public void SteamAppId_FromEnviron()
+    {
+        Assert.Equal("1245620", FrameLimiter.SteamAppId("HOME=/h\0SteamAppId=1245620\0MANGOHUD=1\0"));
+        Assert.Equal("1145360", FrameLimiter.SteamAppId("SteamGameId=1145360\0"));
+        Assert.Null(FrameLimiter.SteamAppId("SteamAppId=0\0MANGOHUD=1\0")); // a Steam usa 0 fora de jogo
+        Assert.Null(FrameLimiter.SteamAppId("MANGOHUD=1\0"));
+    }
+
+    [Fact]
+    public void Scan_AddsHydraGamesSeenRunning()
+    {
+        var known = new Dictionary<string, KnownGame>
+        {
+            ["wine-pcsx2"] = new() { LastSeen = DateTime.Now },
+            ["wine-explorer"] = new() { LastSeen = DateTime.Now },
+            ["wine-eldenring"] = new() { SteamAppId = "999999999", LastSeen = DateTime.Now }, // da Steam: não vira item do Hydra
+        };
+        var list = GameLibrary.Scan(Array.Empty<CustomGame>(), known).Where(g => g.Store == "Hydra").ToList();
+        Assert.Equal(new[] { "pcsx2" }, list.Select(g => g.Name));
+        Assert.Equal("wine-pcsx2", list[0].MangoKey);
+    }
+}

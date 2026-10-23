@@ -29,6 +29,13 @@ public sealed class GameProfile
     public List<HelperProgram> Helpers { get; set; } = new();
 }
 
+/// <summary>Jogo visto rodando com MangoHud (chave = nome do processo do MangoHud, ex. wine-eldenring).</summary>
+public sealed class KnownGame
+{
+    public string? SteamAppId { get; set; }
+    public DateTime LastSeen { get; set; }
+}
+
 /// <summary>Jogo adicionado à mão (qualquer executável ou script).</summary>
 public sealed class CustomGame
 {
@@ -76,6 +83,7 @@ public sealed class AppSettings
 
     // Limitador de FPS: limite por jogo (chave = nome do arquivo de config por jogo do MangoHud; 0 = sem limite)
     public Dictionary<string, double> FpsLimits { get; set; } = new();
+    public Dictionary<string, KnownGame> KnownGames { get; set; } = new();
 
     public Dictionary<string, GameProfile> GameProfiles { get; set; } = new();
     public List<CustomGame> CustomGames { get; set; } = new();
@@ -93,8 +101,12 @@ public sealed class AppSettings
 
     public void Save()
     {
-        Directory.CreateDirectory(Folder);
-        File.WriteAllText(FilePath, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
-        File.SetUnixFileMode(FilePath, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        lock (this) // a interface e o leitor de jogos em segundo plano gravam
+        {
+            Directory.CreateDirectory(Folder);
+            File.WriteAllText(FilePath + ".tmp", JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+            File.SetUnixFileMode(FilePath + ".tmp", UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            File.Move(FilePath + ".tmp", FilePath, overwrite: true);
+        }
     }
 }

@@ -12,6 +12,8 @@ public sealed class LibGame
     public string? ExePath { get; init; }
     public string Args { get; init; } = "";
     public string Key => Store + ":" + Id;
+    /// <summary>Nome do processo do MangoHud (limite e sessões), quando o PHAROS já viu o jogo rodando.</summary>
+    public string? MangoKey { get; init; }
     public string Subtitle => Store;
     public bool IsSteam => Store == "Steam";
 }
@@ -19,10 +21,20 @@ public sealed class LibGame
 /// <summary>Procura jogos instalados na Steam e os adicionados manualmente. Só lê arquivos.</summary>
 public static class GameLibrary
 {
-    public static List<LibGame> Scan(IEnumerable<CustomGame> custom)
+    public static List<LibGame> Scan(IEnumerable<CustomGame> custom, IReadOnlyDictionary<string, KnownGame>? known = null)
     {
         var all = new List<LibGame>();
-        try { all.AddRange(Steam()); } catch { }
+        known ??= new Dictionary<string, KnownGame>();
+        try
+        {
+            // jogo da Steam já visto rodando: a ficha ganha o limite e as sessões dele
+            var bySteam = known.Where(k => k.Value.SteamAppId != null).GroupBy(k => k.Value.SteamAppId!).ToDictionary(g => g.Key, g => g.MaxBy(k => k.Value.LastSeen).Key);
+            all.AddRange(Steam().Select(g => bySteam.TryGetValue(g.Id, out var mk) ? new LibGame { Store = g.Store, Id = g.Id, Name = g.Name, InstallDir = g.InstallDir, MangoKey = mk } : g));
+        }
+        catch { }
+        // os do Hydra fora da Steam (emuladores, jogos avulsos): só existem pelo que o PHAROS viu rodando
+        foreach (var (key, k) in known.Where(k => k.Value.SteamAppId == null && k.Key != "wine-explorer"))
+            all.Add(new LibGame { Store = "Hydra", Id = key, Name = FrameLimiter.Display(key), MangoKey = key });
         foreach (var c in custom)
         {
             if (!File.Exists(c.Exe)) continue;

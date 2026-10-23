@@ -29,6 +29,7 @@ public static class MangoHudLog
         foreach (int dead in Started.Keys.Except(games.Select(g => g.Pid)).ToList()) Started.Remove(dead);
         foreach (var g in games)
         {
+            FrameLimiter.Learn(AppSettings.Current, g);
             string? name = ControlName(Sys.Read(ConfFor(g.Key)) ?? "", g.Pid);
             if (name == null || Started.GetValueOrDefault(g.Pid) == name) continue;
             if (Send(name, ":logging=1;")) Started[g.Pid] = name;

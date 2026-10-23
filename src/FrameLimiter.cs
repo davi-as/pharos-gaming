@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace PharosGaming;
 
 /// <summary>Jogo com o MangoHud carregado agora. Key = nome do arquivo de config por jogo que o MangoHud procura (sem ".conf").</summary>
-public sealed record RunningGame(int Pid, string Key)
+public sealed record RunningGame(int Pid, string Key, string? SteamAppId = null)
 {
     public string Name => FrameLimiter.Display(Key);
 }
@@ -63,16 +63,34 @@ public static class FrameLimiter
             try
             {
                 // environ é pequeno: filtra antes de ler o maps, que é grande
-                if (!File.ReadAllText(Path.Combine(dir, "environ")).Contains("MANGOHUD")) continue;
+                string env = File.ReadAllText(Path.Combine(dir, "environ"));
+                if (!env.Contains("MANGOHUD")) continue;
                 var args = File.ReadAllText(Path.Combine(dir, "cmdline")).Split('\0', StringSplitOptions.RemoveEmptyEntries);
                 if (args.Any(a => a.StartsWith("--type="))) continue;
                 if (!File.ReadLines(Path.Combine(dir, "maps")).Any(l => l.Contains("/libMangoHud"))) continue;
                 string exe = new FileInfo(Path.Combine(dir, "exe")).LinkTarget ?? "";
-                if (KeyFor(exe, (Sys.Read(Path.Combine(dir, "comm")) ?? "").Trim(), args) is { } key) found.Add(new RunningGame(pid, key));
+                if (KeyFor(exe, (Sys.Read(Path.Combine(dir, "comm")) ?? "").Trim(), args) is { } key)
+                    found.Add(new RunningGame(pid, key, SteamAppId(env)));
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
         }
         return found.DistinctBy(g => g.Key).ToList();
+    }
+
+    /// <summary>A Steam marca cada jogo que abre com SteamAppId (o Hydra abre os da Steam por ela).</summary>
+    public static string? SteamAppId(string environ) =>
+        environ.Split('\0').Select(v => v.StartsWith("SteamAppId=") ? v[11..] : v.StartsWith("SteamGameId=") ? v[12..] : null)
+            .FirstOrDefault(v => v is { Length: > 0 } && v != "0" && v.All(char.IsDigit));
+
+    /// <summary>Guarda o jogo visto rodando (KnownGames): a Biblioteca liga a ficha da Steam ao nome do processo.</summary>
+    public static void Learn(AppSettings s, RunningGame g)
+    {
+        lock (s)
+        {
+            if (s.KnownGames.TryGetValue(g.Key, out var k) && k.SteamAppId == (g.SteamAppId ?? k.SteamAppId) && DateTime.Now - k.LastSeen < TimeSpan.FromHours(1)) return;
+            s.KnownGames[g.Key] = new KnownGame { SteamAppId = g.SteamAppId ?? k?.SteamAppId, LastSeen = DateTime.Now };
+        }
+        s.Save();
     }
 
     /// <summary>

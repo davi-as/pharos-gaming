@@ -30,8 +30,14 @@ public sealed partial class MangoHudFrames
     public MangoHudFrames()
     {
         Directory.CreateDirectory(OwnFolder);
+        _folders = Folders();
+    }
+
+    /// <summary>Onde os logs aparecem: a pasta do PHAROS e a output_folder do usuário (ou a pasta pessoal, o padrão do MangoHud).</summary>
+    public static string[] Folders()
+    {
         string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        _folders = new[] { OwnFolder, UserOutputFolder(home) ?? home }.Distinct().ToArray();
+        return new[] { OwnFolder, UserOutputFolder(home) ?? home }.Distinct().ToArray();
     }
 
     /// <summary>output_folder do ~/.config/MangoHud/MangoHud.conf (o MangoHud usa a pasta pessoal se não houver).</summary>

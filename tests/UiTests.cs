@@ -27,7 +27,7 @@ public class UiTests
         var w = new MainWindow();
         w.Show();
         var nav = w.FindControl<StackPanel>("Nav")!.Children.OfType<RadioButton>().ToList();
-        Assert.Equal(23, nav.Count); // as 21 páginas do PHAROS GAMING para Windows + Limitador de FPS + PC como console
+        Assert.Equal(24, nav.Count); // as 21 páginas do PHAROS GAMING para Windows + Limitador de FPS, Sessões e PC como console
         foreach (var b in nav)
         {
             b.IsChecked = true;
@@ -76,6 +76,7 @@ public class Screenshots
         var w = new MainWindow { Width = 1400, Height = 900 };
         w.Show();
         if (Environment.GetEnvironmentVariable("PHAROS_SHOTS_THEME") is { Length: > 0 } theme) App.ApplyTheme(theme); // light | dark
+        if (Environment.GetEnvironmentVariable("PHAROS_SHOTS_SESSIONS") is { Length: > 0 } sess) File.Copy(sess, SessionLog.FilePath, true); // histórico de verdade na captura
         var nav = w.FindControl<StackPanel>("Nav")!.Children.OfType<RadioButton>().ToList();
         for (int i = 0; i < nav.Count; i++)
         {

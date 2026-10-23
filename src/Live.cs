@@ -27,6 +27,9 @@ public static class Live
 
     public static event Action? Tick;
 
+    /// <summary>O histórico de sessões pode ter mudado (chamado fora da thread da interface).</summary>
+    public static event Action? SessionsChanged;
+
     public static void Start()
     {
         if (_timer != null) return;
@@ -34,7 +37,13 @@ public static class Live
         _timer.Tick += (_, _) => Step();
         _timer.Start();
         // fora da interface: varre /proc e liga o log do MangoHud dos jogos abertos (overlay escondido)
-        _logTimer = new Timer(_ => { try { MangoHudLog.Tick(); } catch (Exception) { } }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(3));
+        int n = 0;
+        _logTimer = new Timer(_ =>
+        {
+            try { MangoHudLog.Tick(); } catch (Exception) { }
+            if (n++ % 10 == 0) // a cada 30 s: logs que terminaram viram sessão no histórico
+                try { SessionLog.Scan(MangoHudFrames.Folders()); SessionsChanged?.Invoke(); } catch (Exception) { }
+        }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(3));
     }
 
     /// <summary>Uma leitura, já avisando as páginas (o timer chama; os testes também).</summary>

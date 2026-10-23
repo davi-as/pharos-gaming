@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="PharosGaming.SessionsPage">
+    <Grid RowDefinitions="Auto,*" Margin="6,0,6,6">
+        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+            <WrapPanel x:Name="Games" VerticalAlignment="Center"/>
+            <TextBlock x:Name="Count" Grid.Column="1" Classes="dim" VerticalAlignment="Center"/>
+        </Grid>
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Margin="0,0,10,0">
+                <StackPanel x:Name="Empty" HorizontalAlignment="Center" Margin="0,90,0,0" Spacing="10" IsVisible="False">
+                    <PathIcon Data="{StaticResource ic-history}" Width="44" Height="44" Foreground="{DynamicResource Faint}"/>
+                    <TextBlock Classes="dim" Text="Nenhuma sessão ainda" HorizontalAlignment="Center"/>
+                    <TextBlock Classes="dim" FontSize="12" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" TextAlignment="Center" MaxWidth="520"
+                               Text="Cada jogo que envia FPS ao PHAROS vira uma sessão aqui quando fecha: FPS médio, 1% low, ritmo dos quadros e temperaturas, comparados com a vez anterior."/>
+                </StackPanel>
+                <StackPanel x:Name="List" Spacing="10"/>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

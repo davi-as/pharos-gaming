@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         LaunchOption.Text = MangoHudFrames.LaunchOption;
+        InitLauncher();
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(TickSec) };
         timer.Tick += (_, _) => Tick();
         timer.Start();

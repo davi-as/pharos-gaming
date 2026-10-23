@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:PharosGaming"
         x:Class="PharosGaming.MainWindow"
         Title="PHAROS GAMING" Width="1280" Height="800" MinWidth="900" MinHeight="600"
         Background="{StaticResource Bg}">
@@ -12,7 +13,9 @@
             <TextBlock x:Name="Status" Classes="dim" HorizontalAlignment="Right" VerticalAlignment="Center"/>
         </DockPanel>
 
-        <Grid Grid.Row="1" ColumnDefinitions="*,*,*" RowDefinitions="1.2*,Auto,*">
+        <TabControl Grid.Row="1" Padding="0">
+          <TabItem Header="PAINEL">
+        <Grid ColumnDefinitions="*,*,*" RowDefinitions="1.2*,Auto,*">
 
             <!-- FPS -->
             <Border Classes="card" Grid.ColumnSpan="2">
@@ -100,5 +103,130 @@
                 </Grid>
             </Border>
         </Grid>
+          </TabItem>
+          <TabItem Header="JOGOS">
+            <Grid ColumnDefinitions="300,24,*" Margin="6,12,6,6">
+
+                <!-- Lista de jogos -->
+                <Grid RowDefinitions="Auto,Auto,*">
+                    <TextBlock x:Name="LGameCount" Classes="dim" Text="Procurando seus jogos…" Margin="0,0,0,10"/>
+                    <StackPanel Grid.Row="1" Spacing="8" Margin="0,0,0,10">
+                        <TextBox x:Name="LGameSearch" Watermark="Buscar jogo…" TextChanged="LGameSearch_Changed"/>
+                        <WrapPanel>
+                            <Button x:Name="BtnScanGames" Content="ATUALIZAR LISTA" Margin="0,0,8,0" Click="BtnScanGames_Click"/>
+                            <Button Content="+ ADICIONAR JOGO" Click="BtnAddExe_Click"/>
+                        </WrapPanel>
+                    </StackPanel>
+                    <ListBox x:Name="LGameList" Grid.Row="2" Background="Transparent" SelectionChanged="LGameList_Changed">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="local:LibGame">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}" FontSize="14" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Subtitle}" FontSize="11" Opacity="0.6"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+
+                <!-- Detalhes do jogo -->
+                <TextBlock x:Name="LEmpty" Grid.Column="2" Classes="dim" Text="Escolha um jogo na lista." Margin="0,60,0,0"/>
+                <ScrollViewer x:Name="LDetail" Grid.Column="2" IsVisible="False">
+                    <StackPanel Margin="0,0,12,0">
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+                            <StackPanel>
+                                <TextBlock x:Name="LTitle" Classes="big" FontSize="26" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="LSub" Classes="dim"/>
+                            </StackPanel>
+                            <Button x:Name="BtnPlay" Grid.Column="1" Classes="accent" Content="JOGAR" Padding="40,14" FontSize="16"
+                                    VerticalAlignment="Top" Click="BtnPlay_Click"/>
+                        </Grid>
+                        <TextBlock x:Name="LStatus" Classes="dim" Margin="0,0,0,10"/>
+
+                        <!-- Desempenho -->
+                        <Border Classes="card" Margin="0,0,0,12">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="label" Text="DESEMPENHO"/>
+                                <CheckBox x:Name="LChkMango" Content="Mandar o FPS para o painel do PHAROS (log do MangoHud)" IsCheckedChanged="LProfile_Changed"/>
+                                <CheckBox x:Name="LChkGameMode" Content="GameMode: CPU em desempenho máximo enquanto joga (gamemoderun)" IsCheckedChanged="LProfile_Changed"/>
+                                <TextBlock x:Name="LToolsNote" Classes="dim" FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Gráficos -->
+                        <Border Classes="card" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Classes="label" Text="GRÁFICOS (ARGUMENTOS DE INICIALIZAÇÃO)"/>
+                                <TextBlock Classes="dim" FontSize="12" Text="Modo de janela" Margin="0,8,0,0"/>
+                                <WrapPanel x:Name="LModePanel" Classes="chips">
+                                    <RadioButton GroupName="LMode" Content="Padrão do jogo" Tag="default" IsChecked="True" IsCheckedChanged="LProfile_Changed"/>
+                                    <RadioButton GroupName="LMode" Content="Tela cheia" Tag="full" IsCheckedChanged="LProfile_Changed"/>
+                                    <RadioButton GroupName="LMode" Content="Sem bordas" Tag="borderless" IsCheckedChanged="LProfile_Changed"/>
+                                    <RadioButton GroupName="LMode" Content="Janela" Tag="window" IsCheckedChanged="LProfile_Changed"/>
+                                </WrapPanel>
+                                <TextBlock Classes="dim" FontSize="12" Text="Resolução"/>
+                                <WrapPanel x:Name="LResPanel" Classes="chips">
+                                    <RadioButton GroupName="LRes" Content="Padrão" Tag="default" IsChecked="True" IsCheckedChanged="LProfile_Changed"/>
+                                    <RadioButton GroupName="LRes" Content="1280x720" Tag="1280x720" IsCheckedChanged="LProfile_Changed"/>
+                                    <RadioButton GroupName="LRes" Content="1920x1080" Tag="1920x1080" IsCheckedChanged="LProfile_Changed"/>
+                                    <RadioButton GroupName="LRes" Content="2560x1440" Tag="2560x1440" IsCheckedChanged="LProfile_Changed"/>
+                                    <RadioButton GroupName="LRes" Content="3840x2160" Tag="3840x2160" IsCheckedChanged="LProfile_Changed"/>
+                                </WrapPanel>
+                                <TextBlock Classes="dim" FontSize="12" Text="Taxa de atualização (Hz)"/>
+                                <WrapPanel x:Name="LHzPanel" Classes="chips">
+                                    <RadioButton GroupName="LHz" Content="Padrão" Tag="0" IsChecked="True" IsCheckedChanged="LProfile_Changed"/>
+                                    <RadioButton GroupName="LHz" Content="60" Tag="60" IsCheckedChanged="LProfile_Changed"/>
+                                    <RadioButton GroupName="LHz" Content="120" Tag="120" IsCheckedChanged="LProfile_Changed"/>
+                                    <RadioButton GroupName="LHz" Content="144" Tag="144" IsCheckedChanged="LProfile_Changed"/>
+                                    <RadioButton GroupName="LHz" Content="165" Tag="165" IsCheckedChanged="LProfile_Changed"/>
+                                    <RadioButton GroupName="LHz" Content="240" Tag="240" IsCheckedChanged="LProfile_Changed"/>
+                                </WrapPanel>
+                                <TextBlock Classes="dim" FontSize="12" Text="Tipo de argumento (depende do jogo)"/>
+                                <WrapPanel x:Name="LStylePanel" Classes="chips">
+                                    <RadioButton GroupName="LStyle" Content="Source / CS2" Tag="source" IsChecked="True" IsCheckedChanged="LProfile_Changed"/>
+                                    <RadioButton GroupName="LStyle" Content="Unity" Tag="unity" IsCheckedChanged="LProfile_Changed"/>
+                                    <RadioButton GroupName="LStyle" Content="Unreal" Tag="unreal" IsCheckedChanged="LProfile_Changed"/>
+                                </WrapPanel>
+                                <TextBlock Classes="dim" FontSize="12" Text="Extras"/>
+                                <TextBox x:Name="LExtra" Watermark="ex.: -novid +fps_max 0" Margin="0,4,0,8" TextChanged="LExtra_Changed"/>
+                                <WrapPanel x:Name="LExtraPresets" Margin="0,0,0,12"/>
+                                <TextBlock Classes="label" Text="LINHA FINAL"/>
+                                <SelectableTextBlock x:Name="LPreview" FontFamily="monospace" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,10"
+                                                     Foreground="{StaticResource Fg}"/>
+                                <StackPanel x:Name="LSteamBox" IsVisible="False" Spacing="8">
+                                    <TextBlock x:Name="LSteamNow" Classes="dim" FontSize="12"/>
+                                    <Button x:Name="BtnSteamApply" Classes="accent" Content="APLICAR NAS OPÇÕES DA STEAM" Click="BtnSteamApply_Click"/>
+                                </StackPanel>
+                                <TextBlock x:Name="LGfxNote" Classes="dim" FontSize="11" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Programas auxiliares -->
+                        <Border Classes="card" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Classes="label" Text="PROGRAMAS AUXILIARES"/>
+                                <TextBlock Classes="dim" FontSize="12" Margin="0,6,0,10"
+                                           Text="Ferramentas que abrem antes do jogo (monitoramento, comandos, mixer de áudio, script...). O PHAROS as abre ao clicar em JOGAR e pode fechá-las junto com o jogo. Nada é escrito nas opções da Steam."/>
+                                <ItemsControl x:Name="LHelpers">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="local:HelperProgram">
+                                            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+                                                <TextBlock Text="{Binding Display}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                <Button Grid.Column="1" Content="REMOVER" FontSize="11" Tag="{Binding}" Click="BtnRemoveHelper_Click"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <WrapPanel Margin="0,6,0,0">
+                                    <Button Content="+ ADICIONAR PROGRAMA" Margin="0,0,14,0" Click="BtnAddHelper_Click"/>
+                                    <CheckBox x:Name="LHelperClose" Content="Fechar junto com o jogo" IsChecked="True" VerticalAlignment="Center"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+          </TabItem>
+        </TabControl>
     </Grid>
 </Window>

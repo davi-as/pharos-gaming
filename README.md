@@ -16,6 +16,12 @@ nativo no Linux (X11 e Wayland).
   (trava de FPS/V-Sync), com uma dica do que fazer em cada caso.
 - **Sessão de jogo:** quanto tempo cada componente passou sendo o limite.
 
+## Aba Jogos
+Lista os jogos da Steam (todas as bibliotecas, inclusive Flatpak) e os que você adicionar à mão. Cada jogo tem um perfil:
+MangoHud (manda o FPS para o painel), GameMode, modo de janela, resolução, Hz e argumentos extras. Para jogos da Steam, o
+PHAROS grava a linha nas opções de inicialização do jogo (com backup do `localconfig.vdf`; a Steam precisa ser fechada).
+Também abre programas auxiliares antes do jogo e os fecha quando ele termina.
+
 ## Configurar o FPS (MangoHud)
 O FPS vem do log do [MangoHud](https://github.com/flightlessmango/MangoHud), que precisa estar instalado
 (`pacman -S mangohud`, `apt install mangohud`, etc.).
@@ -67,7 +73,7 @@ legacy-windows/  código original do RESET EXPLODE, referência para portar
 ```
 
 ## Próximos módulos
-Os outros módulos do original estão sendo portados um por vez: Bench, Otimiza, Jogos (Steam), Driver, OC, Maker e
+Os outros módulos do original estão sendo portados um por vez: Bench, Otimiza, Driver, OC, Maker e
 Integração. Enquanto isso, o código Windows continua em [`legacy-windows/`](legacy-windows/).
 
 ## Licença

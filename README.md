@@ -5,7 +5,7 @@ limitando o FPS), biblioteca de jogos com perfis, benchmarks, stress test, overc
 iluminação RGB, a central do PC como console (controle, Hydra, Steam, TV) e ferramentas para quem programa Arduino e ESP32.
 
 Fork do [RESET EXPLODE](https://github.com/GustavoReset/ResetExplode) (Windows/WPF), reescrito em Avalonia para rodar
-nativo no Linux (X11 e Wayland). As 21 páginas do original foram portadas (mais o Limitador de FPS e o PC como console); o código Windows continua em
+nativo no Linux (X11 e Wayland). As 21 páginas do original foram portadas (mais Limitador de FPS, Sessões e PC como console); o código Windows continua em
 [`legacy-windows/`](legacy-windows/) como referência.
 
 ## Páginas
@@ -34,6 +34,13 @@ nativo no Linux (X11 e Wayland). As 21 páginas do original foram portadas (mais
 - **Limitador de FPS:** limite por jogo com frame pacing (limitador do MangoHud no modo early), como o framepacer.
   Detecta o jogo aberto (Hydra, Steam ou qualquer launcher com MangoHud), sugere valores que casam com a taxa da tela,
   muda com o jogo aberto e dá um veredito do ritmo dos quadros. Shift + F1 no jogo alterna entre o limite e sem limite.
+- **Sessões:** cada jogo que envia FPS vira uma sessão quando fecha (FPS médio, 1% low, ritmo dos quadros, temperaturas
+  e cargas, limite em uso), comparada com a sessão anterior do mesmo jogo.
+
+O FPS chega ao PHAROS mesmo com o overlay escondido: as configs que o PHAROS grava têm `control=` e ele liga o log pelo
+socket do MangoHud (`:logging=1;`); para os jogos sem limite, ligue "FPS no PHAROS" em PC como console › MangoHud.
+A ficha de cada jogo na Biblioteca mostra o limite e as últimas sessões: o PHAROS reconhece o processo na primeira vez
+que vê o jogo rodando (os da Steam pelo `SteamAppId`; os do Hydra fora da Steam entram na lista).
 
 **Console**
 - **PC como console:** a central do ecossistema do `dotfiles/gaming` (o PC vira console: o Hydra é a interface e o
@@ -42,6 +49,9 @@ nativo no Linux (X11 e Wayland). As 21 páginas do original foram portadas (mais
   controle; Hydra (abrir com o sistema, MangoHud nos jogos), Steam com `MANGOHUD=1` (os jogos da Steam que o Hydra abre
   nascem da Steam), TV (`tv-power`), reconexão do controle por Bluetooth, MangoHud escondido no início e o diagnóstico
   do `gaming-doctor`. Cada arquivo editado ganha uma cópia `.pharos-bak` na primeira mudança.
+- **Modo TV:** FPS, ritmo, limite e temperaturas em letras grandes, em tela cheia, navegável pelo controle (direcional ou
+  analógico, A confirma, B sai) e pelas setas. Abre pela página, com `pharos-gaming --tv` ou pela ação "Pharos na TV",
+  que pode ir em qualquer gesto do controle.
 
 **Desempenho**
 - **Benchmark:** render de CPU (path tracing, como o Cinebench), cena de jogo e ray tracing em OpenGL, simulação de jogo,
@@ -112,9 +122,9 @@ Usa ferramentas que as distros já trazem: `lspci`, `lsblk`, `udevadm`, `journal
 ```
 mise exec -- dotnet test tests
 ```
-86 testes xunit: os parsers (sysfs, udev, lspci, lsblk, smartctl, journal, MangoHud, VDF da Steam), os cálculos (gargalo,
+96 testes xunit: os parsers (sysfs, udev, lspci, lsblk, smartctl, journal, MangoHud, VDF da Steam), os cálculos (gargalo,
 EXPO, frametime, efeitos de luz), os scripts de root (aspas e conteúdo), o protocolo do OpenRGB contra um servidor falso,
-a leitura desta máquina e a interface inteira em modo headless (abre as 23 páginas). Os testes de GPU rodam a cena, o ray
+a leitura desta máquina e a interface inteira em modo headless (abre as 24 páginas e o modo TV). Os testes de GPU rodam a cena, o ray
 tracing e o stress por um instante quando há GPU com aceleração, e passam sem rodar quando não há (CI). O CI do GitHub
 roda a suíte no Ubuntu a cada push.
 

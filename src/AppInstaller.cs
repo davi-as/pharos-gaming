@@ -60,6 +60,7 @@ public static class AppInstaller
         new() { Name = "Heroic Games Launcher", Description = "Biblioteca da Epic Games, GOG e Amazon Prime Gaming.", Flatpak = "com.heroicgameslauncher.hgl", PreSelect = false },
         new() { Name = "ProtonUp-Qt", Description = "Instala o Proton-GE e outras versões do Proton para jogos que não rodam no oficial.", Flatpak = "net.davidotek.pupgui2", PreSelect = false },
         new() { Name = "OBS Studio", Description = "Gravação e transmissão de jogos.", Pacman = "obs-studio", Apt = "obs-studio", Dnf = "obs-studio", Flatpak = "com.obsproject.Studio", PreSelect = false },
+        new() { Name = "Arduino IDE", Description = "Programar Arduino, ESP32 e outras placas (página Maker).", Pacman = "arduino-ide", Flatpak = "cc.arduino.IDE2", PreSelect = false },
         new() { Name = "smartmontools", Description = "Leitura completa do S.M.A.R.T. na página Discos (desgaste e total gravado).",
                 Pacman = "smartmontools", Apt = "smartmontools", Dnf = "smartmontools", PreSelect = false },
     };

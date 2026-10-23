@@ -28,6 +28,8 @@ public partial class MainWindow : Window
         new("PHAROS FERRAMENTAS", "Instalar apps", () => new AppsPage()),
         new("PHAROS FERRAMENTAS", "Drivers", () => new DriverPage()),
         new("PHAROS FERRAMENTAS", "Integração", () => new IntegPage()),
+        new("PHAROS MAKER", "Portas seriais", () => new MakerPortsPage()),
+        new("PHAROS MAKER", "Drivers seriais", () => new MakerDrvPage()),
     };
 
     private readonly Dictionary<PageDef, Control> _made = new();

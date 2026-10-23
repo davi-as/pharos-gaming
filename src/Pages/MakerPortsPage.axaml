@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:PharosGaming"
+             x:Class="PharosGaming.MakerPortsPage">
+    <ScrollViewer>
+        <StackPanel Margin="6,6,16,6" Spacing="12">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="dim" Text="Arduino, ESP32 e conversores seriais: acesso à porta, programas que a prendem e nomes fixos" VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Content="PROCURAR" Click="Scan_Click"/>
+            </Grid>
+            <Border Classes="card" Margin="0">
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="label" Text="CONECTADAS AGORA"/>
+                    <TextBlock x:Name="Empty" Classes="dim" Text="Nenhuma placa ou conversor serial conectado. Plugue a placa e clique em PROCURAR."/>
+                    <ItemsControl x:Name="Ports">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:SerialPortInfo">
+                                <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,8">
+                                    <StackPanel Spacing="2">
+                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+                                            <TextBlock Text="{Binding State}" Classes="label" FontSize="10" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Detail}" FontFamily="monospace" FontSize="12" Foreground="{StaticResource Muted}"/>
+                                        <TextBlock Classes="dim" FontSize="12"><Run Text="Driver: "/><Run Text="{Binding DriverText, Mode=OneWay}"/><Run Text=" · grupo "/><Run Text="{Binding Group, Mode=OneWay}"/></TextBlock>
+                                        <TextBlock Text="{Binding Diagnosis}" Foreground="{StaticResource Fg}" FontSize="12" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+            <Border Classes="card" Margin="0">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="label" Text="CORREÇÕES"/>
+                    <TextBlock x:Name="AccessText" Classes="dim"/>
+                    <Button x:Name="BtnAccess" Content="LIBERAR ACESSO ÀS PORTAS SERIAIS" Click="Access_Click"/>
+                    <TextBlock x:Name="ModemText" Classes="dim"/>
+                    <Button x:Name="BtnModem" Content="DESLIGAR O MODEMMANAGER" Click="Modem_Click"/>
+                    <TextBlock x:Name="BrlttyText" Classes="dim"/>
+                    <Button x:Name="BtnBrltty" Content="IMPEDIR O BRLTTY DE PEGAR O CH340" Click="Brltty_Click"/>
+                    <Button x:Name="BtnHolders" Content="FECHAR PROGRAMAS QUE PRENDEM A PORTA" Click="Holders_Click"/>
+                    <TextBlock x:Name="Result" Foreground="{StaticResource Fg}" FontSize="12" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+            <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"
+                       Text="No Linux não existe número COM preso nem dispositivo fantasma: /dev/ttyUSB0 e /dev/ttyACM0 são dados na ordem em que as placas são plugadas. Para um nome que nunca muda, use o caminho em /dev/serial/by-id mostrado em cada placa."/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

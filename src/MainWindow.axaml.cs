@@ -10,6 +10,7 @@ public partial class MainWindow : Window
     private static readonly PageDef[] All =
     {
         new("PHAROS GAMING", "Visão geral", () => new DashPage()),
+        new("PHAROS GAMING", "Sistema", () => new SystemPage()),
         new("PHAROS JOGOS", "Biblioteca", () => new LibraryPage()),
     };
 

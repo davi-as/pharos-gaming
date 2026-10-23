@@ -117,12 +117,14 @@ internal static class Nvml
 
     public static string? DriverVersion()
     {
+        if (!Available) return null;
         var sb = new StringBuilder(96);
         return Call(() => nvmlSystemGetDriverVersion(sb, (uint)sb.Capacity)) ? sb.ToString() : null;
     }
 
     public static string? CudaVersion()
     {
+        if (!Available) return null;
         int v = 0;
         return Call(() => nvmlSystemGetCudaDriverVersion(out v)) ? $"{v / 1000}.{v % 1000 / 10}" : null;
     }

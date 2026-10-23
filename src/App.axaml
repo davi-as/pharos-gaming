@@ -1,7 +1,53 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="PharosGaming.App"
+             xmlns:local="using:PharosGaming"
              RequestedThemeVariant="Dark">
+    <Application.DataTemplates>
+        <!-- Cartão de resultado (discos, energia, rede, drivers...) -->
+        <DataTemplate DataType="local:InfoCard" x:DataType="local:InfoCard">
+            <Border Classes="card" Margin="0,0,0,12">
+                <StackPanel Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Title}" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource Fg}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding Meta}" Classes="dim" FontSize="12"/>
+                        </StackPanel>
+                        <Border Grid.Column="1" Classes="badge" Classes.alert="{Binding IsAlert}" VerticalAlignment="Top">
+                            <TextBlock Text="{Binding VerdictText}" FontSize="11" FontWeight="Bold" LetterSpacing="1"/>
+                        </Border>
+                    </Grid>
+                    <TextBlock Text="{Binding Reasons}" Classes="dim" Foreground="{StaticResource Fg}" Margin="0,4,0,4"/>
+                    <ItemsControl ItemsSource="{Binding Metrics}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:Object">
+                                <Grid ColumnDefinitions="260,*" Margin="0,2">
+                                    <TextBlock Text="{Binding Key}" Classes="dim" FontSize="12" x:CompileBindings="False"/>
+                                    <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" FontSize="12" TextWrapping="Wrap"
+                                                         Foreground="{StaticResource Fg}" x:CompileBindings="False"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <!-- Árvore de informações: grupo (título + filhos) ou linha "nome: valor" -->
+        <DataTemplate DataType="local:InfoNode" x:DataType="local:InfoNode">
+            <Panel>
+                <Border IsVisible="{Binding !IsGroup}" BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,8">
+                    <Grid ColumnDefinitions="260,*">
+                        <TextBlock Text="{Binding Header}" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,16,0"/>
+                        <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" Foreground="{StaticResource Fg}" TextWrapping="Wrap"/>
+                    </Grid>
+                </Border>
+                <StackPanel IsVisible="{Binding IsGroup}" Margin="0,20,0,0">
+                    <TextBlock Text="{Binding Display}" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource Fg}" Margin="0,0,0,4"/>
+                    <ItemsControl ItemsSource="{Binding Children}"/>
+                </StackPanel>
+            </Panel>
+        </DataTemplate>
+    </Application.DataTemplates>
     <Application.Resources>
         <!-- Mesma paleta monocromática do PHAROS GAMING para Windows (Theme.xaml) -->
         <SolidColorBrush x:Key="Bg" Color="#000000"/>
@@ -63,6 +109,23 @@
         <Style Selector="RadioButton.nav:checked">
             <Setter Property="Background" Value="{StaticResource LineStrong}"/>
             <Setter Property="Foreground" Value="{StaticResource Fg}"/>
+        </Style>
+        <Style Selector="Border.badge">
+            <Setter Property="BorderBrush" Value="{StaticResource Fg}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="8,3"/>
+            <Setter Property="TextElement.Foreground" Value="{StaticResource Fg}"/>
+        </Style>
+        <Style Selector="Border.badge.alert">
+            <Setter Property="Background" Value="{StaticResource Fg}"/>
+            <Setter Property="TextElement.Foreground" Value="{StaticResource Bg}"/>
+        </Style>
+        <!-- Cabeçalho de página: título, status e ações -->
+        <Style Selector="TextBlock.h2">
+            <Setter Property="Foreground" Value="{StaticResource Fg}"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
         <Style Selector="WrapPanel.chips">
             <Setter Property="Margin" Value="0,4,0,10"/>

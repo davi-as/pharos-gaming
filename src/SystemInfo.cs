@@ -311,8 +311,12 @@ public static class SystemInfo
         return $"{vendor} {(m.Success ? m.Groups[1].Value : g.Device)}";
     }
 
-    public static string? PciDriver(string slot) =>
-        new DirectoryInfo($"/sys/bus/pci/devices/{slot}/driver").ResolveLinkTarget(false)?.Name;
+    /// <summary>Driver do kernel em uso pelo dispositivo PCI (null = sem driver: o link "driver" não existe).</summary>
+    public static string? PciDriver(string slot)
+    {
+        var link = new DirectoryInfo($"/sys/bus/pci/devices/{slot}/driver");
+        return link.Exists ? link.ResolveLinkTarget(false)?.Name : null;
+    }
 
     private static void CollectGpu(InfoNode n)
     {

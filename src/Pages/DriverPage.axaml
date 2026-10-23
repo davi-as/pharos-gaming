@@ -1,0 +1,108 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:PharosGaming"
+             x:Class="PharosGaming.DriverPage">
+    <ScrollViewer>
+        <StackPanel Margin="6,6,16,6" Spacing="12">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel>
+                    <TextBlock Classes="dim" Text="Driver de vídeo, atualizações do sistema e de firmware, e o driver de cada dispositivo"/>
+                    <TextBlock x:Name="Status" Classes="dim" FontSize="12" Text="Clique em VERIFICAR TUDO."/>
+                </StackPanel>
+                <Button x:Name="BtnScan" Grid.Column="1" Classes="accent" Content="VERIFICAR TUDO" VerticalAlignment="Top" Click="Scan_Click"/>
+            </Grid>
+            <ProgressBar x:Name="Progress" Maximum="1"/>
+            <Grid ColumnDefinitions="*,14,*">
+                <Border Classes="card" Margin="0">
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="label" Text="PLACA DE VÍDEO"/>
+                        <ItemsControl x:Name="Gpus">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:GpuDriverStatus">
+                                    <StackPanel Margin="0,4,0,8" Spacing="2">
+                                        <TextBlock Text="{Binding GpuName}" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+                                        <TextBlock FontFamily="monospace" FontSize="12" Foreground="{StaticResource Muted}" TextWrapping="Wrap">
+                                            <Run Text="Instalado: "/><Run Text="{Binding Installed, Mode=OneWay}"/>
+                                            <Run Text="  ·  Distro: "/><Run Text="{Binding Repo, Mode=OneWay}"/>
+                                            <Run Text="  ·  NVIDIA: "/><Run Text="{Binding Latest, Mode=OneWay}"/>
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding Message}" Classes="dim" FontSize="12"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Classes="card" Margin="0">
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="label" Text="PLACA-MÃE / FABRICANTE"/>
+                        <TextBlock x:Name="Board" Classes="dim"/>
+                        <Button x:Name="BtnBoard" Content="ABRIR SUPORTE DO FABRICANTE" IsEnabled="False" Click="Board_Click"/>
+                        <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"
+                                   Text="No Linux o chipset e o áudio da placa já vêm no kernel. Do site do fabricante, o que importa é a BIOS (ou pelo fwupd, quando o fabricante publica no LVFS)."/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+            <Grid ColumnDefinitions="*,14,*">
+                <Border Classes="card" Margin="0">
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="label" Text="ATUALIZAÇÕES DO SISTEMA (KERNEL, DRIVERS, MESA)"/>
+                        <TextBlock x:Name="UpdatesSummary" Classes="dim" Text="Ainda não pesquisado."/>
+                        <ItemsControl x:Name="Updates" MaxHeight="260">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:PendingUpdate">
+                                    <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                        <TextBlock Text="{Binding Name}" Foreground="{StaticResource Fg}" FontWeight="{Binding DriverRelated, Converter={x:Static local:BoolBold.Instance}}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Text}" FontFamily="monospace" FontSize="11" Foreground="{StaticResource Muted}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button x:Name="BtnUpgrade" Content="ATUALIZAR O SISTEMA" IsEnabled="False" Click="Upgrade_Click"/>
+                        <SelectableTextBlock x:Name="UpgradeLog" FontFamily="monospace" FontSize="11" Foreground="{StaticResource Muted}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Classes="card" Margin="0">
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="label" Text="FIRMWARE (FWUPD / LVFS)"/>
+                        <TextBlock x:Name="FirmwareSummary" Classes="dim" Text="Ainda não pesquisado."/>
+                        <ItemsControl x:Name="Firmware">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:PendingUpdate">
+                                    <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                        <TextBlock Text="{Binding Name}" Foreground="{StaticResource Fg}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Text}" FontFamily="monospace" FontSize="11" Foreground="{StaticResource Muted}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"
+                                   Text="Para instalar firmware use fwupdmgr update no terminal: algumas atualizações (BIOS) reiniciam o PC e não devem ser interrompidas."/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+            <Border Classes="card" Margin="0">
+                <StackPanel>
+                    <TextBlock Classes="label" Text="DISPOSITIVOS E DRIVERS DO KERNEL"/>
+                    <ItemsControl x:Name="List" Margin="0,6,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:DriverRow">
+                                <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,5">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Device}" Foreground="{StaticResource Fg}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock FontSize="11" Foreground="{StaticResource Muted}">
+                                                <Run Text="{Binding Class, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding Vendor, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{Binding DriverText}" FontFamily="monospace" FontSize="12" Foreground="{StaticResource Fg}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

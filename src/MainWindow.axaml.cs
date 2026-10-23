@@ -13,6 +13,7 @@ public partial class MainWindow : Window
         new("PHAROS GAMING", "Sistema", () => new SystemPage()),
         new("PHAROS GAMING", "Sensores", () => new SensorsPage()),
         new("PHAROS GAMING", "Placa de vídeo", () => new GpuPage()),
+        new("PHAROS GAMING", "Discos", () => new DisksPage()),
         new("PHAROS JOGOS", "Biblioteca", () => new LibraryPage()),
     };
 

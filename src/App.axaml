@@ -19,13 +19,18 @@
                     </Grid>
                     <TextBlock Text="{Binding Reasons}" Classes="dim" Foreground="{StaticResource Fg}" Margin="0,4,0,4"/>
                     <ItemsControl ItemsSource="{Binding Metrics}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="x:Object">
-                                <Grid ColumnDefinitions="260,*" Margin="0,2">
-                                    <TextBlock Text="{Binding Key}" Classes="dim" FontSize="12" x:CompileBindings="False"/>
-                                    <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" FontSize="12" TextWrapping="Wrap"
-                                                         Foreground="{StaticResource Fg}" x:CompileBindings="False"/>
-                                </Grid>
+                                <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,7,16,7">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Key}" Foreground="{StaticResource Muted}" FontSize="11" x:CompileBindings="False"/>
+                                        <SelectableTextBlock Text="{Binding Value}" FontFamily="monospace" FontSize="13" TextWrapping="Wrap" Margin="0,2,0,0"
+                                                             Foreground="{StaticResource Fg}" x:CompileBindings="False"/>
+                                    </StackPanel>
+                                </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

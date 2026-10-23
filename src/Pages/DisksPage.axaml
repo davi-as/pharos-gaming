@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="PharosGaming.DisksPage">
+    <ScrollViewer>
+        <StackPanel Margin="6,6,16,6">
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+                <TextBlock x:Name="Status" Classes="dim" Text="Saúde, desgaste e temperatura de cada disco" VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button x:Name="BtnFull" Content="LEITURA COMPLETA (PEDE SENHA)" Click="Full_Click"
+                            ToolTip.Tip="Roda o smartctl como root para ler desgaste do SSD, total gravado e contadores de erro."/>
+                    <Button x:Name="BtnRefresh" Content="ATUALIZAR" Click="Refresh_Click"/>
+                </StackPanel>
+            </Grid>
+            <ItemsControl x:Name="Cards"/>
+            <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"
+                       Text="Os dados vêm do S.M.A.R.T. dos discos (pelo udisks e, na leitura completa, pelo smartctl). Pendrives e alguns HDs externos não informam saúde. O veredito é uma estimativa: faça backup de qualquer disco com aviso, não só dos críticos."/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -13,6 +13,8 @@ public static class Report
             AppVersion = typeof(Report).Assembly.GetName().Version?.ToString(3) ?? "",
             System = info.Select(ReportBuilder.ToNode).OfType<ReportNode>().ToList(),
         };
+        var smart = DisksPage.LastSmart;
+        data.Disks.AddRange((await Task.Run(() => DiskHealth.Read(smart))).Select(ReportDisk.From));
         var gpus = await Task.Run(GpuInfoCollector.Collect);
         data.Gpus.AddRange(gpus.Select(g => new ReportGpu(g.Name, g.Subtitle, g.Sections.Select(ReportBuilder.ToNode).OfType<ReportNode>().ToList())));
         var sensors = SensorMonitor.Shared;

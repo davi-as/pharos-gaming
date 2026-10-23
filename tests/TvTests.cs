@@ -41,8 +41,9 @@ public class TvWindowTests
         w.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         var tiles = w.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("tile")).ToList();
-        var shot = tiles.First(b => b.IsEffectivelyEnabled && ((b.Content as StackPanel)?.Children[0] as TextBlock)?.Text == "CAPTURA");
-        var bp = tiles.First(b => ((b.Content as StackPanel)?.Children[0] as TextBlock)?.Text == "HYDRA");
+        Button Tile(string label) => tiles.First(b => b.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == label));
+        var shot = Tile("CAPTURA");
+        var bp = Tile("HYDRA");
         var close = w.FindControl<Button>("BtnClose")!;
         shot.Focus();
         w.KeyPress(Key.Right, RawInputModifiers.None, PhysicalKey.ArrowRight, null);

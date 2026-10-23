@@ -3,6 +3,9 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Media.Transformation;
+using Avalonia.Animation;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 
@@ -26,21 +29,30 @@ public partial class TvWindow : Window
     private string? _sink;
     private int? _volume;
     private bool _screensOff, _padConfirm;
-    private readonly Dictionary<string, (Button Button, TextBlock Value, TextBlock Hint)> _tile = new();
+    private readonly Dictionary<string, (Button Button, TextBlock Value, TextBlock Hint, Border Icon)> _tile = new();
+    private IBrush? _floorGradient;
+
+    private static readonly Dictionary<string, string> Icons = new()
+    {
+        ["limit"] = "timer-outline", ["fg"] = "animation-outline", ["fglight"] = "feather", ["overlay"] = "eye-outline",
+        ["audio"] = "speaker", ["voldown"] = "volume-minus", ["volup"] = "volume-plus", ["power"] = "lightning-bolt-outline",
+        ["screens"] = "monitor-multiple", ["pad"] = "bluetooth-off", ["shot"] = "camera-outline", ["bp"] = "play-circle-outline",
+    };
     private readonly List<(TextBlock Label, TextBlock Value)> _stats = new();
 
     public TvWindow()
     {
         InitializeComponent();
         string[] names = { "limit", "fg", "fglight", "overlay", "audio", "voldown", "volup", "power", "screens", "pad", "shot", "bp" };
-        string[] labels = { "LIMITE", "GERAÇÃO", "QUALIDADE", "OVERLAY", "SAÍDA DE SOM", "VOLUME −", "VOLUME +",
-                            "ENERGIA", "OUTRAS TELAS", "CONTROLE", "CAPTURA", "HYDRA" };
+        string[] labels = { "LIMITE", "GERAÇÃO", "QUALIDADE", "OVERLAY", "SOM", "VOLUME −", "VOLUME +",
+                            "ENERGIA", "TELAS", "CONTROLE", "CAPTURA", "HYDRA" };
         for (int i = 0; i < names.Length; i++) AddTile(names[i], labels[i], i / 4, i % 4);
         for (int r = 0; r < 5; r++) AddStat(r);
         // o controle só manda aqui com a janela em foco: com o jogo na frente, os botões são do jogo
         _pad = new Gamepad(nav => Dispatcher.UIThread.Post(() => { if (IsActive) Navigate(nav); }));
         KeyDown += OnKey;
-        Opened += (_, _) => _tile["limit"].Button.Focus();
+        _floorGradient = FloorBar.Background;
+        Opened += (_, _) => { Intro(); _tile["limit"].Button.Focus(); };
         Closed += (_, _) => { _pad.Dispose(); Live.Tick -= Tick; };
         Live.Start();
         Live.Tick += Tick;
@@ -49,26 +61,65 @@ public partial class TvWindow : Window
         Tick();
     }
 
+    private IBrush Br(string key) => (IBrush)this.FindResource(key)!;
+
     private void AddTile(string name, string label, int row, int col)
     {
-        var v = new TextBlock { Classes = { "tvbig" }, FontSize = 22, Text = "—", TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis };
-        var h = new TextBlock { Classes = { "tv" }, FontSize = 16, TextWrapping = Avalonia.Media.TextWrapping.Wrap };
-        var panel = new StackPanel { Spacing = 6 };
-        panel.Children.Add(new TextBlock { Classes = { "tvlabel" }, FontSize = 13, Text = label });
+        var icon = new Border { Classes = { "ico" }, Child = new PathIcon { Data = (Geometry)this.FindResource("ic-" + Icons[name])!, Width = 22, Height = 22, Foreground = Br("TvInk") } };
+        var v = new TextBlock { Classes = { "serif" }, FontSize = 22, Text = "—", TextTrimming = TextTrimming.CharacterEllipsis, Margin = new(0, 10, 0, 0) };
+        var h = new TextBlock { FontSize = 15, Foreground = Br("TvSoft"), TextTrimming = TextTrimming.CharacterEllipsis, Margin = new(0, 3, 0, 0) };
+        var panel = new StackPanel();
+        var top = new Grid { ColumnDefinitions = new("Auto,*") };
+        top.Children.Add(icon);
+        var cap = new TextBlock { Classes = { "cap" }, FontSize = 12, Text = label, VerticalAlignment = VerticalAlignment.Center, Margin = new(12, 0, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis };
+        Grid.SetColumn(cap, 1);
+        top.Children.Add(cap);
+        panel.Children.Add(top);
         panel.Children.Add(v);
         panel.Children.Add(h);
-        var b = new Button { Classes = { "tile" }, Content = panel, MinHeight = 118 };
+        var b = new Button { Classes = { "tile" }, Content = panel, Height = 138 };
         b.Click += (_, _) => Activate(name);
         Grid.SetRow(b, row);
         Grid.SetColumn(b, col);
         Tiles.Children.Add(b);
-        _tile[name] = (b, v, h);
+        _tile[name] = (b, v, h, icon);
+    }
+
+    /// <summary>Entrada: o Φ sobe, as letras "haros" entram uma a uma (como no login do Pharos), os botões em cascata.</summary>
+    private void Intro()
+    {
+        static void Prepare(Control c, double dy)
+        {
+            c.Opacity = 0;
+            c.RenderTransform = TransformOperations.Parse($"translateY({dy}px)");
+            c.Transitions ??= new Transitions();
+            c.Transitions.Add(new DoubleTransition { Property = OpacityProperty, Duration = TimeSpan.FromMilliseconds(420), Easing = new Avalonia.Animation.Easings.CubicEaseOut() });
+            c.Transitions.Add(new TransformOperationsTransition { Property = RenderTransformProperty, Duration = TimeSpan.FromMilliseconds(520), Easing = new Avalonia.Animation.Easings.CubicEaseOut() });
+        }
+        static void Show(Control c, int ms) => DispatcherTimer.RunOnce(() => { c.Opacity = 1; c.RenderTransform = TransformOperations.Parse("translateY(0px)"); }, TimeSpan.FromMilliseconds(ms));
+
+        Word.Children.Clear();
+        var letters = "haros".Select(ch => new TextBlock { Text = ch.ToString(), FontSize = 50, FontWeight = FontWeight.Medium, Foreground = Br("TvInk"), Margin = new(0, 0, -0.5, -6) }).ToList();
+        foreach (var l in letters) Word.Children.Add(l);
+        Prepare(Root, 0);
+        Prepare(Phi, 18);
+        foreach (var l in letters) Prepare(l, 12);
+        var tiles = Tiles.Children.OfType<Button>().ToList();
+        foreach (var t in tiles) Prepare(t, 24);
+        Prepare(SessionCard, 24);
+        Show(Root, 10);
+        Show(Phi, 60);
+        for (int i = 0; i < letters.Count; i++) Show(letters[i], 380 + 70 * i);
+        Show(SessionCard, 160);
+        for (int i = 0; i < tiles.Count; i++) Show(tiles[i], 220 + 35 * i);
+        // depois da entrada, o botão volta ao transform do estilo (escala no foco)
+        DispatcherTimer.RunOnce(() => { foreach (var t in tiles) t.ClearValue(RenderTransformProperty); }, TimeSpan.FromMilliseconds(220 + 35 * tiles.Count + 560));
     }
 
     private void AddStat(int row)
     {
-        var l = new TextBlock { Classes = { "tv" } };
-        var v = new TextBlock { Classes = { "tv" }, Foreground = App.Brush("Fg"), HorizontalAlignment = HorizontalAlignment.Right };
+        var l = new TextBlock { Classes = { "soft" }, FontSize = 17, Margin = new(0, 3) };
+        var v = new TextBlock { FontSize = 17, FontWeight = FontWeight.Medium, Foreground = Br("TvInk"), HorizontalAlignment = HorizontalAlignment.Right, Margin = new(0, 3) };
         Grid.SetRow(l, row);
         Grid.SetRow(v, row);
         Grid.SetColumn(v, 1);
@@ -97,7 +148,7 @@ public partial class TvWindow : Window
             var bats = await Task.Run(() => QuickActions.PadBatteries());
             BatteryRow.IsVisible = bats.Count > 0;
             Battery.Text = string.Join(" · ", bats.Select(QuickActions.Text));
-            Battery.Foreground = App.Brush(bats.Any(QuickActions.Low) ? "Bad" : "Muted");
+            Battery.Foreground = Br(bats.Any(QuickActions.Low) ? "TvBad" : "TvSoft");
         }
         if (_ticks % 8 == 1) _ = ReadAudio(); // alguém pode mudar o som por fora
         ShowSession();
@@ -110,12 +161,13 @@ public partial class TvWindow : Window
         Game.Text = _game?.Name ?? "Nenhum jogo aberto";
         Fps.Text = f != null ? $"{f.Fps:0}" : "—";
         int mult = _game != null ? _s.FgApplied.GetValueOrDefault(_game.Key, 1) : 1; // a que está valendo agora
-        Ft.Text = f == null ? "" : mult >= 2 ? $"FPS reais · {f.Fps * mult:0} na tela ({mult}×)" : $"FPS · {f.FrameTimeMs:0.0} ms";
+        Ft.Text = f == null ? "" : mult >= 2 ? $"reais · {f.Fps * mult:0} na tela ({mult}×)" : $"{f.FrameTimeMs:0.0} ms por quadro";
 
         var floor = f != null ? Live.SessionFloor : null;
         double above = floor != null ? 100 - floor.BelowPct : 0;
         FloorBar.Width = Math.Max(0, (FloorBar.Parent as Control)?.Bounds.Width * above / 100 ?? 0);
-        FloorBar.Background = App.Brush(above >= 99.5 ? "Ok" : "Warn");
+        FloorBar.Background = above >= 99.5 || floor == null ? _floorGradient : Br("TvWarn");
+        FloorPct.Text = floor == null ? "" : $"{above:0.#}%";
         var start = Live.SessionStart;
         Stat(0, "Acima de 60", floor == null ? "—" : $"{above:0.#}% do tempo" + (start is DateTime t ? $" · {(DateTime.Now - t).TotalMinutes:0} min" : ""));
         Stat(1, "Quedas", floor == null ? "—" : floor.Drops == 0 ? "nenhuma" : $"{floor.Drops}, a pior em {floor.WorstFps:0}");
@@ -130,7 +182,10 @@ public partial class TvWindow : Window
         Tip.Text = _game == null ? "" : floor != null && floor.BelowPct >= 0.5
             ? $"Abaixo de 60 em {floor.BelowPct:0.#}% do tempo até agora. " + (tip != null && !tip.Good ? tip.Text : "Se continuar, baixe um degrau nos gráficos ou ligue upscaling (FSR, XeSS ou DLSS) em Qualidade.")
             : tip != null ? $"{tip.Title}. {tip.Text}" : "Segurando 60. A sugestão do jogo aparece aqui quando houver o que ajustar.";
-        TipBox.BorderBrush = App.Brush(floor != null && floor.BelowPct >= 0.5 || tip is { Good: false } ? "Warn" : "Ok");
+        bool warn = floor != null && floor.BelowPct >= 0.5 || tip is { Good: false };
+        TipBox.BorderBrush = Br(warn ? "TvWarn" : "TvEdge");
+        TipIcon.Data = (Geometry)this.FindResource(warn ? "ic-alert-circle" : "ic-check-circle")!;
+        TipIcon.Foreground = Br(warn ? "TvWarn" : "TvOk");
         DrawGraph(f != null ? Live.RecentFrameTimes : Array.Empty<double>());
     }
 
@@ -146,10 +201,22 @@ public partial class TvWindow : Window
         double Y(double v) => h - Math.Min(v, top) / top * h;
         Graph.Children.Add(new Avalonia.Controls.Shapes.Line
         {
-            StartPoint = new Point(0, Y(target)), EndPoint = new Point(w, Y(target)), Stroke = App.Brush("Line"), StrokeThickness = 2,
+            StartPoint = new Point(0, Y(target)), EndPoint = new Point(w, Y(target)), Stroke = Br("TvEdge"), StrokeThickness = 1.5,
+            StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 4, 4 },
         });
         var pts = ft.Select((v, i) => new Point(i * w / Math.Max(1, ft.Count - 1), Y(v))).ToList();
-        Graph.Children.Add(new Avalonia.Controls.Shapes.Polyline { Points = pts, Stroke = App.Brush("Flame"), StrokeThickness = 2.5 });
+        // área com degradê sob a linha
+        var area = new List<Point>(pts) { new(w, h), new(0, h) };
+        Graph.Children.Add(new Avalonia.Controls.Shapes.Polygon
+        {
+            Points = area,
+            Fill = new LinearGradientBrush
+            {
+                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative), EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+                GradientStops = { new GradientStop(Color.Parse("#556F98D8"), 0), new GradientStop(Color.Parse("#006F98D8"), 1) },
+            },
+        });
+        Graph.Children.Add(new Avalonia.Controls.Shapes.Polyline { Points = pts, Stroke = Br("TvLapis"), StrokeThickness = 2.5, StrokeJoin = PenLineJoin.Round });
     }
 
     private double Limit() => _game != null && _s.FpsLimits.TryGetValue(_game.Key, out var l) ? l : 0;
@@ -158,36 +225,37 @@ public partial class TvWindow : Window
     private void ShowTiles()
     {
         bool has = _game != null;
-        void T(string n, string value, string hint, bool enabled = true)
+        void T(string n, string value, string hint, bool enabled = true, bool on = false)
         {
             var t = _tile[n];
             t.Value.Text = value;
             t.Hint.Text = hint;
             t.Button.IsEnabled = enabled;
+            t.Icon.Classes.Set("on", on && enabled); // ligado: o ícone acende em lápis-lazúli
         }
         double lim = Limit();
         int mult = has ? _s.FgApplied.GetValueOrDefault(_game!.Key, 1) : 1; // valendo agora
         int want = has ? Lsfg.Multiplier(_s, _game!.Key) : 1;             // pedida (vale ao reabrir)
         T("limit", !has ? "—" : lim > 0 ? $"{lim:0.##}" : "Sem limite",
-          !has ? "abra um jogo" : Math.Abs(lim * mult - ScreenHz) < 0.6 ? "igual à TV" : "A troca o valor", has);
+          !has ? "abra um jogo" : Math.Abs(lim * mult - ScreenHz) < 0.6 ? "igual à TV" : "A troca o valor", has, lim > 0);
         string? fgMissing = Lsfg.Missing();
         T("fg", !has ? "—" : want >= 2 ? $"{want}× ligada" : "Desligada",
-          fgMissing ?? (want != mult ? "vale quando o jogo abrir de novo"
-                        : want >= 2 ? $"{ScreenHz / want:0.##} reais × {want}" : "2× = metade reais, mais atraso"), has && fgMissing == null);
+          fgMissing ?? (want != mult ? "vale ao reabrir o jogo"
+                        : want >= 2 ? $"{ScreenHz / want:0.##} reais × {want}" : "2× = metade reais"), has && fgMissing == null, want >= 2);
         bool limited = has && _s.FpsLimits.ContainsKey(_game!.Key);
         bool hidden = has && (_s.OverlayHidden.TryGetValue(_game!.Key, out bool h) ? h : ConsoleSetup.MangoHidden(Sys.Read(MangoHudConfig.FilePath) ?? ""));
-        T("overlay", !has ? "—" : hidden ? "Escondido" : "Visível", has && !limited ? "precisa de um limite salvo" : "o FPS chega ao Pharos igual", limited);
+        T("overlay", !has ? "—" : hidden ? "Escondido" : "Visível", has && !limited ? "precisa de limite" : "o FPS chega ao Pharos igual", limited, !hidden);
         T("power", _power == "performance" ? "Desempenho" : _power == null ? "—" : "Equilibrado",
-          _power == null ? "sem power-profiles-daemon" : "CPU sem economia", _power != null);
+          _power == null ? "sem power-profiles-daemon" : "CPU sem economia", _power != null, _power == "performance");
         bool light = has && _s.FgLight.Contains(_game!.Key);
         T("fglight", !has ? "—" : light ? "Leve" : "Normal", want < 2 ? "com a geração ligada" : light ? "mais rápida, menos nítida" : "melhor imagem",
-          has && want >= 2 && fgMissing == null);
-        T("audio", _sink != null ? QuickActions.Short(_sink) : "—", "A troca a saída", _sink != null);
+          has && want >= 2 && fgMissing == null, light);
+        T("audio", _sink != null ? QuickActions.Short(_sink) : "—", "A troca a saída", _sink != null, true);
         T("voldown", _volume is int vd ? $"{vd}%" : "—", "abaixa 5%", _volume != null);
         T("volup", _volume is int vu ? $"{vu}%" : "—", "aumenta 5%", _volume != null);
-        T("screens", _screensOff ? "Desligadas" : "Ligadas", _screensOff ? "A liga de novo" : "deixa só a tela do jogo");
-        T("pad", _padConfirm ? "Confirmar" : "Desligar", _padConfirm ? "A de novo desliga e fecha o menu" : "desconecta o Bluetooth");
-        T("shot", "Tirar foto", "fecha o menu e captura o jogo");
+        T("screens", _screensOff ? "Desligadas" : "Ligadas", _screensOff ? "A liga de novo" : "deixa só a tela do jogo", on: _screensOff);
+        T("pad", _padConfirm ? "Confirmar" : "Desligar", _padConfirm ? "A de novo desliga" : "desconecta o Bluetooth");
+        T("shot", "Tirar foto", "fecha o menu e captura");
         T("bp", "Big Picture", "o jogo continua aberto");
     }
 

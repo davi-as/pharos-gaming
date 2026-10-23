@@ -204,19 +204,34 @@
                     </Grid>
                 </Border>
 
-                <!-- ajustes -->
-                <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*">
-                    <TextBlock Classes="cap" Text="AJUSTES RÁPIDOS" Margin="8,0,0,6"/>
-                    <Grid x:Name="Tiles" Grid.Row="1" ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto"/>
-                    <Border x:Name="TipBox" Grid.Row="2" CornerRadius="22" Background="{StaticResource TvGlass}" BorderThickness="1.5"
-                            Padding="20,14" Margin="7,10,7,0" VerticalAlignment="Top">
-                        <Border.Transitions><Transitions><BrushTransition Property="BorderBrush" Duration="0:0:0.4"/></Transitions></Border.Transitions>
-                        <Grid ColumnDefinitions="Auto,*">
-                            <PathIcon x:Name="TipIcon" Data="{StaticResource ic-check-circle}" Width="26" Height="26" VerticalAlignment="Top" Margin="0,1,14,0"/>
-                            <TextBlock x:Name="Tip" Grid.Column="1" Classes="soft" FontSize="17" TextWrapping="Wrap" LineHeight="24" MaxLines="3"/>
-                        </Grid>
-                    </Border>
-                </Grid>
+                <!-- ajustes em seções: o que é do jogo, o que é do PC e os atalhos -->
+                <StackPanel Grid.Column="2" Spacing="4">
+                    <Grid ColumnDefinitions="Auto,*" Margin="8,0,8,2">
+                        <TextBlock Classes="cap" Text="JOGO" VerticalAlignment="Center"/>
+                        <Border x:Name="GameChip" Grid.Column="1" HorizontalAlignment="Left" Margin="12,0,0,0" CornerRadius="999"
+                                Background="#14FFFFFF" Padding="10,3">
+                            <Border.Transitions><Transitions><DoubleTransition Property="Opacity" Duration="0:0:0.3"/></Transitions></Border.Transitions>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <PathIcon Data="{StaticResource ic-gamepad-variant-outline}" Width="14" Height="14" Foreground="{StaticResource TvFaint}"/>
+                                <TextBlock Text="com um jogo aberto" FontSize="12.5" Foreground="{StaticResource TvFaint}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                    <Grid x:Name="GameTiles" ColumnDefinitions="*,*,*,*"/>
+                    <TextBlock Classes="cap" Text="SISTEMA" Margin="8,12,0,2"/>
+                    <Grid x:Name="SystemTiles" ColumnDefinitions="*,*,*,*"/>
+                    <TextBlock Classes="cap" Text="ATALHOS" Margin="8,12,0,2"/>
+                    <Grid x:Name="ShortcutTiles" ColumnDefinitions="*,*,*,*">
+                        <Border x:Name="TipBox" Grid.Column="2" Grid.ColumnSpan="2" CornerRadius="22" Background="{StaticResource TvGlass}" BorderThickness="1.5"
+                                Padding="20,14" Margin="7" VerticalAlignment="Stretch">
+                            <Border.Transitions><Transitions><BrushTransition Property="BorderBrush" Duration="0:0:0.4"/></Transitions></Border.Transitions>
+                            <Grid ColumnDefinitions="Auto,*">
+                                <PathIcon x:Name="TipIcon" Data="{StaticResource ic-check-circle}" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock x:Name="Tip" Grid.Column="1" Classes="soft" FontSize="15.5" TextWrapping="Wrap" LineHeight="22" MaxLines="4" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </StackPanel>
             </Grid>
 
             <!-- rodapé: os botões do controle -->

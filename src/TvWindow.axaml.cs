@@ -43,16 +43,18 @@ public partial class TvWindow : Window
     public TvWindow()
     {
         InitializeComponent();
-        // só ações; o estado do jogo (limite, geração, overlay) fica no painel da sessão
-        string[] names = { "audio", "power", "screens", "pad", "shot", "bp" };
-        string[] labels = { "SOM", "ENERGIA", "TELAS", "CONTROLE", "CAPTURA", "HYDRA" };
-        for (int i = 0; i < names.Length; i++) AddTile(names[i], labels[i], i / 3, i % 3);
+        // seções: o que precisa do jogo aberto, o que é do PC e os atalhos (com a sugestão ao lado)
+        (string, string)[] game = { ("limit", "LIMITE"), ("fg", "GERAÇÃO"), ("fglight", "QUALIDADE"), ("overlay", "OVERLAY") };
+        (string, string)[] system = { ("audio", "SOM"), ("power", "ENERGIA"), ("screens", "TELAS"), ("pad", "CONTROLE") };
+        (string, string)[] shortcuts = { ("shot", "CAPTURA"), ("bp", "HYDRA") };
+        foreach (var (grid, items) in new[] { (GameTiles, game), (SystemTiles, system), (ShortcutTiles, shortcuts) })
+            for (int i = 0; i < items.Length; i++) AddTile(items[i].Item1, items[i].Item2, grid, i);
         for (int r = 0; r < 8; r++) AddStat(r);
         // o controle só manda aqui com a janela em foco: com o jogo na frente, os botões são do jogo
         _pad = new Gamepad(nav => Dispatcher.UIThread.Post(() => { if (IsActive) Navigate(nav); }));
         KeyDown += OnKey;
         _floorGradient = FloorBar.Background;
-        Opened += (_, _) => { Intro(); _tile["audio"].Button.Focus(); };
+        Opened += (_, _) => { Intro(); FirstEnabled()?.Focus(); };
         Closed += (_, _) => { _pad.Dispose(); Live.Tick -= Tick; };
         Live.Start();
         Live.Tick += Tick;
@@ -63,7 +65,9 @@ public partial class TvWindow : Window
 
     private IBrush Br(string key) => (IBrush)this.FindResource(key)!;
 
-    private void AddTile(string name, string label, int row, int col)
+    private Button? FirstEnabled() => _tile.Values.Select(t => t.Button).FirstOrDefault(b => b.IsEffectivelyEnabled);
+
+    private void AddTile(string name, string label, Grid grid, int col)
     {
         var icon = new Border { Classes = { "ico" }, Child = new PathIcon { Data = (Geometry)this.FindResource("ic-" + Icons[name])!, Width = 22, Height = 22, Foreground = Br("TvInk") } };
         var v = new TextBlock { Classes = { "serif" }, FontSize = 22, Text = "—", TextTrimming = TextTrimming.CharacterEllipsis, Margin = new(0, 10, 0, 0) };
@@ -77,11 +81,10 @@ public partial class TvWindow : Window
         panel.Children.Add(top);
         panel.Children.Add(v);
         panel.Children.Add(h);
-        var b = new Button { Classes = { "tile" }, Content = panel, Height = 138 };
+        var b = new Button { Classes = { "tile" }, Content = panel, Height = 140 };
         b.Click += (_, _) => Activate(name);
-        Grid.SetRow(b, row);
         Grid.SetColumn(b, col);
-        Tiles.Children.Add(b);
+        grid.Children.Add(b);
         _tile[name] = (b, v, h, icon);
     }
 
@@ -104,14 +107,15 @@ public partial class TvWindow : Window
         Prepare(Root, 0);
         Prepare(Phi, 18);
         foreach (var l in letters) Prepare(l, 12);
-        var tiles = Tiles.Children.OfType<Button>().ToList();
+        var tiles = _tile.Values.Select(t => t.Button).ToList();
         foreach (var t in tiles) t.Opacity = 0; // a transição de opacidade vem do estilo do botão
         Prepare(SessionCard, 24);
         Show(Root, 10);
         Show(Phi, 60);
         for (int i = 0; i < letters.Count; i++) Show(letters[i], 380 + 70 * i);
         Show(SessionCard, 160);
-        for (int i = 0; i < tiles.Count; i++) { var t = tiles[i]; DispatcherTimer.RunOnce(() => t.Opacity = 1, TimeSpan.FromMilliseconds(220 + 30 * i)); }
+        // no fim da entrada a opacidade volta ao estilo: 1, ou 0,42 nos que precisam do jogo aberto (tons mais fracos)
+        for (int i = 0; i < tiles.Count; i++) { var t = tiles[i]; DispatcherTimer.RunOnce(() => t.ClearValue(OpacityProperty), TimeSpan.FromMilliseconds(220 + 30 * i)); }
     }
 
     private void AddStat(int row)
@@ -225,6 +229,24 @@ public partial class TvWindow : Window
         Graph.Children.Add(new Avalonia.Controls.Shapes.Polyline { Points = pts, Stroke = Br("TvLapis"), StrokeThickness = 2.5, StrokeJoin = PenLineJoin.Round });
     }
 
+    /// <summary>Os valores do botão de limite, na ordem em que o A anda (com geração ligada, o limite é dos quadros reais).</summary>
+    private List<double> LimitSteps()
+    {
+        int mult = _game != null ? _s.FgApplied.GetValueOrDefault(_game.Key, 1) : 1;
+        return FrameLimiter.Candidates(ScreenHz, _screen?.Vrr == true).Select(v => Math.Round(v / mult, 2)).Append(0).Distinct().ToList();
+    }
+
+    private double NextLimit()
+    {
+        var v = LimitSteps();
+        int i = v.FindIndex(x => Math.Abs(x - Limit()) < 0.01);
+        return v[(i + 1) % v.Count];
+    }
+
+    private string NextLimitText() => NextLimit() is double n && n > 0 ? $"{n:0.##} FPS" : "sem limite";
+
+    private double ScreenHz => _screen?.Hz ?? 60;
+
     private double Limit() => _game != null && _s.FpsLimits.TryGetValue(_game.Key, out var l) ? l : 0;
 
     private void ShowTiles()
@@ -237,6 +259,22 @@ public partial class TvWindow : Window
             t.Button.IsEnabled = enabled;
             t.Icon.Classes.Set("on", on && enabled); // ligado: o ícone acende em lápis-lazúli
         }
+        bool has = _game != null;
+        GameChip.Opacity = has ? 0 : 1; // sem jogo: a seção fica apagada e a etiqueta diz por quê
+        double lim = Limit();
+        int mult = has ? _s.FgApplied.GetValueOrDefault(_game!.Key, 1) : 1; // valendo agora
+        int want = has ? Lsfg.Multiplier(_s, _game!.Key) : 1;             // pedida (vale ao reabrir)
+        string? fgMissing = Lsfg.Missing();
+        bool limited = has && _s.FpsLimits.ContainsKey(_game!.Key);
+        bool hidden = has && (_s.OverlayHidden.TryGetValue(_game!.Key, out bool h) ? h : ConsoleSetup.MangoHidden(Sys.Read(MangoHudConfig.FilePath) ?? ""));
+        bool light = has && _s.FgLight.Contains(_game!.Key);
+        T("limit", "Mudar limite", has ? $"próximo: {NextLimitText()}" : "próximo valor da TV", has, lim > 0);
+        T("fg", want >= 2 ? (Lsfg.Choices(ScreenHz).Max() > want ? $"Usar {want + 1}×" : "Desligar") : "Ligar 2×",
+          fgMissing ?? (want != mult ? "vale ao reabrir o jogo" : want >= 2 ? $"{ScreenHz / want:0.##} reais × {want}" : "2× = metade reais"),
+          has && fgMissing == null, want >= 2);
+        T("fglight", light ? "Modo normal" : "Modo leve", has && want < 2 ? "com a geração ligada" : light ? "imagem melhor" : "mais rápido, menos nítido",
+          has && want >= 2 && fgMissing == null, light);
+        T("overlay", hidden ? "Mostrar FPS" : "Esconder FPS", has && !limited ? "precisa de limite" : "o FPS chega ao Pharos igual", limited, has && !hidden);
         T("power", _power == "performance" ? "Desempenho" : _power == null ? "—" : "Equilibrado",
           _power == null ? "sem power-profiles-daemon" : _power == "performance" ? "trocar para equilibrado" : "trocar para desempenho", _power != null, _power == "performance");
         T("audio", _sink != null ? QuickActions.Short(_sink) : "—", "trocar a saída", _sink != null, true);
@@ -268,6 +306,24 @@ public partial class TvWindow : Window
         {
             switch (name)
             {
+                case "limit" when g != null:
+                    FrameLimiter.Set(_s, g.Key, NextLimit());
+                    break;
+                case "fg" when g != null:
+                    // desligada → 2× → 3× (se der ≥ 30 reais na tela) → desligada; ligar/desligar vale ao reabrir, trocar vale já
+                    var steps = new List<int> { 1 }.Concat(Lsfg.Choices(ScreenHz)).ToList();
+                    int cur = Lsfg.Multiplier(_s, g.Key);
+                    Lsfg.Set(_s, g.Key, steps[(steps.IndexOf(cur) + 1) % steps.Count], ScreenHz, running: true);
+                    break;
+                case "fglight" when g != null:
+                    Lsfg.SetLight(_s, g.Key, !_s.FgLight.Contains(g.Key), ScreenHz);
+                    break;
+                case "overlay" when g != null:
+                    bool hid = _s.OverlayHidden.TryGetValue(g.Key, out bool hv) ? hv : ConsoleSetup.MangoHidden(Sys.Read(MangoHudConfig.FilePath) ?? "");
+                    _s.OverlayHidden[g.Key] = !hid;
+                    _s.Save();
+                    FrameLimiter.Write(_s, g.Key); // o MangoHud relê; o log volta pelo control= novo
+                    break;
                 case "audio":
                     await QuickActions.NextSink();
                     await ReadAudio();

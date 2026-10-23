@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:PharosGaming"
+             x:Class="PharosGaming.AppsPage">
+    <Grid ColumnDefinitions="*,14,360" Margin="6">
+        <ScrollViewer>
+            <StackPanel Spacing="10" Margin="0,0,10,0">
+                <TextBlock x:Name="Sub" Classes="dim" Text="Programas essenciais depois de formatar, instalados dos repositórios oficiais"/>
+                <ItemsControl x:Name="List">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="local:InstallableApp">
+                            <Border Classes="card" Margin="0,0,0,8" Padding="14,10">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <CheckBox IsChecked="{Binding Selected}" IsEnabled="{Binding CanSelect}" VerticalAlignment="Center"/>
+                                    <StackPanel Grid.Column="1" Margin="6,0">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+                                        <TextBlock Text="{Binding Description}" Classes="dim" FontSize="12"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="2" Text="{Binding Status}" Classes="dim" FontSize="12" VerticalAlignment="Center" MaxWidth="220"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+        <StackPanel Grid.Column="2" Spacing="10">
+            <Border Classes="card" Margin="0">
+                <StackPanel Spacing="8">
+                    <TextBlock x:Name="Manager" Classes="label"/>
+                    <Button x:Name="BtnInstall" Classes="accent" Content="INSTALAR SELECIONADOS" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="Install_Click"/>
+                    <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"
+                               Text="Os pacotes da distro são instalados juntos, com uma senha só. Os do Flathub ficam só para o seu usuário e não pedem senha. Nada é baixado de sites de terceiros."/>
+                </StackPanel>
+            </Border>
+            <Border Classes="card" Margin="0">
+                <StackPanel>
+                    <TextBlock Classes="label" Text="REGISTRO"/>
+                    <SelectableTextBlock x:Name="Log" FontFamily="monospace" FontSize="11" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Grid>
+</UserControl>

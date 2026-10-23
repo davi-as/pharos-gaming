@@ -8,7 +8,7 @@
                 <Button x:Name="BtnRefresh" Grid.Column="1" Content="ATUALIZAR" Click="Refresh_Click"/>
             </Grid>
             <ItemsControl x:Name="Cards"/>
-            <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"
+            <TextBlock Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap"
                        Text="Os dados vêm do kernel (/sys/class/power_supply) e do power-profiles-daemon. Alguns notebooks não informam ciclos de carga ou a capacidade de projeto. O consumo mostrado vem dos sensores de CPU, GPU e SSD, não da fonte (PSU) do PC."/>
         </StackPanel>
     </ScrollViewer>

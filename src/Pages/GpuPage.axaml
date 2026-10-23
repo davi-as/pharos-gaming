@@ -11,10 +11,10 @@
         <Border Grid.Row="1" Classes="card" Margin="0,0,0,12" Padding="22,18">
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel>
-                    <TextBlock x:Name="GpuName" FontSize="24" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+                    <TextBlock x:Name="GpuName" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource Fg}"/>
                     <TextBlock x:Name="GpuSubtitle" Classes="dim" Margin="0,6,0,0"/>
                 </StackPanel>
-                <TextBlock x:Name="GpuVendor" Grid.Column="1" VerticalAlignment="Center" FontSize="30" FontWeight="Black" Foreground="{StaticResource Faint}"/>
+                <TextBlock x:Name="GpuVendor" Grid.Column="1" VerticalAlignment="Center" FontSize="30" FontWeight="Black" Foreground="{DynamicResource Faint}"/>
             </Grid>
         </Border>
         <Grid Grid.Row="2" ColumnDefinitions="*,14,340">
@@ -31,8 +31,8 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="x:Object">
                                 <Grid ColumnDefinitions="*,Auto" Margin="0,4">
-                                    <TextBlock Text="{Binding Key}" Foreground="{StaticResource Muted}" x:CompileBindings="False"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding Value}" FontFamily="monospace" Foreground="{StaticResource Fg}" x:CompileBindings="False"/>
+                                    <TextBlock Text="{Binding Key}" Foreground="{DynamicResource Muted}" x:CompileBindings="False"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Value}" FontFamily="{StaticResource Sans}" Foreground="{DynamicResource Fg}" x:CompileBindings="False"/>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -41,13 +41,13 @@
                         <ItemsControl x:Name="LiveRows">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:SensorRow">
-                                    <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,6">
+                                    <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,6">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <TextBlock TextTrimming="CharacterEllipsis">
-                                                <Run Text="{Binding Category, Mode=OneWay}" Foreground="{StaticResource Faint}"/>
-                                                <Run Text="{Binding Name, Mode=OneWay}" Foreground="{StaticResource Muted}"/>
+                                                <Run Text="{Binding Category, Mode=OneWay}" Foreground="{DynamicResource Faint}"/>
+                                                <Run Text="{Binding Name, Mode=OneWay}" Foreground="{DynamicResource Muted}"/>
                                             </TextBlock>
-                                            <TextBlock Grid.Column="1" Text="{Binding Value}" FontFamily="monospace" Foreground="{StaticResource Fg}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Value}" FontFamily="{StaticResource Sans}" Foreground="{DynamicResource Fg}"/>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>

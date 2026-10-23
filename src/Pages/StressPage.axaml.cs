@@ -36,7 +36,6 @@ public partial class StressPage : UserControl
 
     private bool Running => _stress.Running || _gpuOn;
     private static string? Tag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
-    private static IBrush Res(string key) => (IBrush)Application.Current!.Resources[key]!;
 
     private void Options_Changed(object? sender, RoutedEventArgs e)
     {
@@ -130,9 +129,9 @@ public partial class StressPage : UserControl
     private void SetStatus(string text, bool alert)
     {
         StatusText.Text = text;
-        StatusCard.Background = alert ? Res("Fg") : Res("Card");
-        StatusText.Foreground = alert ? Res("Bg") : Res("Fg");
-        StatusLabel.Foreground = alert ? Res("Bg") : Res("Muted");
+        StatusCard.Background = alert ? App.Brush("BadFill") : App.Brush("Card");
+        StatusText.Foreground = alert ? App.Brush("OnFlame") : App.Brush("Fg");
+        StatusLabel.Foreground = alert ? App.Brush("OnFlame") : App.Brush("Muted");
     }
 
     private void AddLog(string msg)
@@ -194,8 +193,8 @@ public partial class StressPage : UserControl
         double Y(double v) => top + plotH * (1 - (Math.Clamp(v, yMin, yMax) - yMin) / (yMax - yMin));
         for (double v = yMin; v <= yMax; v += 20)
         {
-            Chart.Children.Add(new Line { StartPoint = new(left, Y(v)), EndPoint = new(w, Y(v)), Stroke = Res("Line") });
-            var lbl = new TextBlock { Text = $"{v:0}°", FontSize = 10, Foreground = Res("Faint"), FontFamily = new FontFamily("monospace") };
+            Chart.Children.Add(new Line { StartPoint = new(left, Y(v)), EndPoint = new(w, Y(v)), Stroke = App.Brush("Line") });
+            var lbl = new TextBlock { Text = $"{v:0}°", FontSize = 10, Foreground = App.Brush("Faint"), FontFamily = new FontFamily("monospace") };
             Canvas.SetLeft(lbl, 0); Canvas.SetTop(lbl, Y(v) - 7);
             Chart.Children.Add(lbl);
         }
@@ -203,8 +202,8 @@ public partial class StressPage : UserControl
         {
             StartPoint = new(left, Y(v)), EndPoint = new(w, Y(v)), Stroke = b, StrokeThickness = 1, StrokeDashArray = new AvaloniaList<double> { 4, 3 },
         });
-        Limit(_cpuLimit, Res("Muted"));
-        if (ChkGpu.IsChecked == true) Limit(_gpuLimit, Res("Faint"));
+        Limit(_cpuLimit, App.Brush("Bad"));
+        if (ChkGpu.IsChecked == true) Limit(_gpuLimit, App.Brush("Bad"));
         double step = plotW / (HistoryLength - 1);
         void Series(List<double> data, IBrush stroke)
         {
@@ -215,7 +214,7 @@ public partial class StressPage : UserControl
                 Points = data.Select((v, i) => new Point(left + (offset + i) * step, Y(v))).ToList(), Stroke = stroke, StrokeThickness = 1.6,
             });
         }
-        Series(_gpuHist, Res("Muted"));
-        Series(_cpuHist, Res("Fg"));
+        Series(_gpuHist, App.Brush("Glow"));
+        Series(_cpuHist, App.Brush("Flame"));
     }
 }

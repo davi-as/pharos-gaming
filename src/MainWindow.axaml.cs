@@ -44,7 +44,7 @@ public partial class MainWindow : Window
             if (p.Group != group)
             {
                 group = p.Group;
-                Nav.Children.Add(new TextBlock { Text = group, Classes = { "label" }, Margin = new(10, Nav.Children.Count == 0 ? 4 : 18, 0, 6) });
+                Nav.Children.Add(new TextBlock { Text = group, Classes = { "label" }, Margin = new(10, Nav.Children.Count == 0 ? 2 : 14, 0, 4) });
             }
             var b = new RadioButton { Content = p.Title, GroupName = "nav", Classes = { "nav" } };
             b.IsCheckedChanged += (_, _) => { if (b.IsChecked == true) Show(p); };

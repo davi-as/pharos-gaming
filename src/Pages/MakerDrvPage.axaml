@@ -15,8 +15,8 @@
                 <StackPanel>
                     <TextBlock Classes="label" Text="DRIVERS DO KERNEL"/>
                     <ItemsControl x:Name="Chips" Margin="0,6,0,0"/>
-                    <TextBlock x:Name="LoadResult" Foreground="{StaticResource Fg}" FontSize="12" TextWrapping="Wrap"/>
-                    <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"
+                    <TextBlock x:Name="LoadResult" Foreground="{DynamicResource Fg}" FontSize="12" TextWrapping="Wrap"/>
+                    <TextBlock Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"
                                Text="&quot;Não carregado&quot; é normal sem placa conectada: o kernel carrega o módulo sozinho ao plugar. Se a placa estiver plugada e o driver não carregar, use CARREGAR."/>
                 </StackPanel>
             </Border>
@@ -35,7 +35,7 @@
                         <Button x:Name="BtnIde" Content="INSTALAR A IDE" Click="Ide_Click"/>
                         <Button Content="LIMPAR CACHE DA IDE" Click="Cache_Click"/>
                     </StackPanel>
-                    <TextBlock x:Name="IdeResult" Foreground="{StaticResource Fg}" FontSize="12" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="IdeResult" Foreground="{DynamicResource Fg}" FontSize="12" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
         </StackPanel>

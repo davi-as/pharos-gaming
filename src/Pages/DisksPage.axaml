@@ -12,7 +12,7 @@
                 </StackPanel>
             </Grid>
             <ItemsControl x:Name="Cards"/>
-            <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"
+            <TextBlock Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap"
                        Text="Os dados vêm do S.M.A.R.T. dos discos (pelo udisks e, na leitura completa, pelo smartctl). Pendrives e alguns HDs externos não informam saúde. O veredito é uma estimativa: faça backup de qualquer disco com aviso, não só dos críticos."/>
         </StackPanel>
     </ScrollViewer>

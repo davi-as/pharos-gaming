@@ -15,15 +15,15 @@
                     <ItemsControl x:Name="Ports">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="local:SerialPortInfo">
-                                <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,8">
+                                <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="0,8">
                                     <StackPanel Spacing="2">
                                         <StackPanel Orientation="Horizontal" Spacing="10">
-                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource Fg}"/>
                                             <TextBlock Text="{Binding State}" Classes="label" FontSize="10" VerticalAlignment="Center"/>
                                         </StackPanel>
-                                        <TextBlock Text="{Binding Detail}" FontFamily="monospace" FontSize="12" Foreground="{StaticResource Muted}"/>
+                                        <TextBlock Text="{Binding Detail}" FontFamily="{StaticResource Sans}" FontSize="12" Foreground="{DynamicResource Muted}"/>
                                         <TextBlock Classes="dim" FontSize="12"><Run Text="Driver: "/><Run Text="{Binding DriverText, Mode=OneWay}"/><Run Text=" · grupo "/><Run Text="{Binding Group, Mode=OneWay}"/></TextBlock>
-                                        <TextBlock Text="{Binding Diagnosis}" Foreground="{StaticResource Fg}" FontSize="12" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding Diagnosis}" Foreground="{DynamicResource Fg}" FontSize="12" TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
@@ -41,10 +41,10 @@
                     <TextBlock x:Name="BrlttyText" Classes="dim"/>
                     <Button x:Name="BtnBrltty" Content="IMPEDIR O BRLTTY DE PEGAR O CH340" Click="Brltty_Click"/>
                     <Button x:Name="BtnHolders" Content="FECHAR PROGRAMAS QUE PRENDEM A PORTA" Click="Holders_Click"/>
-                    <TextBlock x:Name="Result" Foreground="{StaticResource Fg}" FontSize="12" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="Result" Foreground="{DynamicResource Fg}" FontSize="12" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
-            <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"
+            <TextBlock Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap"
                        Text="No Linux não existe número COM preso nem dispositivo fantasma: /dev/ttyUSB0 e /dev/ttyACM0 são dados na ordem em que as placas são plugadas. Para um nome que nunca muda, use o caminho em /dev/serial/by-id mostrado em cada placa."/>
         </StackPanel>
     </ScrollViewer>

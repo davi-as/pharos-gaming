@@ -15,27 +15,27 @@
                         </Grid>
                         <!-- Escala: esquerda = GPU fraca para a CPU; centro = equilibrado; direita = CPU fraca para a GPU -->
                         <Panel Height="22" Margin="0,8,0,4">
-                            <Border Height="4" Background="{StaticResource Line}" VerticalAlignment="Center"/>
-                            <Border Width="2" Height="10" Background="{StaticResource Faint}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Height="4" Background="{DynamicResource Line}" VerticalAlignment="Center"/>
+                            <Border Width="2" Height="10" Background="{DynamicResource Faint}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <Canvas x:Name="BalanceCanvas">
-                                <Ellipse x:Name="BalanceDot" Width="14" Height="14" Fill="{StaticResource Fg}" Canvas.Top="4"/>
+                                <Ellipse x:Name="BalanceDot" Width="14" Height="14" Fill="{DynamicResource Fg}" Canvas.Top="4"/>
                             </Canvas>
                         </Panel>
                         <Grid ColumnDefinitions="*,*,*">
-                            <TextBlock Text="limita a GPU" Foreground="{StaticResource Faint}" FontSize="11"/>
-                            <TextBlock Grid.Column="1" Text="equilibrado" Foreground="{StaticResource Faint}" FontSize="11" HorizontalAlignment="Center"/>
-                            <TextBlock Grid.Column="2" Text="limita a CPU" Foreground="{StaticResource Faint}" FontSize="11" HorizontalAlignment="Right"/>
+                            <TextBlock Text="limita a GPU" Foreground="{DynamicResource Faint}" FontSize="11"/>
+                            <TextBlock Grid.Column="1" Text="equilibrado" Foreground="{DynamicResource Faint}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="limita a CPU" Foreground="{DynamicResource Faint}" FontSize="11" HorizontalAlignment="Right"/>
                         </Grid>
-                        <TextBlock x:Name="BalanceText" Foreground="{StaticResource Fg}" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                        <TextBlock x:Name="BalanceText" Foreground="{DynamicResource Fg}" TextWrapping="Wrap" Margin="0,12,0,0"/>
                         <TextBlock Text="Estimativa pelo desempenho relativo típico; o detector ao vivo mostra a realidade de cada jogo."
-                                   Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                   Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"/>
                     </StackPanel>
                 </Border>
                 <!-- Veredito ao vivo -->
                 <Border x:Name="LiveCard" Grid.Column="2" Classes="card" Margin="0">
                     <StackPanel>
                         <TextBlock x:Name="LiveLabel" Classes="label" Text="AGORA"/>
-                        <TextBlock x:Name="LiveTitle" Text="—" FontSize="24" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+                        <TextBlock x:Name="LiveTitle" Text="—" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource Fg}"/>
                         <TextBlock x:Name="LiveGame" Classes="dim" Margin="0,4,0,10"/>
                         <TextBlock x:Name="LiveAdvice" Classes="dim"/>
                     </StackPanel>
@@ -71,10 +71,10 @@
                     </Grid>
                     <TextBlock x:Name="SessionStatus" Classes="dim" Margin="0,14,0,0"/>
                     <StackPanel x:Name="Result" IsVisible="False" Margin="0,16,0,0">
-                        <TextBlock x:Name="ResultTitle" FontSize="22" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+                        <TextBlock x:Name="ResultTitle" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource Fg}"/>
                         <TextBlock x:Name="ResultSummary" Classes="dim" Margin="0,4,0,14"/>
                         <ItemsControl x:Name="Distribution"/>
-                        <TextBlock x:Name="ResultAdvice" Foreground="{StaticResource Fg}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        <TextBlock x:Name="ResultAdvice" Foreground="{DynamicResource Fg}" TextWrapping="Wrap" Margin="0,4,0,0"/>
                     </StackPanel>
                 </StackPanel>
             </Border>

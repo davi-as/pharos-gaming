@@ -19,7 +19,7 @@
             <Border Grid.Column="2" Classes="card" Margin="0">
                 <ScrollViewer>
                     <StackPanel Margin="0,0,10,0">
-                        <TextBlock x:Name="InfoTitle" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource Fg}" Margin="0,0,0,8"/>
+                        <TextBlock x:Name="InfoTitle" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" Margin="0,0,0,8"/>
 
                         <!-- Unidades (só em Armazenamento): anel de cheio/vazio por sistema de arquivos montado -->
                         <StackPanel x:Name="DrivesPanel" IsVisible="False" Margin="0,4,0,8">
@@ -33,20 +33,20 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="local:DriveCard">
-                                        <Border BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="6" Padding="14,12" Margin="0,0,10,10"
-                                                Background="{StaticResource Bg}">
+                                        <Border BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="6" Padding="14,12" Margin="0,0,10,10"
+                                                Background="{DynamicResource Bg}">
                                             <Grid ColumnDefinitions="Auto,*">
                                                 <!-- Anel: trilha = vazio, arco claro = usado -->
                                                 <Panel Width="76" Height="76" Margin="0,0,14,0" VerticalAlignment="Center">
-                                                    <Ellipse Stroke="{StaticResource Line}" StrokeThickness="8"/>
-                                                    <Arc StartAngle="-90" SweepAngle="{Binding Sweep}" Stroke="{StaticResource Fg}" StrokeThickness="8"/>
-                                                    <TextBlock Text="{Binding UsedPercent}" FontFamily="monospace" FontSize="14" Foreground="{StaticResource Fg}"
+                                                    <Ellipse Stroke="{DynamicResource Line}" StrokeThickness="8"/>
+                                                    <Arc StartAngle="-90" SweepAngle="{Binding Sweep}" Stroke="{DynamicResource Fg}" StrokeThickness="8"/>
+                                                    <TextBlock Text="{Binding UsedPercent}" FontFamily="{StaticResource Sans}" FontSize="14" Foreground="{DynamicResource Fg}"
                                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </Panel>
                                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
-                                                    <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource Fg}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis"/>
                                                     <TextBlock Text="{Binding Sizes}" Classes="dim" FontSize="12"/>
-                                                    <TextBlock Text="{Binding Meta}" Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding Meta}" Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap"/>
                                                 </StackPanel>
                                             </Grid>
                                         </Border>

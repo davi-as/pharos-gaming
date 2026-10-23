@@ -55,10 +55,10 @@
                     <TextBlock Classes="label" Text="COMO LIGAR NO JOGO"/>
                     <TextBlock Classes="dim" Text="Jogos da Biblioteca do PHAROS já recebem tudo ao clicar em APLICAR NAS OPÇÕES DA STEAM (ou JOGAR, nos jogos manuais). Para outros launchers (Lutris, Heroic), use esta linha:"/>
                     <Grid ColumnDefinitions="*,Auto">
-                        <TextBox x:Name="LaunchLine" IsReadOnly="True" FontFamily="monospace" FontSize="12" TextWrapping="Wrap"/>
+                        <TextBox x:Name="LaunchLine" IsReadOnly="True" FontFamily="{StaticResource Sans}" FontSize="12" TextWrapping="Wrap"/>
                         <Button Grid.Column="1" Content="Copiar" Margin="8,0,0,0" VerticalAlignment="Top" Click="Copy_Click"/>
                     </Grid>
-                    <TextBlock x:Name="FileNote" Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="FileNote" Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
         </StackPanel>

@@ -20,8 +20,8 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:GpuDriverStatus">
                                     <StackPanel Margin="0,4,0,8" Spacing="2">
-                                        <TextBlock Text="{Binding GpuName}" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
-                                        <TextBlock FontFamily="monospace" FontSize="12" Foreground="{StaticResource Muted}" TextWrapping="Wrap">
+                                        <TextBlock Text="{Binding GpuName}" FontWeight="SemiBold" Foreground="{DynamicResource Fg}"/>
+                                        <TextBlock FontFamily="{StaticResource Sans}" FontSize="12" Foreground="{DynamicResource Muted}" TextWrapping="Wrap">
                                             <Run Text="Instalado: "/><Run Text="{Binding Installed, Mode=OneWay}"/>
                                             <Run Text="  ·  Distro: "/><Run Text="{Binding Repo, Mode=OneWay}"/>
                                             <Run Text="  ·  NVIDIA: "/><Run Text="{Binding Latest, Mode=OneWay}"/>
@@ -38,7 +38,7 @@
                         <TextBlock Classes="label" Text="PLACA-MÃE / FABRICANTE"/>
                         <TextBlock x:Name="Board" Classes="dim"/>
                         <Button x:Name="BtnBoard" Content="ABRIR SUPORTE DO FABRICANTE" IsEnabled="False" Click="Board_Click"/>
-                        <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"
+                        <TextBlock Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap"
                                    Text="No Linux o chipset e o áudio da placa já vêm no kernel. Do site do fabricante, o que importa é a BIOS (ou pelo fwupd, quando o fabricante publica no LVFS)."/>
                     </StackPanel>
                 </Border>
@@ -52,14 +52,14 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:PendingUpdate">
                                     <Grid ColumnDefinitions="*,Auto" Margin="0,2">
-                                        <TextBlock Text="{Binding Name}" Foreground="{StaticResource Fg}" FontWeight="{Binding DriverRelated, Converter={x:Static local:BoolBold.Instance}}"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding Text}" FontFamily="monospace" FontSize="11" Foreground="{StaticResource Muted}"/>
+                                        <TextBlock Text="{Binding Name}" Foreground="{DynamicResource Fg}" FontWeight="{Binding DriverRelated, Converter={x:Static local:BoolBold.Instance}}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Text}" FontFamily="{StaticResource Sans}" FontSize="11" Foreground="{DynamicResource Muted}"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                         <Button x:Name="BtnUpgrade" Content="ATUALIZAR O SISTEMA" IsEnabled="False" Click="Upgrade_Click"/>
-                        <SelectableTextBlock x:Name="UpgradeLog" FontFamily="monospace" FontSize="11" Foreground="{StaticResource Muted}" TextWrapping="Wrap"/>
+                        <SelectableTextBlock x:Name="UpgradeLog" FontFamily="{StaticResource Sans}" FontSize="11" Foreground="{DynamicResource Muted}" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
                 <Border Grid.Column="2" Classes="card" Margin="0">
@@ -70,13 +70,13 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:PendingUpdate">
                                     <Grid ColumnDefinitions="*,Auto" Margin="0,2">
-                                        <TextBlock Text="{Binding Name}" Foreground="{StaticResource Fg}"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding Text}" FontFamily="monospace" FontSize="11" Foreground="{StaticResource Muted}"/>
+                                        <TextBlock Text="{Binding Name}" Foreground="{DynamicResource Fg}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Text}" FontFamily="{StaticResource Sans}" FontSize="11" Foreground="{DynamicResource Muted}"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"
+                        <TextBlock Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap"
                                    Text="Para instalar firmware use fwupdmgr update no terminal: algumas atualizações (BIOS) reiniciam o PC e não devem ser interrompidas."/>
                     </StackPanel>
                 </Border>
@@ -87,15 +87,15 @@
                     <ItemsControl x:Name="List" Margin="0,6,0,0">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="local:DriverRow">
-                                <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,5">
+                                <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="0,5">
                                     <Grid ColumnDefinitions="*,Auto">
                                         <StackPanel>
-                                            <TextBlock Text="{Binding Device}" Foreground="{StaticResource Fg}" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock FontSize="11" Foreground="{StaticResource Muted}">
+                                            <TextBlock Text="{Binding Device}" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock FontSize="11" Foreground="{DynamicResource Muted}">
                                                 <Run Text="{Binding Class, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding Vendor, Mode=OneWay}"/>
                                             </TextBlock>
                                         </StackPanel>
-                                        <TextBlock Grid.Column="1" Text="{Binding DriverText}" FontFamily="monospace" FontSize="12" Foreground="{StaticResource Fg}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding DriverText}" FontFamily="{StaticResource Sans}" FontSize="12" Foreground="{DynamicResource Fg}" VerticalAlignment="Center"/>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

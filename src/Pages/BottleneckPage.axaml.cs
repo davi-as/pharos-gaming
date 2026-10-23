@@ -39,7 +39,6 @@ public partial class BottleneckPage : UserControl
         Canvas.SetLeft(BalanceDot, t * Math.Max(0, w - BalanceDot.Width));
     }
 
-    private static IBrush Res(string key) => (IBrush)Application.Current!.Resources[key]!;
 
     private void Update()
     {
@@ -54,9 +53,9 @@ public partial class BottleneckPage : UserControl
             ? $"{frames.Game} · {frames.Fps:0} FPS · mínimo 10 s {frames.MinFps:0}"
             : "Nenhum jogo enviando FPS pelo MangoHud (as cargas abaixo valem mesmo assim)";
         bool alert = lim is Limiter.Cpu or Limiter.Vram or Limiter.Ram or Limiter.Thermal;
-        LiveCard.Background = alert ? Res("Fg") : Res("Card");
-        LiveTitle.Foreground = alert ? Res("Bg") : Res("Fg");
-        LiveLabel.Foreground = LiveGame.Foreground = LiveAdvice.Foreground = alert ? Res("Bg") : Res("Muted");
+        LiveCard.Background = alert ? App.Brush("BadFill") : App.Brush("Card");
+        LiveTitle.Foreground = alert ? App.Brush("OnFlame") : App.Brush("Fg");
+        LiveLabel.Foreground = LiveGame.Foreground = LiveAdvice.Foreground = alert ? App.Brush("OnFlame") : App.Brush("Muted");
 
         Meters.ItemsSource = new[]
         {

@@ -10,7 +10,7 @@
             </Grid>
             <ProgressBar x:Name="Progress" Maximum="1" Margin="0,0,0,14"/>
             <ItemsControl x:Name="Cards"/>
-            <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"
+            <TextBlock Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap"
                        Text="Os testes de velocidade usam o servidor público speed.cloudflare.com e baixam algumas centenas de MB. Nada é gravado no disco."/>
         </StackPanel>
     </ScrollViewer>

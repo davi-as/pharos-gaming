@@ -88,8 +88,8 @@
                                 <TextBox x:Name="LExtra" Watermark="ex.: -novid +fps_max 0" Margin="0,4,0,8" TextChanged="LExtra_Changed"/>
                                 <WrapPanel x:Name="LExtraPresets" Margin="0,0,0,12"/>
                                 <TextBlock Classes="label" Text="LINHA FINAL"/>
-                                <SelectableTextBlock x:Name="LPreview" FontFamily="monospace" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,10"
-                                                     Foreground="{StaticResource Fg}"/>
+                                <SelectableTextBlock x:Name="LPreview" FontFamily="{StaticResource Sans}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,10"
+                                                     Foreground="{DynamicResource Fg}"/>
                                 <StackPanel x:Name="LSteamBox" IsVisible="False" Spacing="8">
                                     <TextBlock x:Name="LSteamNow" Classes="dim" FontSize="12"/>
                                     <Button x:Name="BtnSteamApply" Classes="accent" Content="APLICAR NAS OPÇÕES DA STEAM" Click="BtnSteamApply_Click"/>

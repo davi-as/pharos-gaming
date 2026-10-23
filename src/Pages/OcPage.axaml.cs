@@ -24,7 +24,6 @@ public partial class OcPage : UserControl
         _ = InitAsync();
     }
 
-    private static IBrush Res(string key) => (IBrush)Application.Current!.Resources[key]!;
     private static string? Tag(Panel p) => p.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
 
     private async Task InitAsync()
@@ -201,8 +200,8 @@ public partial class OcPage : UserControl
         Verdict.Text = ok ? "ESTÁVEL" : "INSTÁVEL";
         VerdictWhy.Text = ok ? $"Nenhum erro em {duration.TotalMinutes:0} min de stress. Para Curve Optimizer, use o PC normalmente por um dia e confira os erros recentes."
                              : $"Motivo: {fail}. Volte um passo no ajuste e teste de novo.";
-        VerdictCard.Background = ok ? Res("Card") : Res("Fg");
-        Verdict.Foreground = VerdictWhy.Foreground = ok ? Res("Fg") : Res("Bg");
+        VerdictCard.Background = ok ? App.Brush("Card") : App.Brush("BadFill");
+        Verdict.Foreground = VerdictWhy.Foreground = ok ? App.Brush("Fg") : App.Brush("OnFlame");
         var rows = new List<Kv> { new("Configuração", label) };
         if (cpuScore is double cs) rows.Add(new("Nota CPU (render)", $"{cs:N0} pts"));
         if (gpuScore is double gs) rows.Add(new("Nota GPU (cena)", $"{gs:N0} pts"));

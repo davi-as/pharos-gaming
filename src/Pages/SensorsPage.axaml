@@ -22,17 +22,17 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="local:SensorGroup">
                                 <StackPanel>
-                                    <TextBlock Text="{Binding Hardware}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Fg}" Margin="0,16,0,6"/>
+                                    <TextBlock Text="{Binding Hardware}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" Margin="0,16,0,6"/>
                                     <ItemsControl ItemsSource="{Binding Rows}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="local:SensorRow">
-                                                <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,5">
+                                                <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="0,5">
                                                     <Grid ColumnDefinitions="*,130,130,120,120">
-                                                        <TextBlock Text="{Binding Name}" Foreground="{StaticResource Fg}" TextTrimming="CharacterEllipsis"/>
-                                                        <TextBlock Grid.Column="1" Text="{Binding Category}" Foreground="{StaticResource Muted}"/>
-                                                        <TextBlock Grid.Column="2" Text="{Binding Value}" FontFamily="monospace" Foreground="{StaticResource Fg}"/>
-                                                        <TextBlock Grid.Column="3" Text="{Binding Min}" FontFamily="monospace" Foreground="{StaticResource Muted}"/>
-                                                        <TextBlock Grid.Column="4" Text="{Binding Max}" FontFamily="monospace" Foreground="{StaticResource Muted}"/>
+                                                        <TextBlock Text="{Binding Name}" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Category}" Foreground="{DynamicResource Muted}"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding Value}" FontFamily="{StaticResource Sans}" Foreground="{DynamicResource Fg}"/>
+                                                        <TextBlock Grid.Column="3" Text="{Binding Min}" FontFamily="{StaticResource Sans}" Foreground="{DynamicResource Muted}"/>
+                                                        <TextBlock Grid.Column="4" Text="{Binding Max}" FontFamily="{StaticResource Sans}" Foreground="{DynamicResource Muted}"/>
                                                     </Grid>
                                                 </Border>
                                             </DataTemplate>

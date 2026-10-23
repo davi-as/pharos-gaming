@@ -25,7 +25,7 @@
                                 <DataTemplate x:DataType="local:LightDevice">
                                     <CheckBox IsChecked="{Binding Selected}" Margin="0,2">
                                         <StackPanel>
-                                            <TextBlock Text="{Binding Name}" Foreground="{StaticResource Fg}"/>
+                                            <TextBlock Text="{Binding Name}" Foreground="{DynamicResource Fg}"/>
                                             <TextBlock Text="{Binding Detail}" Classes="dim" FontSize="11"/>
                                         </StackPanel>
                                     </CheckBox>
@@ -37,7 +37,7 @@
                 <Border Classes="card" Margin="0">
                     <StackPanel>
                         <TextBlock Classes="label" Text="DIAGNÓSTICO"/>
-                        <SelectableTextBlock x:Name="Diag" FontFamily="monospace" FontSize="11" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                        <SelectableTextBlock x:Name="Diag" FontFamily="{StaticResource Sans}" FontSize="11" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -57,7 +57,7 @@
                     </WrapPanel>
                     <TextBlock Classes="label" Text="COR"/>
                     <StackPanel Orientation="Horizontal" Spacing="12">
-                        <Border x:Name="Preview" Width="46" Height="46" CornerRadius="6" BorderBrush="{StaticResource LineStrong}" BorderThickness="1"/>
+                        <Border x:Name="Preview" Width="46" Height="46" CornerRadius="6" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1"/>
                         <WrapPanel x:Name="Swatches" Width="280"/>
                     </StackPanel>
                     <TextBlock Classes="dim" FontSize="11" Text="R"/>
@@ -68,17 +68,17 @@
                     <Slider x:Name="B" Minimum="0" Maximum="255" Value="255" ValueChanged="Color_Changed"/>
                     <Grid ColumnDefinitions="*,Auto">
                         <TextBlock Classes="label" Text="BRILHO"/>
-                        <TextBlock x:Name="BrightText" Grid.Column="1" FontFamily="monospace" Foreground="{StaticResource Fg}"/>
+                        <TextBlock x:Name="BrightText" Grid.Column="1" FontFamily="{StaticResource Sans}" Foreground="{DynamicResource Fg}"/>
                     </Grid>
                     <Slider x:Name="Bright" Minimum="0" Maximum="100" Value="100" ValueChanged="Color_Changed"/>
                     <Grid ColumnDefinitions="*,Auto">
                         <TextBlock Classes="label" Text="VELOCIDADE"/>
-                        <TextBlock x:Name="SpeedText" Grid.Column="1" FontFamily="monospace" Foreground="{StaticResource Fg}"/>
+                        <TextBlock x:Name="SpeedText" Grid.Column="1" FontFamily="{StaticResource Sans}" Foreground="{DynamicResource Fg}"/>
                     </Grid>
                     <Slider x:Name="Speed" Minimum="1" Maximum="10" Value="5" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="Color_Changed"/>
                     <Grid ColumnDefinitions="Auto,*" Margin="0,8,0,0">
                         <Button x:Name="BtnRun" Classes="accent" Content="ATIVAR CONTROLE" Click="Run_Click"/>
-                        <TextBlock x:Name="LiveText" Grid.Column="1" FontFamily="monospace" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        <TextBlock x:Name="LiveText" Grid.Column="1" FontFamily="{StaticResource Sans}" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                     </Grid>
                     <TextBlock x:Name="RunHint" Classes="dim" FontSize="12"/>
                 </StackPanel>

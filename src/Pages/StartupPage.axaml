@@ -18,18 +18,18 @@
                     <ItemsControl x:Name="List" Margin="0,6,0,0">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="local:StartupEntry">
-                                <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,8">
+                                <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="0,8">
                                     <Grid ColumnDefinitions="Auto,*,Auto">
                                         <ToggleSwitch IsChecked="{Binding Enabled, Mode=OneWay}" IsEnabled="{Binding CanToggle}" Tag="{Binding}" OnContent="" OffContent=""
                                                       Click="Toggle_Click" VerticalAlignment="Top"/>
                                         <StackPanel Grid.Column="1" Margin="10,0">
                                             <StackPanel Orientation="Horizontal" Spacing="10">
-                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource Fg}"/>
                                                 <TextBlock Text="{Binding State}" Classes="label" FontSize="10" VerticalAlignment="Center"/>
                                             </StackPanel>
                                             <TextBlock Text="{Binding Source}" Classes="dim" FontSize="12"/>
-                                            <TextBlock Text="{Binding Command}" FontFamily="monospace" FontSize="11" Foreground="{StaticResource Faint}" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Text="{Binding Detail}" Foreground="{StaticResource Faint}" FontSize="12" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Command}" FontFamily="{StaticResource Sans}" FontSize="11" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource Faint}" FontSize="12" TextWrapping="Wrap"/>
                                         </StackPanel>
                                         <Button Grid.Column="2" Content="REMOVER" FontSize="11" Tag="{Binding}" IsVisible="{Binding CanRemove}" VerticalAlignment="Top" Click="Remove_Click"/>
                                     </Grid>
@@ -37,7 +37,7 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap" Margin="0,8,0,0"
+                    <TextBlock Foreground="{DynamicResource Faint}" FontSize="11" TextWrapping="Wrap" Margin="0,8,0,0"
                                Text="Desligar é sempre reversível (o programa continua instalado). O que o Hyprland abre por exec-once fica na configuração dele e não aparece aqui."/>
                 </StackPanel>
             </Border>

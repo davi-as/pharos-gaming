@@ -8,7 +8,7 @@
                     <Panel Width="960" Height="540">
                         <Image x:Name="Img"/>
                         <Canvas x:Name="Buckets"/>
-                        <TextBlock x:Name="Idle" Text="Pressione INICIAR para renderizar a cena" Foreground="{StaticResource Muted}" FontSize="22"
+                        <TextBlock x:Name="Idle" Text="Pressione INICIAR para renderizar a cena" Foreground="{DynamicResource Muted}" FontSize="22"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Panel>
                 </Viewbox>
@@ -16,7 +16,7 @@
             <ProgressBar x:Name="Progress" Maximum="1" Margin="0,10,0,4"/>
             <Grid ColumnDefinitions="*,Auto">
                 <TextBlock x:Name="Status" Classes="dim" Text="Pronto"/>
-                <TextBlock x:Name="Elapsed" Grid.Column="1" FontFamily="monospace" Foreground="{StaticResource Muted}"/>
+                <TextBlock x:Name="Elapsed" Grid.Column="1" FontFamily="{StaticResource Sans}" Foreground="{DynamicResource Muted}"/>
             </Grid>
         </StackPanel>
         <ScrollViewer Grid.Column="2">

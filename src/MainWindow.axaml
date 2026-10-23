@@ -1,15 +1,23 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="PharosGaming.MainWindow"
-        Title="PHAROS GAMING" Width="1360" Height="860" MinWidth="980" MinHeight="620"
-        Background="{StaticResource Bg}">
+        Title="Pharos Gaming" Icon="/Assets/icon-192.png" Width="1360" Height="860" MinWidth="980" MinHeight="620"
+        Background="{DynamicResource Bg}">
     <Grid ColumnDefinitions="230,*">
 
         <!-- Menu lateral por categorias -->
-        <Border Background="{StaticResource Card}" BorderBrush="{StaticResource Line}" BorderThickness="0,0,1,0">
+        <Border Background="{DynamicResource Card}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="PHAROS GAMING" FontWeight="Bold" FontSize="17" LetterSpacing="3"
-                           Foreground="{StaticResource Fg}" Margin="18,18,18,10"/>
+                <!-- marca: o Φ do Pharos + nome em Literata -->
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="16,16,16,12">
+                    <Border Width="36" Height="36" CornerRadius="9" ClipToBounds="True">
+                        <Image Source="/Assets/icon-192.png"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Pharos" Classes="serif" FontSize="20" Foreground="{DynamicResource Fg}"/>
+                        <TextBlock Text="GAMING" Classes="label" FontSize="10" Margin="1,-3,0,0"/>
+                    </StackPanel>
+                </StackPanel>
                 <TextBlock x:Name="Version" DockPanel.Dock="Bottom" Classes="label" Margin="18,10"/>
                 <ScrollViewer>
                     <StackPanel x:Name="Nav" Margin="8,0,8,10"/>
@@ -20,7 +28,7 @@
         <!-- Conteúdo -->
         <Grid Grid.Column="1" RowDefinitions="Auto,*" Margin="14">
             <DockPanel Margin="6,0,6,8">
-                <TextBlock x:Name="PageTitle" DockPanel.Dock="Left" FontWeight="Bold" FontSize="18" Foreground="{StaticResource Fg}"
+                <TextBlock x:Name="PageTitle" DockPanel.Dock="Left" Classes="serif" FontSize="22" Foreground="{DynamicResource Fg}"
                            VerticalAlignment="Center"/>
                 <TextBlock x:Name="Status" Classes="dim" HorizontalAlignment="Right" VerticalAlignment="Center"/>
             </DockPanel>

@@ -41,7 +41,7 @@
         <Border Grid.Row="2" Classes="card" Margin="0,0,0,12" Padding="18,14">
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock x:Name="SourceTitle" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+                    <TextBlock x:Name="SourceTitle" FontWeight="SemiBold" Foreground="{DynamicResource Fg}"/>
                     <TextBlock x:Name="SourceText" Classes="dim" FontSize="12" Margin="0,3,0,0"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0" Spacing="8">
@@ -60,22 +60,22 @@
                     <DataTemplate x:DataType="local:GameRow">
                         <Border Classes="card" Margin="0,0,10,10" Padding="16,14">
                             <StackPanel>
-                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource Fg}" TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Text="{Binding Genre}" Foreground="{StaticResource Faint}" FontSize="11" Margin="0,2,0,10"/>
+                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding Genre}" Foreground="{DynamicResource Faint}" FontSize="11" Margin="0,2,0,10"/>
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding FpsText}" FontFamily="monospace" FontSize="30" Foreground="{StaticResource Fg}"/>
-                                        <TextBlock Text=" FPS" Foreground="{StaticResource Muted}" FontSize="12" VerticalAlignment="Bottom" Margin="0,0,0,6"/>
+                                        <TextBlock Text="{Binding FpsText}" FontFamily="{StaticResource Sans}" FontSize="30" Foreground="{DynamicResource Fg}"/>
+                                        <TextBlock Text=" FPS" Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Bottom" Margin="0,0,0,6"/>
                                     </StackPanel>
-                                    <TextBlock Grid.Column="1" Text="{Binding Rating}" VerticalAlignment="Center" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Muted}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Rating}" VerticalAlignment="Center" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Muted}"/>
                                 </Grid>
                                 <!-- Barra: escala até 240 FPS -->
                                 <ProgressBar Maximum="1" Value="{Binding Bar}" Height="3" MinHeight="3" Margin="0,8,0,8"/>
                                 <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Text="{Binding LowText}" Foreground="{StaticResource Muted}" FontSize="11"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding Source}" Foreground="{StaticResource Faint}" FontSize="11"/>
+                                    <TextBlock Text="{Binding LowText}" Foreground="{DynamicResource Muted}" FontSize="11"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Source}" Foreground="{DynamicResource Faint}" FontSize="11"/>
                                 </Grid>
-                                <TextBlock Text="{Binding Detail}" Foreground="{StaticResource Faint}" FontSize="11" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource Faint}" FontSize="11" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                         </Border>
                     </DataTemplate>

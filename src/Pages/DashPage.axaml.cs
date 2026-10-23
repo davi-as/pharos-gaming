@@ -44,10 +44,10 @@ public partial class DashPage : UserControl
         Push(_gpuHist, gpu?.Load, LoadPoints);
         Push(_cpuHist, cpu.MaxThread, LoadPoints);
         double fpsMax = Math.Max(60, _fpsHist.Max() ?? 0) * 1.1;
-        Draw(FpsChart, _fpsHist, FpsPoints, fpsMax, Brush("Fg"));
+        Draw(FpsChart, _fpsHist, FpsPoints, fpsMax, App.Brush("Flame"));
         LoadChart.Children.Clear();
-        Draw(LoadChart, _gpuHist, LoadPoints, 100, Brush("Fg"), clear: false);
-        Draw(LoadChart, _cpuHist, LoadPoints, 100, Brush("Muted"), clear: false);
+        Draw(LoadChart, _gpuHist, LoadPoints, 100, App.Brush("Flame"), clear: false);
+        Draw(LoadChart, _cpuHist, LoadPoints, 100, App.Brush("Glow"), clear: false);
     }
 
     private void ShowFrames(FrameStats? f)
@@ -130,7 +130,6 @@ public partial class DashPage : UserControl
 
     // ---------------- formatação ----------------
 
-    private IBrush Brush(string key) => (IBrush)Application.Current!.Resources[key]!;
     private static string Pct(float? v) => v is float x ? $"{x:N0}%" : "—";
     private static string? F(float? v, string unit) => v is float x ? $"{x:N0}{unit}" : null;
     private static string Join(params string?[] parts) => string.Join("  ·  ", parts.Where(p => p != null));

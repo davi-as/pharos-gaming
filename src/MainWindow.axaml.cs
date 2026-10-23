@@ -11,6 +11,7 @@ public partial class MainWindow : Window
     {
         new("PHAROS GAMING", "Visão geral", () => new DashPage()),
         new("PHAROS GAMING", "Sistema", () => new SystemPage()),
+        new("PHAROS GAMING", "Sensores", () => new SensorsPage()),
         new("PHAROS JOGOS", "Biblioteca", () => new LibraryPage()),
     };
 

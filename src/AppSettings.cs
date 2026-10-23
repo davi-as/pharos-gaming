@@ -43,6 +43,9 @@ public sealed class AppSettings
     /// <summary>Instância única, compartilhada pelas páginas (cada uma grava a sua parte).</summary>
     public static AppSettings Current { get; } = Load();
 
+    // FPS estimado: a chave fica neste arquivo, que só o usuário lê (permissão 600)
+    public string? HowManyFpsKey { get; set; }
+
     public Dictionary<string, GameProfile> GameProfiles { get; set; } = new();
     public List<CustomGame> CustomGames { get; set; } = new();
 
@@ -61,5 +64,6 @@ public sealed class AppSettings
     {
         Directory.CreateDirectory(Folder);
         File.WriteAllText(FilePath, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+        File.SetUnixFileMode(FilePath, UnixFileMode.UserRead | UnixFileMode.UserWrite);
     }
 }

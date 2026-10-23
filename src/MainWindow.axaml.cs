@@ -17,6 +17,7 @@ public partial class MainWindow : Window
         new("PHAROS GAMING", "Energia", () => new EnergyPage()),
         new("PHAROS GAMING", "Rede", () => new NetPage()),
         new("PHAROS JOGOS", "Biblioteca", () => new LibraryPage()),
+        new("PHAROS JOGOS", "FPS estimado", () => new FpsPage()),
     };
 
     private readonly Dictionary<PageDef, Control> _made = new();

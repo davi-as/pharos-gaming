@@ -1,0 +1,86 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:PharosGaming"
+             x:Class="PharosGaming.FpsPage">
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="6">
+        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+            <TextBlock x:Name="Sub" Classes="dim" Text="FPS esperado no seu PC" VerticalAlignment="Center"/>
+            <TextBox x:Name="Search" Grid.Column="1" Width="260" Watermark="Buscar jogo…" TextChanged="Search_Changed"/>
+        </Grid>
+        <!-- Configuração -->
+        <Border Grid.Row="1" Classes="card" Margin="0,0,0,12">
+            <WrapPanel>
+                <StackPanel Margin="0,0,32,0">
+                    <TextBlock Classes="label" Text="RESOLUÇÃO"/>
+                    <WrapPanel x:Name="ResPanel" Classes="chips">
+                        <RadioButton GroupName="FpsRes" Content="1080p" Tag="1920x1080" IsChecked="True" IsCheckedChanged="Option_Changed"/>
+                        <RadioButton GroupName="FpsRes" Content="1440p" Tag="2560x1440" IsCheckedChanged="Option_Changed"/>
+                        <RadioButton GroupName="FpsRes" Content="4K" Tag="3840x2160" IsCheckedChanged="Option_Changed"/>
+                    </WrapPanel>
+                </StackPanel>
+                <StackPanel Margin="0,0,32,0">
+                    <TextBlock Classes="label" Text="GRÁFICOS"/>
+                    <WrapPanel x:Name="PresetPanel" Classes="chips">
+                        <RadioButton GroupName="FpsPreset" Content="Baixo" Tag="Baixo" IsCheckedChanged="Option_Changed"/>
+                        <RadioButton GroupName="FpsPreset" Content="Médio" Tag="Médio" IsCheckedChanged="Option_Changed"/>
+                        <RadioButton GroupName="FpsPreset" Content="Alto" Tag="Alto" IsChecked="True" IsCheckedChanged="Option_Changed"/>
+                        <RadioButton GroupName="FpsPreset" Content="Ultra" Tag="Ultra" IsCheckedChanged="Option_Changed"/>
+                    </WrapPanel>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Classes="label" Text="UPSCALING (DLSS / FSR)"/>
+                    <WrapPanel x:Name="UpPanel" Classes="chips">
+                        <RadioButton GroupName="FpsUp" Content="Nativo" Tag="Native" IsChecked="True" IsCheckedChanged="Option_Changed"/>
+                        <RadioButton GroupName="FpsUp" Content="Qualidade" Tag="Quality" IsCheckedChanged="Option_Changed"/>
+                        <RadioButton GroupName="FpsUp" Content="Desempenho" Tag="Performance" IsCheckedChanged="Option_Changed"/>
+                    </WrapPanel>
+                </StackPanel>
+            </WrapPanel>
+        </Border>
+        <!-- Fonte dos dados -->
+        <Border Grid.Row="2" Classes="card" Margin="0,0,0,12" Padding="18,14">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="SourceTitle" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+                    <TextBlock x:Name="SourceText" Classes="dim" FontSize="12" Margin="0,3,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0" Spacing="8">
+                    <TextBox x:Name="ApiKey" Width="240" PasswordChar="•" Watermark="Chave da API HowManyFPS"/>
+                    <Button x:Name="BtnKey" Content="SALVAR CHAVE" Click="Key_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        <!-- Cartões dos jogos -->
+        <ScrollViewer Grid.Row="3">
+            <ItemsControl x:Name="List" Margin="0,0,6,0">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><UniformGrid Columns="4"/></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="local:GameRow">
+                        <Border Classes="card" Margin="0,0,10,10" Padding="16,14">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource Fg}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding Genre}" Foreground="{StaticResource Faint}" FontSize="11" Margin="0,2,0,10"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding FpsText}" FontFamily="monospace" FontSize="30" Foreground="{StaticResource Fg}"/>
+                                        <TextBlock Text=" FPS" Foreground="{StaticResource Muted}" FontSize="12" VerticalAlignment="Bottom" Margin="0,0,0,6"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="{Binding Rating}" VerticalAlignment="Center" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Muted}"/>
+                                </Grid>
+                                <!-- Barra: escala até 240 FPS -->
+                                <ProgressBar Maximum="1" Value="{Binding Bar}" Height="3" MinHeight="3" Margin="0,8,0,8"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="{Binding LowText}" Foreground="{StaticResource Muted}" FontSize="11"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Source}" Foreground="{StaticResource Faint}" FontSize="11"/>
+                                </Grid>
+                                <TextBlock Text="{Binding Detail}" Foreground="{StaticResource Faint}" FontSize="11" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

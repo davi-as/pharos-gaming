@@ -1,0 +1,78 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:PharosGaming"
+             x:Class="PharosGaming.OptimizePage">
+    <ScrollViewer>
+        <StackPanel Margin="6,6,16,6" Spacing="12">
+            <TextBlock Classes="dim" Text="Libera memória, fecha o que atrapalha e ajusta o sistema para jogos"/>
+            <Border Classes="card" Margin="0">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="MEMÓRIA RAM"/>
+                        <TextBlock x:Name="RamText" Classes="val" Margin="0,4,0,0"/>
+                        <ProgressBar x:Name="RamBar" Maximum="1"/>
+                        <TextBlock x:Name="Result" Classes="dim" FontSize="12"/>
+                        <TextBlock x:Name="Confirm" Classes="dim" FontSize="12" Foreground="{StaticResource Fg}" IsVisible="False"/>
+                    </StackPanel>
+                    <Button x:Name="BtnOptimize" Grid.Column="1" Classes="accent" Content="PHAROS OTIMIZA" Margin="16,0,0,0" VerticalAlignment="Center" Click="Optimize_Click"/>
+                </Grid>
+            </Border>
+            <Border Classes="card" Margin="0">
+                <StackPanel>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Classes="label" Text="PROGRAMAS PARA FECHAR"/>
+                        <Button Grid.Column="1" Content="ATUALIZAR" FontSize="11" Click="RefreshApps_Click"/>
+                    </Grid>
+                    <TextBlock x:Name="AppsEmpty" Classes="dim" Text="Nada para fechar: nenhum programa aberto além do sistema." IsVisible="False" Margin="0,6,0,0"/>
+                    <ItemsControl x:Name="Apps" Margin="0,6,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:BackgroundApp">
+                                <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,6">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <CheckBox IsChecked="{Binding Selected}" VerticalAlignment="Center"/>
+                                        <StackPanel Grid.Column="1" Margin="6,0">
+                                            <TextBlock Text="{Binding Title}" Foreground="{StaticResource Fg}"/>
+                                            <TextBlock Text="{Binding Detail}" Classes="dim" FontSize="12"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="2" Text="{Binding MemoryText}" FontFamily="monospace" Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+            <Border Classes="card" Margin="0">
+                <StackPanel>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Classes="label" Text="AJUSTES DO SISTEMA PARA JOGOS"/>
+                        <Button Grid.Column="1" Content="RESTAURAR ORIGINAIS" FontSize="11" Click="Restore_Click"/>
+                    </Grid>
+                    <TextBlock x:Name="TweaksResult" Classes="dim" FontSize="12"/>
+                    <ItemsControl x:Name="Tweaks" Margin="0,6,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:Tweak">
+                                <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,10">
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <ToggleSwitch IsChecked="{Binding IsOn, Mode=OneWay}" IsEnabled="{Binding Available}" Tag="{Binding}"
+                                                      OnContent="" OffContent="" Click="Tweak_Click" VerticalAlignment="Top"/>
+                                        <StackPanel Grid.Column="1" Margin="10,0,0,0" Spacing="2">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+                                                <TextBlock Text="{Binding Badge}" Classes="label" FontSize="10" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Description}" Classes="dim" FontSize="12"/>
+                                            <TextBlock Text="{Binding Effect}" Foreground="{StaticResource Faint}" FontSize="12" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Unavailable}" Foreground="{StaticResource Faint}" FontSize="12" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Status}" Foreground="{StaticResource Fg}" FontSize="12" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

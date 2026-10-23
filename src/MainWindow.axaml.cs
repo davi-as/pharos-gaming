@@ -23,6 +23,7 @@ public partial class MainWindow : Window
         new("PHAROS DESEMPENHO", "Benchmark", () => new BenchPage()),
         new("PHAROS DESEMPENHO", "Stress test", () => new StressPage()),
         new("PHAROS DESEMPENHO", "Overclock", () => new OcPage()),
+        new("PHAROS FERRAMENTAS", "Otimização", () => new OptimizePage()),
     };
 
     private readonly Dictionary<PageDef, Control> _made = new();

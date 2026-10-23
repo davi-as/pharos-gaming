@@ -52,6 +52,9 @@ public sealed class AppSettings
     public List<BenchRun> BenchRuns { get; set; } = new();
     public List<BenchRecord> BenchRecords { get; set; } = new();
 
+    // Otimização: valores originais dos ajustes antes da primeira alteração (null = não existia)
+    public Dictionary<string, string?> TweakBackup { get; set; } = new();
+
     // FPS estimado: a chave fica neste arquivo, que só o usuário lê (permissão 600)
     public string? HowManyFpsKey { get; set; }
 

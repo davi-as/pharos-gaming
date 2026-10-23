@@ -27,7 +27,7 @@ public static partial class ConsoleSetup
     {
         new("hydra", "Abrir o Hydra"),
         new("steam_bp", "Abrir o Steam Big Picture"),
-        new("pharos_tv", "Pharos na TV (abre e fecha)"),
+        new("pharos_tv", "Menu do Pharos (abre e fecha)"),
         new("mangohud", "Mostrar/esconder MangoHud"),
         new("screenshot", "Capturar a tela"),
         new("tv_pc", "TV na entrada do PC"),
@@ -44,6 +44,7 @@ public static partial class ConsoleSetup
         new("GUIDE_START", "Guide + Start", "Home + Plus no 8BitDo", "tv_pc"),
         new("VIEW_START", "View + Start", "Minus + Plus no 8BitDo", "mangohud"),
         new("SHARE", "Share", "Capture no 8BitDo", "screenshot"),
+        new("GUIDE_VIEW", "Guide + View", "Home + Minus no 8BitDo", "pharos_tv"),
     };
 
     /// <summary>KEY=valor (o mesmo formato do config.env, que o bash lê com source). Comentários e linhas vazias ficam de fora.</summary>

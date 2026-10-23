@@ -115,10 +115,12 @@ public static partial class FrameLimiter
     }
 
     /// <summary>Config do jogo: a base inteira (o arquivo é lido no lugar dela, não junto) + o limite e o log que o PHAROS lê.</summary>
-    public static string Build(string key, double limit, IEnumerable<string> baseLines)
+    public static string Build(string key, double limit, IEnumerable<string> baseLines, bool? hidden = null)
     {
         var lines = new List<string> { $"{Header} Jogo: {Display(key)}. Edições manuais são substituídas." };
-        lines.AddRange(baseLines.Where(l => !l.StartsWith("# Gerado pelo PHAROS") && !Owned.Contains(l.Split('=', 2)[0].Trim())));
+        lines.AddRange(baseLines.Where(l => !l.StartsWith("# Gerado pelo PHAROS") && !Owned.Contains(l.Split('=', 2)[0].Trim())
+                                            && !(hidden != null && l.Trim().StartsWith("no_display"))));
+        if (hidden == true) lines.Add("no_display=1"); // escolhido no menu rápido para este jogo
         string fps = limit.ToString("0.##", CultureInfo.InvariantCulture);
         lines.AddRange(new[]
         {
@@ -164,14 +166,14 @@ public static partial class FrameLimiter
 
     private static bool IsOurs(string f) => File.Exists(f) && File.ReadLines(f).FirstOrDefault()?.StartsWith(Header) == true;
 
-    private static void Write(AppSettings s, string key)
+    public static void Write(AppSettings s, string key)
     {
         Directory.CreateDirectory(Dir);
         string f = FileFor(key);
         bool existed = File.Exists(f);
         if (existed && !IsOurs(f) && !File.Exists(f + ".pharos-bak")) File.Copy(f, f + ".pharos-bak"); // config por jogo feita à mão: guarda antes
         // troca atômica: o MangoHud relê no IN_DELETE_SELF (espera 100 ms pelo arquivo novo) e nunca vê o arquivo pela metade
-        File.WriteAllText(f + ".tmp", Build(key, s.FpsLimits[key], BaseLines()));
+        File.WriteAllText(f + ".tmp", Build(key, s.FpsLimits[key], BaseLines(), s.OverlayHidden.TryGetValue(key, out bool h) ? h : null));
         File.Move(f + ".tmp", f, overwrite: true);
         if (!existed) Poke();
     }

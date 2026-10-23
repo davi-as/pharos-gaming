@@ -87,6 +87,10 @@ public sealed class AppSettings
 
     // PC como console: na TV, todo jogo novo ganha o limite igual à taxa dela (59,95)
     public bool AutoTvProfile { get; set; } = true;
+    /// <summary>Geração de quadros por jogo (lsfg-vk): multiplicador; ausente = desligada.</summary>
+    public Dictionary<string, int> FgMultiplier { get; set; } = new();
+    /// <summary>Overlay do MangoHud por jogo pelo menu rápido: true = escondido; ausente = o do MangoHud.conf.</summary>
+    public Dictionary<string, bool> OverlayHidden { get; set; } = new();
     /// <summary>Saída do Hyprland que é a TV (ex. DP-2); null = adivinhar pela descrição do monitor.</summary>
     public string? TvScreen { get; set; }
 

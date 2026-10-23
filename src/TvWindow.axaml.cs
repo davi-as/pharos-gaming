@@ -9,43 +9,70 @@ using Avalonia.VisualTree;
 namespace PharosGaming;
 
 /// <summary>
-/// Modo TV: o essencial do jogo aberto em letras grandes (FPS, ritmo, limite, temperaturas), navegável pelo controle
-/// ou pelas setas. Abre pela página PC como console, pelo controle (ação "Pharos na TV") ou com pharos-gaming --tv.
+/// Menu rápido do Pharos na TV: a sessão do jogo aberto ("nunca abaixo de 60") e ajustes que valem com o jogo aberto
+/// (limite, geração de quadros, overlay, energia), navegável pelo controle ou pelas setas. Abre com Guide + View (o
+/// daemon do console põe a janela em tela cheia por cima do jogo e devolve o jogo quando ela fecha), pela página
+/// PC como console ou com pharos-gaming --tv.
 /// </summary>
 public partial class TvWindow : Window
 {
     private readonly Gamepad _pad;
+    private readonly AppSettings _s = AppSettings.Current;
     private RunningGame? _game;
     private FrameLimiter.Screen? _screen;
     private int _ticks;
     private bool _scanning;
-    private readonly (TextBlock Value, TextBlock Detail)[] _hw;
+    private string? _power;
+    private readonly Dictionary<string, (Button Button, TextBlock Value, TextBlock Hint)> _tile = new();
+    private readonly List<(TextBlock Label, TextBlock Value)> _stats = new();
 
     public TvWindow()
     {
         InitializeComponent();
-        _hw = new[] { "GPU", "CPU", "MEMÓRIA", "TELA" }.Select(AddTile).ToArray();
+        string[] names = { "limit", "fg", "overlay", "power", "shot", "bp" };
+        string[] labels = { "LIMITE", "GERAÇÃO DE QUADROS", "OVERLAY", "ENERGIA", "CAPTURA", "HYDRA" };
+        for (int i = 0; i < names.Length; i++) AddTile(names[i], labels[i], i / 3, i % 3);
+        for (int r = 0; r < 5; r++) AddStat(r);
         // o controle só manda aqui com a janela em foco: com o jogo na frente, os botões são do jogo
         _pad = new Gamepad(nav => Dispatcher.UIThread.Post(() => { if (IsActive) Navigate(nav); }));
         KeyDown += OnKey;
-        Opened += (_, _) => { ShowLimits(); BtnBp.Focus(); };
+        Opened += (_, _) => _tile["limit"].Button.Focus();
         Closed += (_, _) => { _pad.Dispose(); Live.Tick -= Tick; };
         Live.Start();
         Live.Tick += Tick;
+        _ = ReadPower();
         Tick();
     }
 
-    private (TextBlock, TextBlock) AddTile(string label)
+    private void AddTile(string name, string label, int row, int col)
     {
-        var v = new TextBlock { Classes = { "tvbig" }, FontSize = 44, Text = "—" };
-        var d = new TextBlock { FontSize = 20, Foreground = App.Brush("Muted"), TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis };
-        var p = new StackPanel { Margin = new(0, 0, 24, 0) };
-        p.Children.Add(new TextBlock { Classes = { "tvlabel" }, Text = label });
-        p.Children.Add(v);
-        p.Children.Add(d);
-        Hw.Children.Add(new Border { Classes = { "card" }, Margin = new(0, 0, 18, 0), Padding = new(26, 22), Child = p });
-        return (v, d);
+        var v = new TextBlock { Classes = { "tvbig" }, FontSize = 26, Text = "—" };
+        var h = new TextBlock { Classes = { "tv" }, FontSize = 16, TextWrapping = Avalonia.Media.TextWrapping.Wrap };
+        var panel = new StackPanel { Spacing = 6 };
+        panel.Children.Add(new TextBlock { Classes = { "tvlabel" }, FontSize = 13, Text = label });
+        panel.Children.Add(v);
+        panel.Children.Add(h);
+        var b = new Button { Classes = { "tile" }, Content = panel, MinHeight = 140 };
+        b.Click += (_, _) => Activate(name);
+        Grid.SetRow(b, row);
+        Grid.SetColumn(b, col);
+        Tiles.Children.Add(b);
+        _tile[name] = (b, v, h);
     }
+
+    private void AddStat(int row)
+    {
+        var l = new TextBlock { Classes = { "tv" } };
+        var v = new TextBlock { Classes = { "tv" }, Foreground = App.Brush("Fg"), HorizontalAlignment = HorizontalAlignment.Right };
+        Grid.SetRow(l, row);
+        Grid.SetRow(v, row);
+        Grid.SetColumn(v, 1);
+        Stats.Children.Add(l);
+        Stats.Children.Add(v);
+        _stats.Add((l, v));
+    }
+
+    private void Stat(int i, string label, string value) => (_stats[i].Label.Text, _stats[i].Value.Text) = (label, value);
 
     private async void Tick()
     {
@@ -59,56 +86,116 @@ public partial class TvWindow : Window
                 return (game, FrameLimiter.ScreenOf(game?.Pid ?? -1)); // sem jogo: a tela em foco
             });
             _scanning = false;
-            bool changed = g?.Key != _game?.Key;
             _game = g;
             _screen = sc;
-            if (changed) ShowLimits();
         }
+        ShowSession();
+        ShowTiles();
+    }
+
+    private void ShowSession()
+    {
         var f = _game != null ? Live.Frames : null;
         Game.Text = _game?.Name ?? "Nenhum jogo aberto";
         Fps.Text = f != null ? $"{f.Fps:0}" : "—";
-        Ft.Text = f != null ? $"{f.FrameTimeMs:0.0} ms por quadro · mínimo {f.MinFps:0}" : "";
-        var v = f != null && _game != null ? FrameLimiter.Judge(Live.FrameTimes, Limit()) : null;
-        Verdict.Text = _game == null ? "Abra um jogo pelo Hydra: ele aparece aqui sozinho."
-                     : v != null ? $"{v.Title}. {v.Detail}" : f == null ? "Esperando o FPS do MangoHud…" : "Medindo o ritmo dos quadros…";
-        Verdict.Foreground = App.Brush(v == null ? "Muted" : v.Good ? "Ok" : "Warn");
+        int mult = _game != null ? Lsfg.Multiplier(_s, _game.Key) : 1;
+        Ft.Text = f == null ? "" : mult >= 2 ? $"FPS reais · {f.Fps * mult:0} na tela ({mult}×)" : $"FPS · {f.FrameTimeMs:0.0} ms";
 
-        var gpu = Live.Gpu;
-        var cpu = Live.Cpu;
-        var mem = Live.Mem;
-        _hw[0].Value.Text = gpu?.Temp is float gt ? $"{gt:0} °C" : "—";
-        _hw[0].Detail.Text = gpu?.Load is float gl ? $"{gl:0}% de uso" + (gpu.PowerW is float w ? $" · {w:0} W" : "") : "";
-        _hw[1].Value.Text = cpu?.Temp is float ct ? $"{ct:0} °C" : "—";
-        _hw[1].Detail.Text = cpu?.Total is float cl ? $"{cl:0}% de uso" : "";
-        _hw[2].Value.Text = mem != null ? $"{mem.UsedGb:0.#} GB" : "—";
-        _hw[2].Detail.Text = mem != null ? $"de {mem.TotalGb:0} GB" : "";
-        _hw[3].Value.Text = _screen != null ? $"{_screen.Hz:0.#} Hz" : "—";
-        _hw[3].Detail.Text = _screen != null ? _screen.Name + (_screen.Vrr ? " · VRR" : "") : "";
+        var floor = f != null ? Live.SessionFloor : null;
+        double above = floor != null ? 100 - floor.BelowPct : 0;
+        FloorBar.Width = Math.Max(0, (FloorBar.Parent as Control)?.Bounds.Width * above / 100 ?? 0);
+        FloorBar.Background = App.Brush(above >= 99.5 ? "Ok" : "Warn");
+        var start = Live.SessionStart;
+        Stat(0, "Acima de 60", floor == null ? "—" : $"{above:0.#}% do tempo" + (start is DateTime t ? $" · {(DateTime.Now - t).TotalMinutes:0} min" : ""));
+        Stat(1, "Quedas", floor == null ? "—" : floor.Drops == 0 ? "nenhuma" : $"{floor.Drops}, a pior em {floor.WorstFps:0}");
+        var v = f != null ? FrameLimiter.Judge(Live.FrameTimes, Limit()) : null;
+        Stat(2, "Ritmo dos quadros", v == null ? "—" : v.Title);
+        Stat(3, "GPU · CPU", $"{(Live.Gpu?.Temp is float gt ? $"{gt:0} °C" : "—")} · {(Live.Cpu?.Temp is float ct ? $"{ct:0} °C" : "—")}");
+        var last = _game == null ? null : SessionLog.Load().Sessions.Where(x => x.Game == _game.Name).MaxBy(x => x.Start);
+        Stat(4, "Sessão anterior", last?.BelowPct is double b ? $"{100 - b:0.#}% acima de 60" : last != null ? $"{last.AvgFps:0} FPS médio" : "—");
+
+        var tip = last != null ? SessionLog.Advice(last) : null;
+        TipBox.IsVisible = _game != null;
+        Tip.Text = _game == null ? "" : floor != null && floor.BelowPct >= 0.5
+            ? $"Abaixo de 60 em {floor.BelowPct:0.#}% do tempo até agora. " + (tip != null && !tip.Good ? tip.Text : "Se continuar, baixe um degrau nos gráficos ou ligue upscaling (FSR, XeSS ou DLSS) em Qualidade.")
+            : tip != null ? $"{tip.Title}. {tip.Text}" : "Segurando 60. A sugestão do jogo aparece aqui quando houver o que ajustar.";
+        TipBox.BorderBrush = App.Brush(floor != null && floor.BelowPct >= 0.5 || tip is { Good: false } ? "Warn" : "Ok");
     }
 
-    private double Limit() => _game != null && AppSettings.Current.FpsLimits.TryGetValue(_game.Key, out var l) ? l : 0;
+    private double Limit() => _game != null && _s.FpsLimits.TryGetValue(_game.Key, out var l) ? l : 0;
+    private double ScreenHz => _screen?.Hz ?? 60;
 
-    private void ShowLimits()
+    private void ShowTiles()
     {
-        Limits.Children.Clear();
-        LimitLabel.Text = _game == null ? "LIMITE DE FPS (abra um jogo)" : $"LIMITE DE FPS · {_game.Name}";
-        var last = _game == null ? null : SessionLog.Load().Sessions.Where(s => s.Game == _game.Name).MaxBy(s => s.Start);
-        LastSession.Text = last == null ? "" : $"Última sessão: {last.AvgFps:0} FPS médio, 1% low {last.Low1Fps:0}, ritmo ±{last.PacingMs:0.0} ms ({last.Start:dd/MM})";
-        if (_game == null) return;
-        var values = (_screen is { } sc ? FrameLimiter.Candidates(sc.Hz, sc.Vrr) : new() { 120, 60, 40, 30 }).Append(0);
-        foreach (double v in values)
+        bool has = _game != null;
+        void T(string n, string value, string hint, bool enabled = true)
         {
-            var b = new Button { Classes = { "tv" }, Content = v > 0 ? v.ToString("0.##") : "Sem limite" };
-            if (Math.Abs(Limit() - v) < 0.01) b.Classes.Add("current");
-            b.Click += (_, _) =>
-            {
-                try { FrameLimiter.Set(AppSettings.Current, _game!.Key, v); }
-                catch (Exception) { return; } // sem permissão no ~/.config/MangoHud: o botão só não marca
-                foreach (var o in Limits.Children.OfType<Button>()) o.Classes.Remove("current");
-                b.Classes.Add("current");
-            };
-            Limits.Children.Add(b);
+            var t = _tile[n];
+            t.Value.Text = value;
+            t.Hint.Text = hint;
+            t.Button.IsEnabled = enabled;
         }
+        double lim = Limit();
+        int mult = has ? Lsfg.Multiplier(_s, _game!.Key) : 1;
+        T("limit", !has ? "—" : lim > 0 ? $"{lim:0.##}" : "Sem limite",
+          !has ? "abra um jogo" : Math.Abs(lim * mult - ScreenHz) < 0.6 ? "igual à TV" : "A troca o valor", has);
+        string? fgMissing = Lsfg.Missing();
+        T("fg", !has ? "—" : mult >= 2 ? $"{mult}× ligada" : "Desligada",
+          fgMissing ?? (mult >= 2 ? $"{ScreenHz / mult:0.##} reais × {mult}" : "2× = metade reais, mais atraso"), has && fgMissing == null);
+        bool limited = has && _s.FpsLimits.ContainsKey(_game!.Key);
+        bool hidden = has && (_s.OverlayHidden.TryGetValue(_game!.Key, out bool h) ? h : ConsoleSetup.MangoHidden(Sys.Read(MangoHudConfig.FilePath) ?? ""));
+        T("overlay", !has ? "—" : hidden ? "Escondido" : "Visível", has && !limited ? "precisa de um limite salvo" : "o FPS chega ao Pharos igual", limited);
+        T("power", _power == "performance" ? "Desempenho" : _power == null ? "—" : "Equilibrado",
+          _power == null ? "sem power-profiles-daemon" : "CPU sem economia", _power != null);
+        T("shot", "Tirar foto", "fecha o menu e captura o jogo");
+        T("bp", "Big Picture", "o jogo continua aberto");
+    }
+
+    private async Task ReadPower()
+    {
+        _power = await Task.Run(BatteryInfo.PowerProfile);
+        ShowTiles();
+    }
+
+    private async void Activate(string name)
+    {
+        var g = _game;
+        try
+        {
+            switch (name)
+            {
+                case "limit" when g != null:
+                    // os valores que casam com a tela, e sem limite; com geração ligada, o limite é dos quadros reais
+                    int mult = Lsfg.Multiplier(_s, g.Key);
+                    var values = FrameLimiter.Candidates(ScreenHz, _screen?.Vrr == true).Select(v => Math.Round(v / mult, 2)).Append(0).Distinct().ToList();
+                    int i = values.FindIndex(v => Math.Abs(v - Limit()) < 0.01);
+                    FrameLimiter.Set(_s, g.Key, values[(i + 1) % values.Count]);
+                    break;
+                case "fg" when g != null:
+                    Lsfg.Set(_s, g.Key, Lsfg.Multiplier(_s, g.Key) >= 2 ? 1 : 2, ScreenHz);
+                    break;
+                case "overlay" when g != null:
+                    bool hidden = _s.OverlayHidden.TryGetValue(g.Key, out bool h) ? h : ConsoleSetup.MangoHidden(Sys.Read(MangoHudConfig.FilePath) ?? "");
+                    _s.OverlayHidden[g.Key] = !hidden;
+                    _s.Save();
+                    FrameLimiter.Write(_s, g.Key); // o MangoHud relê; o log volta pelo control= novo
+                    break;
+                case "power" when _power != null:
+                    await Sys.RunAsync("powerprofilesctl", "set", _power == "performance" ? "balanced" : "performance");
+                    await ReadPower();
+                    break;
+                case "shot":
+                    // depois que o menu fecha e o jogo volta à frente
+                    await Sys.RunAsync("systemd-run", "--user", "--collect", "--quiet", "sh", "-c", $"sleep 1; exec {Sys.Quote(ConsoleSetup.Bin("controller-screenshot"))}");
+                    Close();
+                    return;
+                case "bp":
+                    await Sys.RunAsync("systemd-run", "--user", "--collect", "--quiet", ConsoleSetup.HydraWrapper, "--big-picture");
+                    break;
+            }
+        }
+        catch (Exception ex) { Tip.Text = "Não consegui mudar: " + ex.Message; }
+        ShowTiles();
     }
 
     private void OnKey(object? sender, KeyEventArgs e)
@@ -143,9 +230,6 @@ public partial class TvWindow : Window
             .Select(x => x.b).FirstOrDefault();
         next?.Focus(NavigationMethod.Directional);
     }
-
-    private async void Bp_Click(object? sender, RoutedEventArgs e) =>
-        await Sys.RunAsync("systemd-run", "--user", "--collect", "--quiet", ConsoleSetup.HydraWrapper, "--big-picture");
 
     private void Close_Click(object? sender, RoutedEventArgs e) => Close();
 }

@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.VisualTree;
 
 namespace PharosGaming.Tests;
 
@@ -39,16 +40,34 @@ public class TvWindowTests
         var w = new TvWindow();
         w.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        var bp = w.FindControl<Button>("BtnBp")!;
+        var tiles = w.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("tile")).ToList();
+        var shot = tiles.First(b => b.IsEffectivelyEnabled && ((b.Content as StackPanel)?.Children[0] as TextBlock)?.Text == "CAPTURA");
+        var bp = tiles.First(b => ((b.Content as StackPanel)?.Children[0] as TextBlock)?.Text == "HYDRA");
         var close = w.FindControl<Button>("BtnClose")!;
-        bp.Focus();
+        shot.Focus();
         w.KeyPress(Key.Right, RawInputModifiers.None, PhysicalKey.ArrowRight, null);
-        Assert.True(close.IsFocused);
-        w.KeyPress(Key.Left, RawInputModifiers.None, PhysicalKey.ArrowLeft, null);
         Assert.True(bp.IsFocused);
+        w.KeyPress(Key.Down, RawInputModifiers.None, PhysicalKey.ArrowDown, null);
+        Assert.True(close.IsFocused);
         bool closed = false;
         w.Closed += (_, _) => closed = true;
         w.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
         Assert.True(closed);
+    }
+}
+
+public class LsfgTests
+{
+    [Fact]
+    public void Build_OneProfilePerGameWithExe()
+    {
+        var toml = Lsfg.Build(new Dictionary<string, int> { ["wine-eldenring"] = 2, ["retroarch"] = 3, ["wine-hades"] = 1 }, "/h/.local/share/pharos-gaming/lsfg-vk.dll");
+        Assert.Contains("version = 2", toml);
+        Assert.Contains("dll = \"/h/.local/share/pharos-gaming/lsfg-vk.dll\"", toml);
+        Assert.Contains("active_in = [ \"eldenring.exe\" ]", toml);
+        Assert.Contains("active_in = [ \"retroarch\" ]", toml);
+        Assert.Contains("multiplier = 3", toml);
+        Assert.DoesNotContain("hades", toml); // 1× = desligada: sem perfil
+        Assert.Equal(2, toml.Split("[[profile]]").Length - 1);
     }
 }

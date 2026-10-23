@@ -52,6 +52,16 @@
                 </StackPanel>
             </Panel>
         </DataTemplate>
+        <!-- Medidor: rótulo, valor e barra -->
+        <DataTemplate DataType="local:MeterItem" x:DataType="local:MeterItem">
+            <StackPanel Margin="0,6,24,6">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{Binding Label}" Foreground="{StaticResource Muted}" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Grid.Column="1" Text="{Binding Value}" FontFamily="monospace" Foreground="{StaticResource Fg}"/>
+                </Grid>
+                <ProgressBar Maximum="1" Value="{Binding Fraction}" Margin="0,5,0,0"/>
+            </StackPanel>
+        </DataTemplate>
     </Application.DataTemplates>
     <Application.Resources>
         <!-- Mesma paleta monocromática do PHAROS GAMING para Windows (Theme.xaml) -->

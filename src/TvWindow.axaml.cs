@@ -43,16 +43,16 @@ public partial class TvWindow : Window
     public TvWindow()
     {
         InitializeComponent();
-        string[] names = { "limit", "fg", "fglight", "overlay", "audio", "voldown", "volup", "power", "screens", "pad", "shot", "bp" };
-        string[] labels = { "LIMITE", "GERAÇÃO", "QUALIDADE", "OVERLAY", "SOM", "VOLUME −", "VOLUME +",
-                            "ENERGIA", "TELAS", "CONTROLE", "CAPTURA", "HYDRA" };
-        for (int i = 0; i < names.Length; i++) AddTile(names[i], labels[i], i / 4, i % 4);
+        // só ações; o estado do jogo (limite, geração, overlay) fica no painel da sessão
+        string[] names = { "audio", "power", "screens", "pad", "shot", "bp" };
+        string[] labels = { "SOM", "ENERGIA", "TELAS", "CONTROLE", "CAPTURA", "HYDRA" };
+        for (int i = 0; i < names.Length; i++) AddTile(names[i], labels[i], i / 3, i % 3);
         for (int r = 0; r < 8; r++) AddStat(r);
         // o controle só manda aqui com a janela em foco: com o jogo na frente, os botões são do jogo
         _pad = new Gamepad(nav => Dispatcher.UIThread.Post(() => { if (IsActive) Navigate(nav); }));
         KeyDown += OnKey;
         _floorGradient = FloorBar.Background;
-        Opened += (_, _) => { Intro(); _tile["limit"].Button.Focus(); };
+        Opened += (_, _) => { Intro(); _tile["audio"].Button.Focus(); };
         Closed += (_, _) => { _pad.Dispose(); Live.Tick -= Tick; };
         Live.Start();
         Live.Tick += Tick;
@@ -225,28 +225,10 @@ public partial class TvWindow : Window
         Graph.Children.Add(new Avalonia.Controls.Shapes.Polyline { Points = pts, Stroke = Br("TvLapis"), StrokeThickness = 2.5, StrokeJoin = PenLineJoin.Round });
     }
 
-    /// <summary>Os valores do botão de limite, na ordem em que o A anda (com geração ligada, o limite é dos quadros reais).</summary>
-    private List<double> LimitSteps()
-    {
-        int mult = _game != null ? _s.FgApplied.GetValueOrDefault(_game.Key, 1) : 1;
-        return FrameLimiter.Candidates(ScreenHz, _screen?.Vrr == true).Select(v => Math.Round(v / mult, 2)).Append(0).Distinct().ToList();
-    }
-
-    private double NextLimit()
-    {
-        var v = LimitSteps();
-        int i = v.FindIndex(x => Math.Abs(x - Limit()) < 0.01);
-        return v[(i + 1) % v.Count];
-    }
-
-    private string NextLimitText() => NextLimit() is double n && n > 0 ? $"{n:0.##} FPS" : "sem limite";
-
     private double Limit() => _game != null && _s.FpsLimits.TryGetValue(_game.Key, out var l) ? l : 0;
-    private double ScreenHz => _screen?.Hz ?? 60;
 
     private void ShowTiles()
     {
-        bool has = _game != null;
         void T(string n, string value, string hint, bool enabled = true, bool on = false)
         {
             var t = _tile[n];
@@ -255,25 +237,9 @@ public partial class TvWindow : Window
             t.Button.IsEnabled = enabled;
             t.Icon.Classes.Set("on", on && enabled); // ligado: o ícone acende em lápis-lazúli
         }
-        double lim = Limit();
-        int mult = has ? _s.FgApplied.GetValueOrDefault(_game!.Key, 1) : 1; // valendo agora
-        int want = has ? Lsfg.Multiplier(_s, _game!.Key) : 1;             // pedida (vale ao reabrir)
-        T("limit", "Mudar limite", !has ? "abra um jogo" : $"próximo: {NextLimitText()}", has, lim > 0);
-        string? fgMissing = Lsfg.Missing();
-        T("fg", want >= 2 ? (Lsfg.Choices(ScreenHz).Max() > want ? $"Usar {want + 1}×" : "Desligar") : "Ligar 2×",
-          fgMissing ?? (want != mult ? "vale ao reabrir o jogo"
-                        : want >= 2 ? $"{ScreenHz / want:0.##} reais × {want}" : "2× = metade reais"), has && fgMissing == null, want >= 2);
-        bool limited = has && _s.FpsLimits.ContainsKey(_game!.Key);
-        bool hidden = has && (_s.OverlayHidden.TryGetValue(_game!.Key, out bool h) ? h : ConsoleSetup.MangoHidden(Sys.Read(MangoHudConfig.FilePath) ?? ""));
-        T("overlay", hidden ? "Mostrar FPS" : "Esconder FPS", has && !limited ? "precisa de limite" : "o FPS chega ao Pharos igual", limited, !hidden);
         T("power", _power == "performance" ? "Desempenho" : _power == null ? "—" : "Equilibrado",
           _power == null ? "sem power-profiles-daemon" : _power == "performance" ? "trocar para equilibrado" : "trocar para desempenho", _power != null, _power == "performance");
-        bool light = has && _s.FgLight.Contains(_game!.Key);
-        T("fglight", light ? "Modo normal" : "Modo leve", want < 2 ? "com a geração ligada" : light ? "imagem melhor" : "mais rápido, menos nítido",
-          has && want >= 2 && fgMissing == null, light);
         T("audio", _sink != null ? QuickActions.Short(_sink) : "—", "trocar a saída", _sink != null, true);
-        T("voldown", _volume is int vd ? $"{vd}%" : "—", "abaixa 5%", _volume != null);
-        T("volup", _volume is int vu ? $"{vu}%" : "—", "aumenta 5%", _volume != null);
         T("screens", _screensOff ? "Ligar telas" : "Desligar telas", _screensOff ? "as outras estão desligadas" : "deixa só a tela do jogo", on: _screensOff);
         T("pad", _padConfirm ? "Confirmar" : "Desligar", _padConfirm ? "A de novo desliga" : "desconecta o Bluetooth");
         T("shot", "Tirar foto", "fecha o menu e captura");
@@ -302,25 +268,8 @@ public partial class TvWindow : Window
         {
             switch (name)
             {
-                case "limit" when g != null:
-                    // os valores que casam com a tela, e sem limite; com geração ligada, o limite é dos quadros reais
-                    FrameLimiter.Set(_s, g.Key, NextLimit());
-                    break;
-                case "fg" when g != null:
-                    // desligada → 2× → 3× (se der ≥ 30 reais na tela) → desligada; ligar/desligar vale ao reabrir, trocar vale já
-                    var steps = new List<int> { 1 }.Concat(Lsfg.Choices(ScreenHz)).ToList();
-                    int cur = Lsfg.Multiplier(_s, g.Key);
-                    Lsfg.Set(_s, g.Key, steps[(steps.IndexOf(cur) + 1) % steps.Count], ScreenHz, running: true);
-                    break;
-                case "fglight" when g != null:
-                    Lsfg.SetLight(_s, g.Key, !_s.FgLight.Contains(g.Key), ScreenHz);
-                    break;
                 case "audio":
                     await QuickActions.NextSink();
-                    await ReadAudio();
-                    break;
-                case "voldown" or "volup":
-                    await QuickActions.Step(name == "volup" ? 5 : -5);
                     await ReadAudio();
                     break;
                 case "screens":
@@ -335,12 +284,6 @@ public partial class TvWindow : Window
                     await QuickActions.DisconnectPads();
                     Close();
                     return;
-                case "overlay" when g != null:
-                    bool hidden = _s.OverlayHidden.TryGetValue(g.Key, out bool h) ? h : ConsoleSetup.MangoHidden(Sys.Read(MangoHudConfig.FilePath) ?? "");
-                    _s.OverlayHidden[g.Key] = !hidden;
-                    _s.Save();
-                    FrameLimiter.Write(_s, g.Key); // o MangoHud relê; o log volta pelo control= novo
-                    break;
                 case "power" when _power != null:
                     await Sys.RunAsync("powerprofilesctl", "set", _power == "performance" ? "balanced" : "performance");
                     await ReadPower();

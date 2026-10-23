@@ -207,7 +207,7 @@
                 <!-- ajustes -->
                 <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*">
                     <TextBlock Classes="cap" Text="AJUSTES RÁPIDOS" Margin="8,0,0,6"/>
-                    <Grid x:Name="Tiles" Grid.Row="1" ColumnDefinitions="*,*,*,*" RowDefinitions="Auto,Auto,Auto"/>
+                    <Grid x:Name="Tiles" Grid.Row="1" ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto"/>
                     <Border x:Name="TipBox" Grid.Row="2" CornerRadius="22" Background="{StaticResource TvGlass}" BorderThickness="1.5"
                             Padding="20,14" Margin="7,10,7,0" VerticalAlignment="Top">
                         <Border.Transitions><Transitions><BrushTransition Property="BorderBrush" Duration="0:0:0.4"/></Transitions></Border.Transitions>

@@ -49,9 +49,16 @@ que vê o jogo rodando (os da Steam pelo `SteamAppId`; os do Hydra fora da Steam
   controle; Hydra (abrir com o sistema, MangoHud nos jogos), Steam com `MANGOHUD=1` (os jogos da Steam que o Hydra abre
   nascem da Steam), TV (`tv-power`), reconexão do controle por Bluetooth, MangoHud escondido no início e o diagnóstico
   do `gaming-doctor`. Cada arquivo editado ganha uma cópia `.pharos-bak` na primeira mudança.
-- **Modo TV:** FPS, ritmo, limite e temperaturas em letras grandes, em tela cheia, navegável pelo controle (direcional ou
-  analógico, A confirma, B sai) e pelas setas. Abre pela página, com `pharos-gaming --tv` ou pela ação "Pharos na TV",
-  que pode ir em qualquer gesto do controle.
+- **Menu rápido na TV:** Guide + View no controle abre o Pharos em tela cheia por cima do jogo (o daemon do console
+  devolve o jogo ao fechar). Mostra a sessão ao vivo (quanto do tempo ficou acima de 60, quedas, ritmo, temperaturas,
+  a sessão anterior e a sugestão do jogo) e ajustes que valem com o jogo aberto: limite, geração de quadros, overlay,
+  perfil de energia, captura e Big Picture. Navega pelo controle (direcional ou analógico, A muda, B volta ao jogo) ou
+  pelas setas; também abre pela página e com `pharos-gaming --tv`.
+- **Perfil da TV:** todo jogo novo que aparece na TV ganha o limite igual à taxa dela (59,95), e cada sessão mede o
+  tempo abaixo de 60 e sugere o ajuste que falta (upscaling ou gráficos quando a GPU está cheia; CPU quando não está).
+- **Geração de quadros (lsfg-vk):** por jogo, pelo menu rápido. O PHAROS escreve `~/.config/lsfg-vk/conf.toml` (um
+  perfil por jogo, pelo `.exe`) e baixa o limite real para metade (29,98 × 2 = 59,95 na TV sem VRR). Precisa do
+  lsfg-vk instalado e da Lossless Scaling no ramo beta `lsfg-vk` na Steam. Só como último recurso: dobra o atraso.
 
 **Desempenho**
 - **Benchmark:** render de CPU (path tracing, como o Cinebench), cena de jogo e ray tracing em OpenGL, simulação de jogo,
@@ -122,7 +129,7 @@ Usa ferramentas que as distros já trazem: `lspci`, `lsblk`, `udevadm`, `journal
 ```
 mise exec -- dotnet test tests
 ```
-96 testes xunit: os parsers (sysfs, udev, lspci, lsblk, smartctl, journal, MangoHud, VDF da Steam), os cálculos (gargalo,
+100 testes xunit: os parsers (sysfs, udev, lspci, lsblk, smartctl, journal, MangoHud, VDF da Steam), os cálculos (gargalo,
 EXPO, frametime, efeitos de luz), os scripts de root (aspas e conteúdo), o protocolo do OpenRGB contra um servidor falso,
 a leitura desta máquina e a interface inteira em modo headless (abre as 24 páginas e o modo TV). Os testes de GPU rodam a cena, o ray
 tracing e o stress por um instante quando há GPU com aceleração, e passam sem rodar quando não há (CI). O CI do GitHub

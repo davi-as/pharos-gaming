@@ -26,6 +26,13 @@ public sealed partial class MangoHudFrames
     private readonly StringBuilder _partial = new();
     private int _colFps = -1, _colFt = -1;
     private readonly Queue<(DateTime At, double Fps, double Ft)> _hist = new();
+    private readonly List<double> _all = new(); // a sessão inteira deste log (tempo abaixo de 60)
+
+    /// <summary>"Nunca 59" desde o começo deste log.</summary>
+    public Floor SessionFloor => Floor.Of(_all);
+
+    /// <summary>Quando o log atual começou (pelo nome do arquivo).</summary>
+    public DateTime? SessionStart => _file != null ? SessionLog.FromName(_file)?.Start : null;
 
     public MangoHudFrames()
     {
@@ -67,6 +74,7 @@ public sealed partial class MangoHudFrames
             _offset = 0;
             _partial.Clear();
             _hist.Clear();
+            _all.Clear();
             _colFps = _colFt = -1;
         }
 
@@ -105,6 +113,7 @@ public sealed partial class MangoHudFrames
             double ft = _colFt >= 0 && _colFt < cols.Length &&
                         double.TryParse(cols[_colFt], NumberStyles.Float, CultureInfo.InvariantCulture, out var t) ? t : 1000 / fps;
             _hist.Enqueue((now, fps, ft));
+            _all.Add(fps);
         }
         while (_hist.Count > 0 && (now - _hist.Peek().At).TotalSeconds > WindowSec) _hist.Dequeue();
     }

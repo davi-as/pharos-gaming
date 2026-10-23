@@ -56,6 +56,11 @@ public partial class SessionsPage : UserControl
         var metrics = new WrapPanel { Margin = new(0, 12, 0, 0) };
         metrics.Children.Add(Metric("FPS MÉDIO", $"{s.AvgFps:0}", Delta(s.AvgFps, prev?.AvgFps)));
         metrics.Children.Add(Metric("1% LOW", $"{s.Low1Fps:0}", Delta(s.Low1Fps, prev?.Low1Fps)));
+        if (s.BelowPct is double b)
+        {
+            metrics.Children.Add(Metric("ACIMA DE 60", $"{100 - b:0.#}%", Delta(-b, -(prev?.BelowPct ?? double.NaN), "pts", 0.5)));
+            metrics.Children.Add(Metric("QUEDAS", s.Drops == 0 ? "0" : $"{s.Drops} · pior {s.WorstFps:0}", null));
+        }
         metrics.Children.Add(Metric("RITMO", $"±{s.PacingMs:0.0} ms", Delta(-s.PacingMs, prev == null ? null : -prev.PacingMs, "ms", 0.3)));
         if (s.CpuTempMax is double ct) metrics.Children.Add(Metric("CPU MÁX.", $"{ct:0} °C", null));
         if (s.GpuTempMax is double gt) metrics.Children.Add(Metric("GPU MÁX.", $"{gt:0} °C", null));
@@ -65,6 +70,15 @@ public partial class SessionsPage : UserControl
         var body = new StackPanel();
         body.Children.Add(head);
         body.Children.Add(metrics);
+        if (s.BelowPct != null)
+        {
+            var tip = SessionLog.Advice(s);
+            body.Children.Add(new TextBlock
+            {
+                Text = $"{tip.Title}. {tip.Text}", Classes = { "dim" }, FontSize = 12.5, Margin = new(0, 6, 0, 0),
+                Foreground = App.Brush(tip.Good ? "Ok" : "Warn"), TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+            });
+        }
         return new Border { Classes = { "card" }, Margin = new(0), Child = body };
     }
 

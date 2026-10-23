@@ -68,3 +68,42 @@ public class SessionTests
         Assert.Equal(2, SessionLog.Load().Sessions.Count); // não resume de novo
     }
 }
+
+public class FloorTests
+{
+    [Fact]
+    public void Floor_CountsTimeAndDropsBelow60()
+    {
+        var f = Floor.Of(new[] { 60.0, 59.9, 58, 57, 60, 60, 54, 60 });
+        Assert.Equal(37.5, f.BelowPct);   // 58, 57, 54 de 8
+        Assert.Equal(2, f.Drops);         // 58-57 e 54
+        Assert.Equal(54, f.WorstFps);
+        Assert.Equal(0, Floor.Of(new[] { 59.95, 60.0 }).BelowPct); // o limite de 59,95 da TV não é queda
+    }
+
+    [Fact]
+    public void Advice_PointsToGpuOrCpu()
+    {
+        GameSession S(double below, double? gpuLow, double low1 = 55) =>
+            new("x", DateTime.Now, 30, 60, low1, 1, null, null, null, null, 59.95, new(), below, below > 0 ? 3 : 0, 50, gpuLow);
+        Assert.True(SessionLog.Advice(S(0.2, null)).Good);
+        Assert.Contains("FSR", SessionLog.Advice(S(4, 98)).Text);
+        Assert.Contains("distância de visão", SessionLog.Advice(S(4, 60)).Text);
+        Assert.Contains("geração de quadros", SessionLog.Advice(S(10, 99, low1: 40)).Text);
+        Assert.False(SessionLog.Advice(S(4, 98)).Good);
+        Assert.True(SessionLog.Advice(new GameSession("x", DateTime.Now, 1, 60, 60, 1, null, null, null, null, 0, new())).Good); // sessão antiga
+    }
+
+    [Fact]
+    public void TvName_GuessesTvByBrandAndRate()
+    {
+        var screens = new[]
+        {
+            new FrameLimiter.Screen("DP-1", 165, false, "AOC Q27G2G4"),
+            new FrameLimiter.Screen("DP-2", 59.951, false, "Samsung Electric Company SAMSUNG 0x01000E00"),
+        };
+        Assert.Equal("DP-2", FrameLimiter.TvName(new AppSettings(), screens));
+        Assert.Equal("DP-1", FrameLimiter.TvName(new AppSettings { TvScreen = "DP-1" }, screens));
+        Assert.Null(FrameLimiter.TvName(new AppSettings(), screens.Take(1)));
+    }
+}

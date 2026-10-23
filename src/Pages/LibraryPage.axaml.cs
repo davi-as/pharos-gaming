@@ -138,6 +138,7 @@ public partial class LibraryPage : UserControl
             {
                 Classes = { "dim" }, FontSize = 12.5,
                 Text = $"{s.Start:dd/MM HH:mm} · {s.Minutes:0} min · {s.AvgFps:0} FPS médio · 1% low {s.Low1Fps:0} · ritmo ±{s.PacingMs:0.0} ms"
+                       + (s.BelowPct is double b ? $" · {100 - b:0.#}% acima de 60" : "")
                        + (s.GpuTempMax is double t ? $" · GPU {t:0} °C" : ""),
             });
         if (sessions.Count == 0) LSessions.Children.Add(new TextBlock { Classes = { "dim" }, FontSize = 12, Text = "Nenhuma sessão registrada ainda." });

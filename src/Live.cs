@@ -21,6 +21,8 @@ public static class Live
     public static MemReading? Mem { get; private set; }
     public static FrameStats? Frames { get; private set; }
     public static IReadOnlyList<double> FrameTimes => FramesReader.FrameTimes;
+    public static Floor SessionFloor => FramesReader.SessionFloor;
+    public static DateTime? SessionStart => FramesReader.SessionStart;
 
     /// <summary>Pausa as leituras de GPU (benchmarks de GPU: cada consulta ao driver custa um engasgo).</summary>
     public static bool Paused { get; set; }

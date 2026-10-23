@@ -15,7 +15,7 @@ public sealed record RunningGame(int Pid, string Key, string? SteamAppId = null)
 /// O limite vai num arquivo por jogo (~/.config/MangoHud/wine-JOGO.conf), que o MangoHud prefere ao MangoHud.conf
 /// e relê sozinho quando muda: vale para jogos abertos por qualquer launcher (Hydra, Steam) e muda com o jogo aberto.
 /// </summary>
-public static class FrameLimiter
+public static partial class FrameLimiter
 {
     public static string Dir => Path.Combine(Sys.ConfigHome, "MangoHud");
     private static string UserConf => Path.Combine(Dir, "MangoHud.conf");
@@ -195,10 +195,43 @@ public static class FrameLimiter
 
     // ---------------- sugestões ----------------
 
-    public sealed record Screen(string Name, double Hz, bool Vrr);
+    public sealed record Screen(string Name, double Hz, bool Vrr, string Description = "");
+
+    /// <summary>Todas as telas do Hyprland (vazio fora dele).</summary>
+    public static List<Screen> Screens()
+    {
+        try
+        {
+            using var mons = JsonDocument.Parse(Sys.RunAsync("hyprctl", "monitors", "-j").GetAwaiter().GetResult().Out);
+            return mons.RootElement.EnumerateArray().Select(m => new Screen(m.GetProperty("name").GetString() ?? "", m.GetProperty("refreshRate").GetDouble(),
+                m.GetProperty("vrr").GetBoolean(), m.GetProperty("description").GetString() ?? "")).ToList();
+        }
+        catch (Exception) { return new(); }
+    }
+
+    /// <summary>A TV: a escolhida nas configurações, ou a tela de até 61 Hz de uma marca de TV.</summary>
+    public static string? TvName(AppSettings s, IEnumerable<Screen> screens) =>
+        s.TvScreen ?? screens.FirstOrDefault(m => m.Hz <= 61 && TvRe().IsMatch(m.Description))?.Name;
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(SAMSUNG|LG|SONY|TCL|HISENSE|PHILIPS|PANASONIC|TOSHIBA|VIZIO|SHARP|TV)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex TvRe();
+
+    /// <summary>
+    /// Perfil da TV: jogo sem limite que aparece na TV ganha o limite igual à taxa dela (cada quadro o mesmo tempo
+    /// na tela, sem VRR). Devolve o limite aplicado, ou null.
+    /// </summary>
+    public static double? AutoTv(AppSettings s, RunningGame g)
+    {
+        if (!s.AutoTvProfile || s.FpsLimits.ContainsKey(g.Key)) return null;
+        var screens = Screens();
+        if (ScreenOf(g.Pid, windowOnly: true) is not { } at || at.Name != TvName(s, screens)) return null; // sem janela: não é o jogo
+        double hz = Math.Round(at.Hz, 2);
+        Set(s, g.Key, hz);
+        return hz;
+    }
 
     /// <summary>Tela onde está a janela do jogo (hyprctl); sem Hyprland ou sem janela, a tela em foco.</summary>
-    public static Screen? ScreenOf(int pid)
+    public static Screen? ScreenOf(int pid, bool windowOnly = false)
     {
         try
         {
@@ -206,6 +239,7 @@ public static class FrameLimiter
             using var clients = JsonDocument.Parse(Sys.RunAsync("hyprctl", "clients", "-j").GetAwaiter().GetResult().Out);
             int? monId = clients.RootElement.EnumerateArray().Where(c => c.GetProperty("pid").GetInt32() == pid)
                 .Select(c => (int?)c.GetProperty("monitor").GetInt32()).FirstOrDefault();
+            if (monId == null && windowOnly) return null;
             var m = mons.RootElement.EnumerateArray().FirstOrDefault(m => monId is { } id ? m.GetProperty("id").GetInt32() == id : m.GetProperty("focused").GetBoolean());
             if (m.ValueKind != JsonValueKind.Object) return null;
             return new Screen(m.GetProperty("name").GetString() ?? "", m.GetProperty("refreshRate").GetDouble(), m.GetProperty("vrr").GetBoolean());

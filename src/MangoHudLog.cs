@@ -30,6 +30,7 @@ public static class MangoHudLog
         foreach (var g in games)
         {
             FrameLimiter.Learn(AppSettings.Current, g);
+            FrameLimiter.AutoTv(AppSettings.Current, g);
             string? name = ControlName(Sys.Read(ConfFor(g.Key)) ?? "", g.Pid);
             if (name == null || Started.GetValueOrDefault(g.Pid) == name) continue;
             if (Send(name, ":logging=1;")) Started[g.Pid] = name;

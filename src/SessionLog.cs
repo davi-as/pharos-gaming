@@ -7,7 +7,28 @@ namespace PharosGaming;
 /// <summary>Resumo de uma sessão de jogo, tirado do log do MangoHud.</summary>
 public sealed record GameSession(string Game, DateTime Start, double Minutes, double AvgFps, double Low1Fps, double PacingMs,
                                  double? CpuTempMax, double? GpuTempMax, double? CpuLoadAvg, double? GpuLoadAvg, double Limit,
-                                 List<string> Files);
+                                 List<string> Files, double? BelowPct = null, int Drops = 0, double WorstFps = 0, double? GpuLoadLow = null); // BelowPct null: sessão de antes da medida
+
+/// <summary>"Nunca abaixo de 60": quanto do tempo ficou abaixo, quantas vezes caiu e até onde.</summary>
+public sealed record Floor(double BelowPct, int Drops, double WorstFps)
+{
+    public const double Fps = 59.5; // o limite da TV é 59,95: abaixo de 59,5 é queda de verdade
+
+    public static Floor Of(IReadOnlyList<double> fps)
+    {
+        if (fps.Count == 0) return new(0, 0, 0);
+        int below = 0, drops = 0;
+        bool inDrop = false;
+        foreach (double f in fps)
+        {
+            bool low = f < Fps;
+            if (low) below++;
+            if (low && !inDrop) drops++;
+            inDrop = low;
+        }
+        return new(100.0 * below / fps.Count, drops, fps.Min());
+    }
+}
 
 /// <summary>
 /// Histórico de sessões: quando um CSV do MangoHud para de crescer (jogo fechado), vira um resumo em sessions.json.
@@ -80,9 +101,30 @@ public static partial class SessionLog
         double sd = Math.Sqrt(ft.Sum(t => (t - avgFt) * (t - avgFt)) / ft.Count);
         static double? Max(IEnumerable<double?> v) => v.Where(x => x != null).DefaultIfEmpty(null).Max();
         static double? Avg(IEnumerable<double?> v) { var l = v.Where(x => x != null).ToList(); return l.Count > 0 ? l.Average() : null; }
+        var floor = Floor.Of(rows.Select(r => r.Fps).ToList());
         return new GameSession(game, start, minutes, rows.Average(r => r.Fps), low1, sd,
             Max(rows.Select(r => r.CpuTemp)), Max(rows.Select(r => r.GpuTemp)), Avg(rows.Select(r => r.CpuLoad)), Avg(rows.Select(r => r.GpuLoad)),
-            limit, files);
+            limit, files, floor.BelowPct, floor.Drops, floor.WorstFps, Avg(rows.Where(r => r.Fps < Floor.Fps).Select(r => r.GpuLoad)));
+    }
+
+    public sealed record Tip(string Title, string Text, bool Good);
+
+    /// <summary>
+    /// O que falta para "nunca abaixo de 60", pela sessão: GPU cheia nas quedas → upscaling ou gráficos; GPU com folga →
+    /// CPU ou o próprio jogo (upscaling ajuda pouco). Geração de quadros só como último recurso (dobra o atraso).
+    /// </summary>
+    public static Tip Advice(GameSession s)
+    {
+        if (s.BelowPct is not double below) return new("Sem a medida de 60", "Sessão registrada antes da medida de tempo abaixo de 60.", true);
+        if (below < 0.5)
+            return new("Segurou 60", s.Drops == 0 ? "Nenhuma queda abaixo de 60 nesta sessão." : $"{s.Drops} queda(s) curta(s), {s.BelowPct:0.#}% do tempo: imperceptível.", true);
+        string where = $"Abaixo de 60 em {below:0.#}% do tempo, {s.Drops} queda(s), a pior em {s.WorstFps:0}.";
+        string fg = s.Low1Fps < 45 ? " Se ainda cair, a geração de quadros 2× segura 60, com mais atraso no controle." : "";
+        if (s.GpuLoadLow is double g && g >= 90)
+            return new("A GPU não deu conta", where + " A GPU estava cheia nas quedas: ligue FSR, XeSS ou DLSS em Qualidade no jogo, ou baixe sombras e efeitos." + fg, false);
+        if (s.GpuLoadLow is double g2 && g2 < 75)
+            return new("CPU ou o jogo no limite", where + " A GPU tinha folga: baixe distância de visão e multidões; upscaling ajuda pouco aqui." + fg, false);
+        return new("Faltou folga", where + " Um degrau a menos nos gráficos ou upscaling em Qualidade deve resolver." + fg, false);
     }
 
     /// <summary>"Hades_2026-10-23_12-17-57.csv" → ("Hades", 23/10/2026 12:17:57).</summary>

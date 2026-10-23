@@ -36,6 +36,18 @@ public partial class ConsolePage : UserControl
             if (_loading) return;
             BtNote.Text = await ConsoleSetup.SetService(ConsoleSetup.BluetoothService, BtSwitch.IsChecked == true) ?? "";
         };
+        TvAuto.IsCheckedChanged += (_, _) =>
+        {
+            if (_loading) return;
+            AppSettings.Current.AutoTvProfile = TvAuto.IsChecked == true;
+            AppSettings.Current.Save();
+        };
+        TvScreenBox.SelectionChanged += (_, _) =>
+        {
+            if (_loading || TvScreenBox.SelectedItem is not string item) return;
+            AppSettings.Current.TvScreen = item.Split(' ')[0];
+            AppSettings.Current.Save();
+        };
         _ = Refresh();
         _ = RunDoctor();
     }
@@ -102,6 +114,11 @@ public partial class ConsolePage : UserControl
         string? ip = File.Exists(ConsoleSetup.MachineFile) && ConsoleSetup.ParseEnv(File.ReadAllText(ConsoleSetup.MachineFile)).TryGetValue("TV_IP", out var v) ? v : null;
         TvText.Text = hasTv ? $"Liga junto com o PC pelo controle e desliga ao suspender{(ip != null ? $" · TV em {ip}" : "")}." : "tv-power não instalado.";
         _ = TvStatus(hasTv);
+        var screens = await Task.Run(FrameLimiter.Screens);
+        string? tv = FrameLimiter.TvName(AppSettings.Current, screens);
+        TvScreenBox.ItemsSource = screens.Select(m => $"{m.Name} · {m.Hz:0.##} Hz · {m.Description}").ToList();
+        TvScreenBox.SelectedIndex = screens.FindIndex(m => m.Name == tv);
+        TvAuto.IsChecked = AppSettings.Current.AutoTvProfile;
         BtSwitch.IsEnabled = bt.Exists;
         BtSwitch.IsChecked = bt.Enabled;
         BtNote.Text = bt.Exists ? (bt.Active ? "" : "O serviço está parado.") : "Serviço xbox-bt-autoconnect não instalado.";

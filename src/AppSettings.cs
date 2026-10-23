@@ -85,6 +85,11 @@ public sealed class AppSettings
     public Dictionary<string, double> FpsLimits { get; set; } = new();
     public Dictionary<string, KnownGame> KnownGames { get; set; } = new();
 
+    // PC como console: na TV, todo jogo novo ganha o limite igual à taxa dela (59,95)
+    public bool AutoTvProfile { get; set; } = true;
+    /// <summary>Saída do Hyprland que é a TV (ex. DP-2); null = adivinhar pela descrição do monitor.</summary>
+    public string? TvScreen { get; set; }
+
     public Dictionary<string, GameProfile> GameProfiles { get; set; } = new();
     public List<CustomGame> CustomGames { get; set; } = new();
 

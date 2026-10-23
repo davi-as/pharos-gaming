@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="PharosGaming.NetPage">
+    <ScrollViewer>
+        <StackPanel Margin="6,6,16,6">
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+                <TextBlock x:Name="Status" Classes="dim" VerticalAlignment="Center"
+                           Text="Diagnóstico de lag: latência, jitter e perda até o roteador e a internet, DNS, velocidade e bufferbloat (≈ 25 s)."/>
+                <Button x:Name="BtnTest" Grid.Column="1" Classes="accent" Content="TESTAR" Click="Test_Click"/>
+            </Grid>
+            <ProgressBar x:Name="Progress" Maximum="1" Margin="0,0,0,14"/>
+            <ItemsControl x:Name="Cards"/>
+            <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"
+                       Text="Os testes de velocidade usam o servidor público speed.cloudflare.com e baixam algumas centenas de MB. Nada é gravado no disco."/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

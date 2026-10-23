@@ -15,6 +15,9 @@ public static class Report
         };
         var smart = DisksPage.LastSmart;
         data.Disks.AddRange((await Task.Run(() => DiskHealth.Read(smart))).Select(ReportDisk.From));
+        var rows = SensorMonitor.Shared.Rows.ToList();
+        data.Power.AddRange((await Task.Run(() => BatteryInfo.Read(rows))).Select(ReportDisk.From));
+        if (NetworkTest.Last != null) data.Network.AddRange(NetworkTest.Last.Select(ReportDisk.From));
         var gpus = await Task.Run(GpuInfoCollector.Collect);
         data.Gpus.AddRange(gpus.Select(g => new ReportGpu(g.Name, g.Subtitle, g.Sections.Select(ReportBuilder.ToNode).OfType<ReportNode>().ToList())));
         var sensors = SensorMonitor.Shared;

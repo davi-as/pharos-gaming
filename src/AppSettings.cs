@@ -46,6 +46,14 @@ public sealed class AppSettings
     // FPS estimado: a chave fica neste arquivo, que só o usuário lê (permissão 600)
     public string? HowManyFpsKey { get; set; }
 
+    // Overlay (MangoHud com o arquivo do PHAROS)
+    public bool OverlayEnabled { get; set; }
+    public bool OverlayVisible { get; set; } = true;
+    public string OverlayCorner { get; set; } = "TL";
+    public double OverlayScale { get; set; } = 1.0;
+    /// <summary>Itens escolhidos para o overlay (chaves de OverlayMetrics); null = padrão.</summary>
+    public List<string>? OverlayItems { get; set; }
+
     public Dictionary<string, GameProfile> GameProfiles { get; set; } = new();
     public List<CustomGame> CustomGames { get; set; } = new();
 

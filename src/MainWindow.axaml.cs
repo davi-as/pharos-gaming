@@ -19,6 +19,7 @@ public partial class MainWindow : Window
         new("PHAROS JOGOS", "Biblioteca", () => new LibraryPage()),
         new("PHAROS JOGOS", "FPS estimado", () => new FpsPage()),
         new("PHAROS JOGOS", "Gargalo", () => new BottleneckPage()),
+        new("PHAROS JOGOS", "Overlay", () => new OverlayPage()),
     };
 
     private readonly Dictionary<PageDef, Control> _made = new();

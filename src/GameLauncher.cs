@@ -47,7 +47,7 @@ public static class GameLauncher
     /// <summary>Linha no formato das opções de inicialização da Steam: MangoHud e GameMode antes de %command%, argumentos depois.</summary>
     public static string LaunchLine(GameProfile p)
     {
-        var parts = Wrappers(p).Select(w => w == "mangohud" ? $"MANGOHUD_CONFIG=\"{MangoHudFrames.LogConfig}\" mangohud" : w).ToList();
+        var parts = Wrappers(p).Select(w => w == "mangohud" ? $"{MangoHudConfig.EnvPrefix}MANGOHUD_CONFIG=\"{MangoHudFrames.LogConfig}\" mangohud" : w).ToList();
         string args = BuildArgs(p);
         if (parts.Count == 0) return args; // a Steam aceita só os argumentos
         parts.Add("%command%");
@@ -140,7 +140,11 @@ public static class GameLauncher
                 foreach (var c in cmd.Skip(1)) psi.ArgumentList.Add(c);
                 // shortcut: argumentos separados por espaço, sem aspas; trocar por um parser se algum jogo precisar de espaços num argumento
                 foreach (var a in (g.Args + " " + BuildArgs(p)).Split(' ', StringSplitOptions.RemoveEmptyEntries)) psi.ArgumentList.Add(a);
-                if (p.MangoHud) psi.Environment["MANGOHUD_CONFIG"] = MangoHudFrames.LogConfig;
+                if (p.MangoHud)
+                {
+                    psi.Environment["MANGOHUD_CONFIG"] = MangoHudFrames.LogConfig;
+                    if (AppSettings.Current.OverlayEnabled) psi.Environment["MANGOHUD_CONFIGFILE"] = MangoHudConfig.FilePath;
+                }
                 using var game = Process.Start(psi)!;
                 status($"{g.Name} em execução.");
                 await game.WaitForExitAsync(ct);

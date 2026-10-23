@@ -84,6 +84,24 @@
         <SolidColorBrush x:Key="Fg" Color="#F5F5F5"/>
         <SolidColorBrush x:Key="Muted" Color="#8C8C8C"/>
         <SolidColorBrush x:Key="Faint" Color="#4A4A4A"/>
+        <!-- Destaque do Fluent em tons de cinza (o PHAROS é monocromático): botões principais, seleção, caixas e interruptores -->
+        <Color x:Key="SystemAccentColor">#D6D6D6</Color>
+        <Color x:Key="SystemAccentColorLight1">#E4E4E4</Color>
+        <Color x:Key="SystemAccentColorLight2">#F0F0F0</Color>
+        <Color x:Key="SystemAccentColorLight3">#FFFFFF</Color>
+        <Color x:Key="SystemAccentColorDark1">#B4B4B4</Color>
+        <Color x:Key="SystemAccentColorDark2">#8C8C8C</Color>
+        <Color x:Key="SystemAccentColorDark3">#5A5A5A</Color>
+        <!-- texto e marcas sobre o destaque claro: pretos -->
+        <SolidColorBrush x:Key="AccentButtonForeground" Color="#000000"/>
+        <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="#000000"/>
+        <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="#000000"/>
+        <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundChecked" Color="#000000"/>
+        <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPointerOver" Color="#000000"/>
+        <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPressed" Color="#000000"/>
+        <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#000000"/>
+        <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#000000"/>
+        <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#000000"/>
     </Application.Resources>
     <Application.Styles>
         <FluentTheme/>

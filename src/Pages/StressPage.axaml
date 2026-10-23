@@ -22,15 +22,15 @@
                         <Grid ColumnDefinitions="*,10,*,10,*">
                             <StackPanel>
                                 <TextBlock Classes="label" Text="LIMITE CPU °C"/>
-                                <NumericUpDown x:Name="CpuLimit" Value="90" Minimum="40" Maximum="110" Increment="1" FormatString="0"/>
+                                <NumericUpDown x:Name="CpuLimit" Value="90" Minimum="40" Maximum="110" Increment="1" FormatString="0" ShowButtonSpinner="False"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Classes="label" Text="LIMITE GPU °C"/>
-                                <NumericUpDown x:Name="GpuLimit" Value="85" Minimum="40" Maximum="100" Increment="1" FormatString="0" IsEnabled="False"/>
+                                <NumericUpDown x:Name="GpuLimit" Value="85" Minimum="40" Maximum="100" Increment="1" FormatString="0" IsEnabled="False" ShowButtonSpinner="False"/>
                             </StackPanel>
                             <StackPanel Grid.Column="4">
                                 <TextBlock Classes="label" Text="MIN (0 = ∞)"/>
-                                <NumericUpDown x:Name="Minutes" Value="10" Minimum="0" Maximum="1440" Increment="5" FormatString="0"/>
+                                <NumericUpDown x:Name="Minutes" Value="10" Minimum="0" Maximum="1440" Increment="5" FormatString="0" ShowButtonSpinner="False"/>
                             </StackPanel>
                         </Grid>
                     </StackPanel>

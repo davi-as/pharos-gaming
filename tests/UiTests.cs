@@ -13,7 +13,7 @@ public class TestApp
     {
         // configurações numa pasta temporária: os testes nunca tocam em ~/.config/pharos-gaming
         Environment.SetEnvironmentVariable("PHAROS_CONFIG_DIR", Directory.CreateTempSubdirectory("pharos-test").FullName);
-        return AppBuilder.Configure<App>().UseHeadless(new AvaloniaHeadlessPlatformOptions());
+        return AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
     }
 }
 
@@ -26,7 +26,7 @@ public class UiTests
         var w = new MainWindow();
         w.Show();
         var nav = w.FindControl<StackPanel>("Nav")!.Children.OfType<RadioButton>().ToList();
-        Assert.True(nav.Count >= 2);
+        Assert.Equal(21, nav.Count); // as 21 páginas do PHAROS GAMING para Windows
         foreach (var b in nav)
         {
             b.IsChecked = true;

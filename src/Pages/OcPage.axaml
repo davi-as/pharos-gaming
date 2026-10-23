@@ -1,0 +1,98 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:PharosGaming"
+             x:Class="PharosGaming.OcPage">
+    <ScrollViewer>
+        <StackPanel Margin="6,6,16,6" Spacing="12">
+            <TextBlock Classes="dim" Text="Ajustes da GPU, verificador de estabilidade e guia de overclock na BIOS"/>
+            <Grid ColumnDefinitions="*,14,*">
+                <!-- GPU -->
+                <Border Classes="card" Margin="0">
+                    <StackPanel Spacing="6">
+                        <TextBlock x:Name="GpuTitle" Classes="label" Text="GPU"/>
+                        <TextBlock x:Name="GpuState" Classes="dim" FontSize="12"/>
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,6,0,0">
+                            <TextBlock Classes="label" Text="LIMITE DE ENERGIA"/>
+                            <TextBlock x:Name="PowerValue" Grid.Column="1" FontFamily="monospace" Foreground="{StaticResource Fg}"/>
+                        </Grid>
+                        <Slider x:Name="Power" Minimum="50" Maximum="300" ValueChanged="Power_Changed"/>
+                        <TextBlock x:Name="ClockLabel" Classes="label" Text="TETO DE CLOCK (UNDERVOLT)"/>
+                        <WrapPanel x:Name="ClockPanel" Classes="chips"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button x:Name="BtnApply" Classes="accent" Content="APLICAR" Click="Apply_Click"/>
+                            <Button x:Name="BtnReset" Content="RESTAURAR PADRÃO" Click="Reset_Click"/>
+                        </StackPanel>
+                        <TextBlock x:Name="GpuResult" Classes="dim" FontSize="12"/>
+                        <TextBlock Foreground="{StaticResource Faint}" FontSize="11" TextWrapping="Wrap"
+                                   Text="Aplicado como root (pede a senha) e vale até reiniciar o PC. Limitar o clock máximo faz a placa trabalhar numa tensão menor: perde pouco FPS e roda bem mais fria."/>
+                    </StackPanel>
+                </Border>
+                <!-- Verificador -->
+                <Border Grid.Column="2" Classes="card" Margin="0">
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="label" Text="VERIFICADOR DE ESTABILIDADE"/>
+                        <TextBlock Classes="dim" FontSize="12" Text="Mede a nota, roda stress e procura erros de hardware no log do kernel (MCE, PCIe, EDAC e travamentos da GPU)."/>
+                        <TextBlock Classes="label" Text="CONFIGURAÇÃO TESTADA" Margin="0,4,0,0"/>
+                        <TextBox x:Name="Label" Watermark="ex.: PBO + Curve Optimizer -15, GPU 150 W"/>
+                        <TextBlock Classes="label" Text="TESTAR"/>
+                        <WrapPanel x:Name="TargetPanel" Classes="chips">
+                            <RadioButton GroupName="OcTarget" Content="CPU + RAM" Tag="cpu" IsChecked="True"/>
+                            <RadioButton GroupName="OcTarget" Content="GPU" Tag="gpu"/>
+                            <RadioButton GroupName="OcTarget" Content="Ambos" Tag="both"/>
+                        </WrapPanel>
+                        <TextBlock Classes="label" Text="DURAÇÃO"/>
+                        <WrapPanel x:Name="DurPanel" Classes="chips">
+                            <RadioButton GroupName="OcDur" Content="5 min" Tag="5"/>
+                            <RadioButton GroupName="OcDur" Content="15 min" Tag="15" IsChecked="True"/>
+                            <RadioButton GroupName="OcDur" Content="30 min" Tag="30"/>
+                        </WrapPanel>
+                        <Button x:Name="BtnCheck" Classes="accent" Content="INICIAR VERIFICAÇÃO" Click="Check_Click"/>
+                        <ProgressBar x:Name="Progress" Maximum="1"/>
+                        <TextBlock x:Name="Status" Classes="dim" FontSize="12"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+            <Border x:Name="VerdictCard" Classes="card" Margin="0" IsVisible="False">
+                <StackPanel>
+                    <TextBlock x:Name="Verdict" Classes="big" FontSize="26"/>
+                    <TextBlock x:Name="VerdictWhy" TextWrapping="Wrap" Margin="0,4,0,8"/>
+                    <ItemsControl x:Name="Result"/>
+                </StackPanel>
+            </Border>
+            <Grid ColumnDefinitions="*,14,*">
+                <Border Classes="card" Margin="0">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="ERROS DE HARDWARE RECENTES"/>
+                        <TextBlock x:Name="RecentErrors" Classes="dim" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Classes="card" Margin="0">
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="HISTÓRICO"/>
+                        <ItemsControl x:Name="History"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+            <Border Classes="card" Margin="0">
+                <StackPanel>
+                    <TextBlock x:Name="GuideTitle" Classes="label" Text="GUIA: OVERCLOCK NA BIOS"/>
+                    <TextBlock x:Name="GuideIntro" Classes="dim" Margin="0,4,0,8"/>
+                    <ItemsControl x:Name="Guide">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:GuideStep">
+                                <Grid ColumnDefinitions="40,*" Margin="0,8">
+                                    <TextBlock Text="{Binding Number}" Classes="big" FontSize="24"/>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+                                        <TextBlock Text="{Binding Where}" FontFamily="monospace" FontSize="12" Foreground="{StaticResource Muted}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding Text}" Classes="dim" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

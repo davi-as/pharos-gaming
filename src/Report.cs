@@ -13,6 +13,11 @@ public static class Report
             AppVersion = typeof(Report).Assembly.GetName().Version?.ToString(3) ?? "",
             System = info.Select(ReportBuilder.ToNode).OfType<ReportNode>().ToList(),
         };
+        var gpus = await Task.Run(GpuInfoCollector.Collect);
+        data.Gpus.AddRange(gpus.Select(g => new ReportGpu(g.Name, g.Subtitle, g.Sections.Select(ReportBuilder.ToNode).OfType<ReportNode>().ToList())));
+        var sensors = SensorMonitor.Shared;
+        sensors.Refresh();
+        data.Sensors.AddRange(sensors.Rows.Select(s => new ReportSensor(s.Hardware, s.Category, s.Name, s.Value, s.Min, s.Max)));
         return data;
     }
 }

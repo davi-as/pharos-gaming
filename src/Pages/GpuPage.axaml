@@ -1,0 +1,61 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:PharosGaming"
+             x:Class="PharosGaming.GpuPage">
+    <Grid RowDefinitions="Auto,Auto,*" Margin="6">
+        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+            <TextBlock x:Name="Sub" Classes="dim" Text="Lendo a placa de vídeo…" VerticalAlignment="Center"/>
+            <WrapPanel x:Name="Chips" Grid.Column="1"/>
+        </Grid>
+        <!-- Destaque -->
+        <Border Grid.Row="1" Classes="card" Margin="0,0,0,12" Padding="22,18">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel>
+                    <TextBlock x:Name="GpuName" FontSize="24" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+                    <TextBlock x:Name="GpuSubtitle" Classes="dim" Margin="0,6,0,0"/>
+                </StackPanel>
+                <TextBlock x:Name="GpuVendor" Grid.Column="1" VerticalAlignment="Center" FontSize="30" FontWeight="Black" Foreground="{StaticResource Faint}"/>
+            </Grid>
+        </Border>
+        <Grid Grid.Row="2" ColumnDefinitions="*,14,340">
+            <Border Classes="card" Margin="0">
+                <ScrollViewer>
+                    <ItemsControl x:Name="Sections" Margin="0,-20,10,0"/>
+                </ScrollViewer>
+            </Border>
+            <!-- Sensores (equivalente à aba Sensors do GPU-Z) -->
+            <Border Grid.Column="2" Classes="card" Margin="0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Classes="label" Text="SENSORES AO VIVO" Margin="0,0,0,6"/>
+                    <ItemsControl x:Name="Extras" DockPanel.Dock="Top" Margin="0,0,0,6">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:Object">
+                                <Grid ColumnDefinitions="*,Auto" Margin="0,4">
+                                    <TextBlock Text="{Binding Key}" Foreground="{StaticResource Muted}" x:CompileBindings="False"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Value}" FontFamily="monospace" Foreground="{StaticResource Fg}" x:CompileBindings="False"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <ScrollViewer>
+                        <ItemsControl x:Name="LiveRows">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:SensorRow">
+                                    <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,6">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock TextTrimming="CharacterEllipsis">
+                                                <Run Text="{Binding Category, Mode=OneWay}" Foreground="{StaticResource Faint}"/>
+                                                <Run Text="{Binding Name, Mode=OneWay}" Foreground="{StaticResource Muted}"/>
+                                            </TextBlock>
+                                            <TextBlock Grid.Column="1" Text="{Binding Value}" FontFamily="monospace" Foreground="{StaticResource Fg}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

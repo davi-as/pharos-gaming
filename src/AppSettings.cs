@@ -62,6 +62,9 @@ public sealed class AppSettings
     // FPS estimado: a chave fica neste arquivo, que só o usuário lê (permissão 600)
     public string? HowManyFpsKey { get; set; }
 
+    // Aparência: "system" (segue o tema do sistema), "light" (papiro) ou "dark" (noite do Nilo)
+    public string Theme { get; set; } = "system";
+
     // Overlay (MangoHud com o arquivo do PHAROS)
     public bool OverlayEnabled { get; set; }
     public bool OverlayVisible { get; set; } = true;

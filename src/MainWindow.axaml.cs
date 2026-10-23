@@ -50,9 +50,26 @@ public partial class MainWindow : Window
             b.IsCheckedChanged += (_, _) => { if (b.IsChecked == true) Show(p); };
             Nav.Children.Add(b);
         }
+        ShowTheme();
         Live.Start();
         Live.Tick += () => Status.Text = Live.Frames is { } f ? $"● {f.Game} · {f.Fps:N0} FPS" : "nenhum jogo com MangoHud";
         Nav.Children.OfType<RadioButton>().First().IsChecked = true;
+    }
+
+    // Sistema → Claro → Escuro: as cores são dinâmicas, a troca vale na hora
+    private void Theme_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var s = AppSettings.Current;
+        s.Theme = s.Theme switch { "system" => "light", "light" => "dark", _ => "system" };
+        try { s.Save(); } catch { }
+        App.ApplyTheme(s.Theme);
+        ShowTheme();
+    }
+
+    private void ShowTheme()
+    {
+        BtnTheme.Content = AppSettings.Current.Theme switch { "light" => "☀ Claro", "dark" => "☾ Escuro", _ => "◐ Sistema" };
+        ToolTip.SetTip(BtnTheme, "Tema: clique para alternar entre sistema, claro e escuro");
     }
 
     private void Show(PageDef p)

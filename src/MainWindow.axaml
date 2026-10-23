@@ -18,7 +18,10 @@
                         <TextBlock Text="GAMING" Classes="label" FontSize="10" Margin="1,-3,0,0"/>
                     </StackPanel>
                 </StackPanel>
-                <TextBlock x:Name="Version" DockPanel.Dock="Bottom" Classes="label" Margin="18,10"/>
+                <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="18,6,12,10">
+                    <TextBlock x:Name="Version" Classes="label" VerticalAlignment="Center"/>
+                    <Button x:Name="BtnTheme" Grid.Column="1" FontSize="12" Padding="12,4" Click="Theme_Click"/>
+                </Grid>
                 <ScrollViewer>
                     <StackPanel x:Name="Nav" Margin="8,0,8,10"/>
                 </ScrollViewer>

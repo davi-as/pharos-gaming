@@ -41,3 +41,25 @@ public class UiTests
         w.Close();
     }
 }
+
+public class ThemeTests
+{
+    [AvaloniaFact]
+    public void ThemeButton_CyclesAndChangesColors()
+    {
+        var w = new MainWindow();
+        w.Show();
+        var btn = w.FindControl<Button>("BtnTheme")!;
+        AppSettings.Current.Theme = "system";
+        string? Bg() => (App.Brush("Bg") as Avalonia.Media.ISolidColorBrush)?.Color.ToString();
+        btn.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Assert.Equal("light", AppSettings.Current.Theme);
+        Assert.Equal("#fffff8f0", Bg());   // papiro
+        btn.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Assert.Equal("dark", AppSettings.Current.Theme);
+        Assert.Equal("#ff0a1424", Bg());   // noite do Nilo
+        btn.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Assert.Equal("system", AppSettings.Current.Theme);
+        w.Close();
+    }
+}

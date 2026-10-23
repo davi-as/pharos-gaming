@@ -73,6 +73,9 @@ public sealed class AppSettings
     /// <summary>Itens escolhidos para o overlay (chaves de OverlayMetrics); null = padrão.</summary>
     public List<string>? OverlayItems { get; set; }
 
+    // Limitador de FPS: limite por jogo (chave = nome do arquivo de config por jogo do MangoHud; 0 = sem limite)
+    public Dictionary<string, double> FpsLimits { get; set; } = new();
+
     public Dictionary<string, GameProfile> GameProfiles { get; set; } = new();
     public List<CustomGame> CustomGames { get; set; } = new();
 

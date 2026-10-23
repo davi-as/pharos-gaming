@@ -26,7 +26,7 @@ public class UiTests
         var w = new MainWindow();
         w.Show();
         var nav = w.FindControl<StackPanel>("Nav")!.Children.OfType<RadioButton>().ToList();
-        Assert.Equal(21, nav.Count); // as 21 páginas do PHAROS GAMING para Windows
+        Assert.Equal(22, nav.Count); // as 21 páginas do PHAROS GAMING para Windows + o Limitador de FPS
         foreach (var b in nav)
         {
             b.IsChecked = true;

@@ -82,6 +82,7 @@ public partial class OverlayPage : UserControl
         {
             _s.Save();
             MangoHudConfig.Write(_s);
+            FrameLimiter.RewriteAll(_s); // as configs por jogo do limitador levam o overlay junto
             FileNote.Text = $"Arquivo: {MangoHudConfig.FilePath}. O MangoHud relê o arquivo sozinho: as mudanças aparecem com o jogo aberto.";
         }
         catch (Exception ex) { FileNote.Text = "Não consegui gravar a configuração: " + ex.Message; }

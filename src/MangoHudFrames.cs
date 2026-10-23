@@ -106,6 +106,9 @@ public sealed partial class MangoHudFrames
         while (_hist.Count > 0 && (now - _hist.Peek().At).TotalSeconds > WindowSec) _hist.Dequeue();
     }
 
+    /// <summary>Tempos de quadro dos últimos 10 s (para o veredito do limitador).</summary>
+    public IReadOnlyList<double> FrameTimes => _hist.Select(h => h.Ft).ToList();
+
     internal FrameStats? Stats(string game)
     {
         if (_hist.Count == 0) return null;

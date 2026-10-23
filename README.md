@@ -31,6 +31,9 @@ nativo no Linux (X11 e Wayland). As 21 páginas do original foram portadas; o c�
 - **Gargalo:** equilíbrio CPU × GPU, veredito ao vivo e análise de uma sessão de jogo.
 - **Overlay:** escolha o que o MangoHud mostra por cima do jogo, a posição e o tamanho (arquivo próprio do PHAROS; o seu
   `MangoHud.conf` não é tocado).
+- **Limitador de FPS:** limite por jogo com frame pacing (limitador do MangoHud no modo early), como o framepacer.
+  Detecta o jogo aberto (Hydra, Steam ou qualquer launcher com MangoHud), sugere valores que casam com a taxa da tela,
+  muda com o jogo aberto e dá um veredito do ritmo dos quadros. Shift + F1 no jogo alterna entre o limite e sem limite.
 
 **PHAROS DESEMPENHO**
 - **Benchmark:** render de CPU (path tracing, como o Cinebench), cena de jogo e ray tracing em OpenGL, simulação de jogo,
@@ -103,7 +106,7 @@ mise exec -- dotnet test tests
 ```
 72 testes xunit: os parsers (sysfs, udev, lspci, lsblk, smartctl, journal, MangoHud, VDF da Steam), os cálculos (gargalo,
 EXPO, frametime, efeitos de luz), os scripts de root (aspas e conteúdo), o protocolo do OpenRGB contra um servidor falso,
-a leitura desta máquina e a interface inteira em modo headless (abre as 21 páginas). Os testes de GPU rodam a cena, o ray
+a leitura desta máquina e a interface inteira em modo headless (abre as 22 páginas). Os testes de GPU rodam a cena, o ray
 tracing e o stress por um instante quando há GPU com aceleração, e passam sem rodar quando não há (CI). O CI do GitHub
 roda a suíte no Ubuntu a cada push.
 

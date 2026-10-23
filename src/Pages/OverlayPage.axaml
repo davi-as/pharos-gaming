@@ -10,7 +10,7 @@
                     <CheckBox x:Name="ChkEnabled" Content="Usar o overlay do PHAROS nos jogos abertos pelo PHAROS" IsCheckedChanged="Enabled_Changed"/>
                     <TextBlock Classes="dim" FontSize="12"
                                Text="Desligado, o jogo usa o seu próprio MangoHud.conf (GOverlay, por exemplo). Ligado, o PHAROS usa um arquivo próprio e não mexe no seu."/>
-                    <CheckBox x:Name="ChkVisible" Content="Mostrar ao abrir o jogo (Ctrl + Shift + O liga e desliga)" IsCheckedChanged="Option_Changed"/>
+                    <CheckBox x:Name="ChkVisible" Content="Mostrar ao abrir o jogo (Ctrl + Shift + Q liga e desliga)" IsCheckedChanged="Option_Changed"/>
                     <TextBlock x:Name="ToolNote" Classes="dim" FontSize="12"/>
                 </StackPanel>
             </Border>

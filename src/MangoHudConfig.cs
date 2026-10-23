@@ -60,7 +60,7 @@ public static class MangoHudConfig
             "text_color=F5F5F5",
             "gpu_color=F5F5F5", "cpu_color=F5F5F5", "vram_color=F5F5F5", "ram_color=F5F5F5", "engine_color=F5F5F5",
             "frametime_color=F5F5F5", "background_color=0E0E0E",
-            "toggle_hud=Control_L+Shift_L+O",  // mesmo atalho do overlay no Windows
+            "toggle_hud=Control_L+Shift_L+Q",  // o mesmo do MangoHud.conf do usuário e do View+Start do controle
         };
         if (!visible) lines.Add("no_display");
         var set = keys.ToHashSet();

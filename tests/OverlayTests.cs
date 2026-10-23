@@ -14,7 +14,7 @@ public class OverlayTests
         Assert.Contains("core_load", conf);
         Assert.Contains("exec_name", conf);
         Assert.DoesNotContain("gpu_stats", conf);
-        Assert.Contains("toggle_hud=Control_L+Shift_L+O", conf);
+        Assert.Contains("toggle_hud=Control_L+Shift_L+Q", conf);
     }
 
     [Fact]

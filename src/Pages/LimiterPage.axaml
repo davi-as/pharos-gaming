@@ -1,0 +1,61 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="PharosGaming.LimiterPage">
+    <ScrollViewer>
+        <StackPanel Margin="6,6,16,6">
+            <TextBlock Classes="dim" Margin="0,0,0,14" TextWrapping="Wrap"
+                       Text="Trava o FPS num valor que o PC segura e entrega cada quadro no mesmo intervalo: some o engasgo e a placa trabalha menos. Quem limita é o MangoHud, então vale para jogos abertos pelo Hydra, pela Steam ou por qualquer launcher que ligue o MangoHud. O limite fica guardado por jogo e muda com o jogo aberto."/>
+            <Border Classes="card" Margin="0,0,0,12">
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="label" Text="JOGO"/>
+                    <TextBlock x:Name="GameName" Classes="big" FontSize="24" Text="—" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="GameNote" Classes="dim" FontSize="12" TextWrapping="Wrap"/>
+                    <Grid x:Name="LiveRow" ColumnDefinitions="Auto,32,Auto,32,*" Margin="0,6,0,0">
+                        <StackPanel>
+                            <TextBlock Classes="label" Text="FPS"/>
+                            <TextBlock x:Name="FpsText" Classes="big" Text="—"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Classes="label" Text="FRAMETIME"/>
+                            <TextBlock x:Name="FtText" Classes="big" Text="—"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <TextBlock x:Name="VerdictTitle" Classes="h2" Text=""/>
+                            <TextBlock x:Name="VerdictDetail" Classes="dim" FontSize="12" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+            <Border x:Name="LimitCard" Classes="card" Margin="0,0,0,12">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="label" Text="LIMITE"/>
+                    <TextBlock x:Name="CurrentText" Classes="dim" TextWrapping="Wrap"/>
+                    <WrapPanel x:Name="Choices"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBox x:Name="CustomFps" Width="90" Watermark="Outro"/>
+                        <Button Content="Aplicar" Click="Custom_Click"/>
+                        <Button Content="Sem limite" Click="NoLimit_Click"/>
+                    </StackPanel>
+                    <TextBlock x:Name="SuggestText" Classes="dim" FontSize="12" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="WriteNote" Classes="dim" FontSize="12" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+            <Border Classes="card" Margin="0,0,0,12">
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="label" Text="JOGOS COM LIMITE"/>
+                    <TextBlock x:Name="EmptyList" Classes="dim" Text="Nenhum ainda. Abra o jogo e escolha o limite aqui."/>
+                    <StackPanel x:Name="Saved" Spacing="4"/>
+                </StackPanel>
+            </Border>
+            <Border Classes="card" Margin="0">
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="label" Text="PARA FICAR LISO"/>
+                    <TextBlock Classes="dim" TextWrapping="Wrap" Text="• Escolha um limite que o PC segure nas cenas mais pesadas. O limitador não cria FPS: se o PC cai abaixo, cai igual."/>
+                    <TextBlock Classes="dim" TextWrapping="Wrap" Text="• Desligue os outros limitadores (o do jogo, DXVK_FRAME_RATE, gamescope -r) para não brigarem."/>
+                    <TextBlock Classes="dim" TextWrapping="Wrap" Text="• Tela sem G-Sync/FreeSync: use um divisor da taxa da tela (as opções acima) e ligue o V-Sync do jogo. Com G-Sync/FreeSync, qualquer valor um pouco abaixo da taxa."/>
+                    <TextBlock Classes="dim" TextWrapping="Wrap" Text="• No jogo: Shift + F1 alterna entre o limite e sem limite. Ctrl + Shift + Q mostra e esconde o overlay (View + Start no controle)."/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

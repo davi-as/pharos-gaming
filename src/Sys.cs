@@ -41,12 +41,13 @@ public static class Sys
             psi.Environment["LC_ALL"] = "C"; // saída em inglês e com ponto decimal: é o que os parsers esperam
             if (env != null) foreach (var (k, v) in env) psi.Environment[k] = v;
             using var p = Process.Start(psi)!;
-            if (stdin != null) { await p.StandardInput.WriteAsync(stdin); p.StandardInput.Close(); }
+            // ConfigureAwait(false) em tudo: quem chama de forma síncrona (GetResult) na thread da interface não trava
+            if (stdin != null) { await p.StandardInput.WriteAsync(stdin).ConfigureAwait(false); p.StandardInput.Close(); }
             var o = p.StandardOutput.ReadToEndAsync(ct);
             var e = p.StandardError.ReadToEndAsync(ct);
-            try { await p.WaitForExitAsync(ct); }
+            try { await p.WaitForExitAsync(ct).ConfigureAwait(false); }
             catch (OperationCanceledException) { try { p.Kill(true); } catch { } throw; }
-            return new Result(p.ExitCode, await o, await e);
+            return new Result(p.ExitCode, await o.ConfigureAwait(false), await e.ConfigureAwait(false));
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception ex) { return new Result(-1, "", ex.Message); }

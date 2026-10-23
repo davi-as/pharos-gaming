@@ -26,7 +26,7 @@ public static class FrameLimiter
 
     // opções que o arquivo por jogo define; as do arquivo base com essas chaves saem
     private static readonly HashSet<string> Owned = new()
-        { "fps_limit", "fps_limit_method", "toggle_fps_limit", "show_fps_limit", "autostart_log", "log_interval", "output_folder" };
+        { "fps_limit", "fps_limit_method", "toggle_fps_limit", "show_fps_limit", "autostart_log", "log_interval", "output_folder", "control" };
 
     /// <summary>"wine-eldenring" → "eldenring".</summary>
     public static string Display(string key) => key.StartsWith("wine-") ? key[5..] : key;
@@ -109,6 +109,7 @@ public static class FrameLimiter
             $"toggle_fps_limit={ToggleKeys}",
             "show_fps_limit",
             "autostart_log=1", "log_interval=250", $"output_folder={MangoHudFrames.OwnFolder}", // o painel do PHAROS lê esse log
+            MangoHudLog.ControlLine(), // liga o log com o overlay escondido (MangoHudLog)
         });
         return string.Join("\n", lines) + "\n";
     }

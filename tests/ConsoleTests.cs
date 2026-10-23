@@ -73,6 +73,30 @@ public class ConsoleTests
     }
 
     [Fact]
+    public void PharosLog_AddsControlAndRemovesOnlyOurs()
+    {
+        const string conf = "no_display=1\nlog_interval=100\n";
+        string on = ConsoleSetup.SetPharosLog(conf, true);
+        Assert.True(ConsoleSetup.PharosLog(on));
+        Assert.Contains($"output_folder={MangoHudFrames.OwnFolder}", on.Split('\n'));
+        Assert.Single(on.Split('\n'), l => l.StartsWith("log_interval=")); // mantém o do usuário
+        Assert.Contains("log_interval=250", ConsoleSetup.SetPharosLog("fps\n", true).Split('\n'));
+        Assert.Single(ConsoleSetup.SetPharosLog(on, true).Split('\n'), l => l.StartsWith("control=")); // não duplica
+        string off = ConsoleSetup.SetPharosLog(on, false);
+        Assert.False(ConsoleSetup.PharosLog(off));
+        Assert.Equal(conf, off);
+        Assert.Contains("output_folder=/meu", ConsoleSetup.SetPharosLog("output_folder=/meu\n", true).Split('\n')); // pasta do usuário fica
+    }
+
+    [Fact]
+    public void ControlName_UsesLastLineAndPid()
+    {
+        Assert.Equal("mangohud-42-1", MangoHudLog.ControlName("control=mangohud-%p-0\nfps\ncontrol=mangohud-%p-1\n", 42));
+        Assert.Null(MangoHudLog.ControlName("fps\n", 42));
+        Assert.StartsWith("control=mangohud-%p-", MangoHudLog.ControlLine());
+    }
+
+    [Fact]
     public void Mango_HiddenAndKeys()
     {
         const string conf = "legacy_layout=0\ntoggle_hud=Control_L+Shift_L+Q\nno_display=1\nfps\n";

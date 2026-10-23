@@ -186,6 +186,23 @@ public static partial class ConsoleSetup
         return string.Join('\n', lines) + "\n";
     }
 
+    /// <summary>O MangoHud.conf tem o control= que deixa o PHAROS ligar o log com o overlay escondido.</summary>
+    public static bool PharosLog(string conf) => conf.Split('\n').Any(l => l.Trim().StartsWith("control="));
+
+    /// <summary>Liga: control= (nome novo) e a pasta do log do PHAROS se não houver outra. Desliga: tira só o que o PHAROS pôs.</summary>
+    public static string SetPharosLog(string conf, bool on)
+    {
+        string ours = $"output_folder={MangoHudFrames.OwnFolder}";
+        var lines = conf.TrimEnd('\n').Split('\n').Where(l => !l.Trim().StartsWith("control=") && l.Trim() != ours).ToList();
+        if (on)
+        {
+            lines.Add(MangoHudLog.ControlLine());
+            if (!lines.Any(l => l.Trim().StartsWith("output_folder="))) lines.Add(ours);
+            if (!lines.Any(l => l.Trim().StartsWith("log_interval="))) lines.Add("log_interval=250"); // sem ele o MangoHud grava cada quadro (~20 MB/h)
+        }
+        return string.Join('\n', lines) + "\n";
+    }
+
     /// <summary>"Control_L+Shift_L+Q" → "Ctrl + Shift + Q" (padrão do MangoHud quando não há linha: Shift_R+F12).</summary>
     public static string MangoToggleKeys(string conf)
     {

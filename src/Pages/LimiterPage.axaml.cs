@@ -55,9 +55,9 @@ public partial class LimiterPage : UserControl
         var v = f != null ? FrameLimiter.Judge(Live.FrameTimes, Limit(_running!.Key)) : null;
         VerdictTitle.Text = v?.Title ?? (f == null ? "Sem dados de quadros" : "Medindo…");
         VerdictTitle.Foreground = v == null ? App.Brush("Muted") : v.Good ? App.Brush("Ok") : App.Brush("Bad");
-        // o MangoHud só começa o log com o overlay visível (no_display segura o autostart_log)
+        // com um limite salvo, o arquivo do jogo traz o control= e o PHAROS liga o log sozinho (MangoHudLog)
         VerdictDetail.Text = v?.Detail ?? (f == null
-            ? "O veredito usa o log do MangoHud, que começa quando o jogo abre com um limite salvo aqui e o overlay aparece pelo menos uma vez (Ctrl + Shift + Q)."
+            ? "O veredito usa o log do MangoHud: ele começa sozinho quando o jogo tem um limite salvo aqui (ou com “FPS no PHAROS” ligado em PC como console)."
             : "");
 
         var choices = Candidates();

@@ -26,6 +26,11 @@ public partial class ConsolePage : UserControl
         SteamMango.IsCheckedChanged += (_, _) => Toggle(() => ConsoleSetup.EditFile(ConsoleSetup.AutostartFile,
             t => ConsoleSetup.SetSteamMango(t, SteamMango.IsChecked == true)), SteamNote, "Vale quando a Steam abrir de novo (próximo login ou Reiniciar a Steam).");
         MangoHidden.IsCheckedChanged += (_, _) => Toggle(SetMangoHidden, MangoNote, "Vale no próximo jogo (e no aberto, que relê o arquivo).");
+        MangoLog.IsCheckedChanged += (_, _) => Toggle(() =>
+        {
+            ConsoleSetup.EditFile(MangoHudConfig.FilePath, t => ConsoleSetup.SetPharosLog(t, MangoLog.IsChecked == true));
+            FrameLimiter.RewriteAll(AppSettings.Current);
+        }, MangoNote, "Pronto: a Visão geral, o Gargalo e o Limitador recebem o FPS de qualquer jogo com MangoHud.");
         BtSwitch.IsCheckedChanged += async (_, _) =>
         {
             if (_loading) return;
@@ -102,6 +107,8 @@ public partial class ConsolePage : UserControl
         BtNote.Text = bt.Exists ? (bt.Active ? "" : "O serviço está parado.") : "Serviço xbox-bt-autoconnect não instalado.";
         string mango = Sys.Read(MangoHudConfig.FilePath) ?? "";
         MangoHidden.IsChecked = ConsoleSetup.MangoHidden(mango);
+        MangoLog.IsChecked = ConsoleSetup.PharosLog(mango);
+        MangoLog.IsEnabled = !MangoHudConfig.IsOurs; // o arquivo do overlay do PHAROS já traz o control=
         MangoNote.Text = $"Mostrar e esconder: {ConsoleSetup.MangoToggleKeys(mango)}, ou View + Start no controle. "
                          + (MangoHudConfig.IsOurs ? "O arquivo é o do overlay do PHAROS (página Overlay)." : "O PHAROS só muda esta linha do seu MangoHud.conf.");
         _loading = false;

@@ -31,7 +31,7 @@
                         <StackPanel x:Name="Setup" VerticalAlignment="Center" Spacing="10" Orientation="Horizontal">
                             <PathIcon Data="{StaticResource ic-speedometer}" Width="28" Height="28" Foreground="{DynamicResource Faint}"/>
                             <TextBlock Classes="dim" MaxWidth="560" VerticalAlignment="Center"
-                                       Text="Nenhum jogo enviando FPS. O painel lê o log do MangoHud: ligue o overlay do PHAROS (página Overlay) ou um limite no Limitador de FPS e mostre o overlay no jogo (Ctrl + Shift + Q)."/>
+                                       Text="Nenhum jogo enviando FPS. O painel lê o log do MangoHud: ligue “FPS no PHAROS” em PC como console › MangoHud e ele chega de qualquer jogo, com o overlay escondido ou não."/>
                         </StackPanel>
                     </Panel>
                 </Grid>

@@ -14,6 +14,7 @@ public static class Live
     private static readonly LinuxSensors Sensors = new();
     private static readonly MangoHudFrames FramesReader = new();
     private static DispatcherTimer? _timer;
+    private static Timer? _logTimer;
 
     public static CpuReading? Cpu { get; private set; }
     public static GpuReading? Gpu { get; private set; }
@@ -32,6 +33,8 @@ public static class Live
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(TickSec) };
         _timer.Tick += (_, _) => Step();
         _timer.Start();
+        // fora da interface: varre /proc e liga o log do MangoHud dos jogos abertos (overlay escondido)
+        _logTimer = new Timer(_ => { try { MangoHudLog.Tick(); } catch (Exception) { } }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(3));
     }
 
     /// <summary>Uma leitura, já avisando as páginas (o timer chama; os testes também).</summary>

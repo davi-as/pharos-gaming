@@ -140,6 +140,7 @@
                                 <TextBlock Classes="h2" Text="MangoHud"/>
                             </StackPanel>
                             <ToggleSwitch x:Name="MangoHidden" OnContent="Começa escondido no jogo" OffContent="Aparece ao abrir o jogo"/>
+                            <ToggleSwitch x:Name="MangoLog" OnContent="FPS no PHAROS mesmo com o overlay escondido" OffContent="FPS no PHAROS só com o overlay visível"/>
                             <TextBlock x:Name="MangoNote" Classes="dim" FontSize="12"/>
                         </StackPanel>
                     </Border>

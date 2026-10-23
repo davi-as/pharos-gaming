@@ -65,8 +65,8 @@ public static class MangoHudConfig
             "toggle_hud=Control_L+Shift_L+Q",  // o mesmo do MangoHud.conf do usuário e do View+Start do controle
         };
         if (!visible) lines.Add("no_display");
-        // log que o painel do PHAROS lê (o MangoHud só começa a gravar com o overlay visível)
-        lines.AddRange(new[] { "autostart_log=1", "log_interval=250", $"output_folder={MangoHudFrames.OwnFolder}" });
+        // log que o painel do PHAROS lê; com o overlay escondido quem liga o log é o MangoHudLog, pelo control=
+        lines.AddRange(new[] { "autostart_log=1", "log_interval=250", $"output_folder={MangoHudFrames.OwnFolder}", MangoHudLog.ControlLine() });
         var set = keys.ToHashSet();
         foreach (var m in OverlayMetrics.All)
             if (set.Contains(m.Key) && Options.TryGetValue(m.Key, out var opts)) lines.AddRange(opts);

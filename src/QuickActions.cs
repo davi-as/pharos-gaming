@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace PharosGaming;
 
 /// <summary>
-/// Ações do menu rápido que não são do jogo: saída e volume de áudio (wpctl), as outras telas (DPMS do Hyprland),
+/// Ações do menu rápido que não são do jogo: saída e volume de áudio (wpctl), as outras telas (DDC/CI, ou DPMS do Hyprland),
 /// desligar o controle (Bluetooth) e a bateria dele (power_supply do kernel).
 /// </summary>
 public static partial class QuickActions
@@ -66,23 +66,60 @@ public static partial class QuickActions
 
     // ---------------- outras telas ----------------
 
-    /// <summary>Alguma tela além da do jogo está desligada (DPMS)?</summary>
+    // DDC/CI (ddcutil), como o Pharos web app: o próprio monitor entra em standby e não volta com mouse ou teclado
+    // (o DPMS do Hyprland volta). Telas sem DDC/CI (a TV) vão pelo tv-power, como no web app; sem ele, DPMS.
+    public sealed record Ddc(string Connector, int Bus);
+
+    /// <summary>Telas do "ddcutil detect --terse" com DDC/CI: conector do Hyprland (card1-DP-2 → DP-2) e barramento I2C.</summary>
+    public static List<Ddc> DdcDisplays(string detect) =>
+        detect.Split("\n\n").Where(b => b.TrimStart().StartsWith("Display ")) // "Invalid display" não fala DDC/CI
+            .Select(b => DdcRe().Match(b)).Where(m => m.Success)
+            .Select(m => new Ddc(m.Groups[2].Value, int.Parse(m.Groups[1].Value))).ToList();
+
+    [GeneratedRegex(@"/dev/i2c-(\d+)[\s\S]*?DRM connector:\s+card\d+-(\S+)")] private static partial Regex DdcRe();
+
+    private static async Task<List<Ddc>> ReadDdc() => DdcDisplays((await Sys.RunAsync("ddcutil", "detect", "--terse")).Out);
+
+    /// <summary>Alguma tela além da do jogo está desligada (standby DDC/CI ou DPMS)?</summary>
     public static bool OthersOff(string? keep)
     {
         try
         {
+            var ddc = ReadDdc().GetAwaiter().GetResult();
+            foreach (var d in ddc.Where(d => d.Connector != keep))
+                if (Sys.RunAsync("ddcutil", "-b", d.Bus.ToString(), "getvcp", "d6", "--terse").GetAwaiter().GetResult() is { Ok: true } r && !r.Out.Contains("x01"))
+                    return true;
+            if (TvOther(keep, ddc) && Sys.RunAsync(ConsoleSetup.Bin("tv-power"), "status").GetAwaiter().GetResult().Out.Trim() != "on") return true;
             using var doc = System.Text.Json.JsonDocument.Parse(Sys.RunAsync("hyprctl", "monitors", "-j").GetAwaiter().GetResult().Out);
             return doc.RootElement.EnumerateArray().Any(m => m.GetProperty("name").GetString() != keep && !m.GetProperty("dpmsStatus").GetBoolean());
         }
         catch (Exception) { return false; }
     }
 
-    /// <summary>Desliga (DPMS) todas as telas menos a do jogo; ligar devolve todas.</summary>
+    /// <summary>Desliga todas as telas menos a do jogo (DDC/CI, senão DPMS); ligar devolve todas.</summary>
     public static async Task OtherScreens(bool off, string? keep)
     {
-        foreach (var m in FrameLimiter.Screens().Where(m => m.Name != keep))
+        var ddc = await ReadDdc();
+        foreach (var d in ddc.Where(d => d.Connector != keep))
+            // --noverify: o MSI aplica o standby mas falha a releitura de confirmação (igual ao web app)
+            await Sys.RunAsync("ddcutil", "-b", d.Bus.ToString(), "--noverify", "setvcp", "d6", off ? "04" : "01");
+        if (TvOther(keep, ddc))
+        {
+            // sem await: ligar a TV espera a rede e o Wake-on-LAN (até ~40 s), o menu não fica preso
+            _ = Sys.RunAsync(ConsoleSetup.Bin("tv-power"), off ? "off" : "on");
+            return;
+        }
+        foreach (var m in NoDdc(keep, ddc))
             await Sys.RunAsync("hyprctl", "dispatch", $"hl.dsp.dpms({{ action = \"{(off ? "disable" : "enable")}\", monitor = \"{m.Name}\" }})");
     }
+
+    private static IEnumerable<FrameLimiter.Screen> NoDdc(string? keep, List<Ddc> ddc) =>
+        FrameLimiter.Screens().Where(m => m.Name != keep && ddc.All(d => d.Connector != m.Name));
+
+    // shortcut: a TV do tv-power é a tela sem DDC/CI (só há uma aqui); com o jogo num monitor DDC, ela é "outra" mesmo
+    // sumida do Hyprland (desligada); com mais de uma tela sem DDC/CI, ligar nome→TV
+    private static bool TvOther(string? keep, List<Ddc> ddc) =>
+        File.Exists(ConsoleSetup.Bin("tv-power")) && (keep == null || ddc.Any(d => d.Connector == keep));
 
     // ---------------- controle ----------------
 

@@ -152,6 +152,15 @@ public class QuickActionsTests
     }
 
     [Fact]
+    public void DdcDisplays_SkipsInvalidAndMapsConnector()
+    {
+        const string detect = "Display 1\n   I2C bus:          /dev/i2c-2\n   DRM connector:    card1-HDMI-A-1\n   Monitor:          SAM:LF27T35:X\n\n" +
+            "Invalid display\n   I2C bus:          /dev/i2c-3\n   DRM connector:    card1-DP-1\n\n" +
+            "Display 2\n   I2C bus:          /dev/i2c-4\n   DRM connector:    card1-DP-2\n   Monitor:          MSD:PGCTRBL01:\n";
+        Assert.Equal(new[] { new QuickActions.Ddc("HDMI-A-1", 2), new QuickActions.Ddc("DP-2", 4) }, QuickActions.DdcDisplays(detect));
+    }
+
+    [Fact]
     public void PadBatteries_PercentOrLevel()
     {
         var root = Directory.CreateTempSubdirectory("ps").FullName;

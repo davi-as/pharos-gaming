@@ -25,6 +25,16 @@ public static class Live
     public static IReadOnlyList<double> RecentFrameTimes => FramesReader.RecentFrameTimes;
     public static DateTime? SessionStart => FramesReader.SessionStart;
 
+    /// <summary>O jogo aberto (o com janela entre os que têm MangoHud), visto a cada 3 s fora da interface.</summary>
+    public static RunningGame? Game { get; private set; }
+    /// <summary>Thread mais ocupada do jogo, em % de um núcleo: limita o FPS mesmo com a CPU total "sobrando".</summary>
+    public static float? GameThread { get; private set; }
+    /// <summary>Gargalo da sessão (a do log do MangoHud em leitura), uma amostra por segundo.</summary>
+    public static BottleneckSession? Bottleneck { get; private set; }
+    private static readonly ThreadLoad Threads = new();
+    private static string? _bnFile;
+    private static int _steps;
+
     /// <summary>Pausa as leituras de GPU (benchmarks de GPU: cada consulta ao driver custa um engasgo).</summary>
     public static bool Paused { get; set; }
 
@@ -43,7 +53,7 @@ public static class Live
         int n = 0;
         _logTimer = new Timer(_ =>
         {
-            try { MangoHudLog.Tick(); } catch (Exception) { }
+            try { Game = MangoHudLog.Tick(); } catch (Exception) { }
             if (n++ % 10 == 0) // a cada 30 s: logs que terminaram viram sessão no histórico
                 try { SessionLog.Scan(MangoHudFrames.Folders()); SessionsChanged?.Invoke(); } catch (Exception) { }
         }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(3));
@@ -55,8 +65,22 @@ public static class Live
         if (Paused) return;
         (Cpu, Gpu, Mem) = Sensors.Sample();
         Frames = FramesReader.Poll();
+        if (_steps++ % 2 == 0) SampleBottleneck();
         Tick?.Invoke();
     }
 
-    public static LoadSample Sample() => BottleneckAnalyzer.Sample(Cpu!, Gpu, Mem!, Frames);
+    public static LoadSample Sample() => BottleneckAnalyzer.Sample(Cpu!, Gpu, Mem!, Frames) with { GameThread = Frames != null ? GameThread : null };
+
+    /// <summary>Uma amostra por segundo enquanto o jogo grava FPS; a contagem vai para o lado do CSV a cada 30 (histórico).</summary>
+    private static void SampleBottleneck()
+    {
+        var g = Game;
+        string? file = FramesReader.CurrentFile;
+        if (g == null || Frames == null || file == null || Cpu == null || Mem == null) { GameThread = null; return; }
+        GameThread = Threads.Sample(g.Pid);
+        if (_bnFile != file) (Bottleneck, _bnFile) = (new BottleneckSession(), file);
+        if (GameThread == null) return;
+        Bottleneck!.Add(Sample());
+        if (Bottleneck.Count % 30 == 0) Bottleneck.Save(file);
+    }
 }

@@ -1,0 +1,11 @@
+[Unit]
+Description=Auto-reconnect Xbox Wireless Controller over Bluetooth LE (BlueZ reconnect workaround)
+After=bluetooth.target
+
+[Service]
+ExecStart=%h/.local/bin/xbox-bt-autoconnect.sh
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target

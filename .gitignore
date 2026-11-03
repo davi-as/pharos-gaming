@@ -18,3 +18,6 @@ PharosGaming-dist/
 
 # Drivers seriais embutidos (PHAROS MAKER): as DLLs fazem parte dos pacotes assinados
 !legacy-windows/Drivers/**
+__pycache__/
+.pytest_cache/
+!console/bin/

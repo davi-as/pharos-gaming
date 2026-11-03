@@ -7,7 +7,12 @@ namespace PharosGaming;
 /// <summary>Resumo de uma sessão de jogo, tirado do log do MangoHud.</summary>
 public sealed record GameSession(string Game, DateTime Start, double Minutes, double AvgFps, double Low1Fps, double PacingMs,
                                  double? CpuTempMax, double? GpuTempMax, double? CpuLoadAvg, double? GpuLoadAvg, double Limit,
-                                 List<string> Files, double? BelowPct = null, int Drops = 0, double WorstFps = 0, double? GpuLoadLow = null); // BelowPct null: sessão de antes da medida
+                                 List<string> Files, double? BelowPct = null, int Drops = 0, double WorstFps = 0, double? GpuLoadLow = null, // BelowPct null: sessão de antes da medida
+                                 Dictionary<string, double>? Limiters = null, double? HotPct = null) // gargalo (% do tempo por Limiter) e GPU segurando o clock
+{
+    /// <summary>O que mais limitou o FPS na sessão, se o PHAROS mediu.</summary>
+    public Limiter? MainLimiter => Limiters is { Count: > 0 } l && Enum.TryParse(l.MaxBy(x => x.Value).Key, out Limiter m) ? m : null;
+}
 
 /// <summary>"Nunca abaixo de 60": quanto do tempo ficou abaixo, quantas vezes caiu e até onde.</summary>
 public sealed record Floor(double BelowPct, int Drops, double WorstFps)
@@ -122,6 +127,9 @@ public static partial class SessionLog
             return new("Segurou 60", s.Drops == 0 ? "Nenhuma queda abaixo de 60 nesta sessão." : $"{s.Drops} queda(s) curta(s), {s.BelowPct:0.#}% do tempo: imperceptível.", true);
         string where = $"Abaixo de 60 em {below:0.#}% do tempo, {s.Drops} queda(s), a pior em {s.WorstFps:0}.";
         string fg = s.Low1Fps < 45 ? " Se ainda cair, a geração de quadros 2× segura 60, com mais atraso no controle." : "";
+        // o gargalo medido ao vivo (thread do jogo, temperatura) vale mais que a dedução pela carga da GPU no log
+        if (s.MainLimiter is Limiter l && l != Limiter.Capped)
+            return new(BottleneckAnalyzer.Title(l), where + " Motivo: " + BottleneckAnalyzer.Short(l) + fg, false);
         if (s.GpuLoadLow is double g && g >= 90)
             return new("A GPU não deu conta", where + " A GPU estava cheia nas quedas: ligue FSR, XeSS ou DLSS em Qualidade no jogo, ou baixe sombras e efeitos." + fg, false);
         if (s.GpuLoadLow is double g2 && g2 < 75)
@@ -173,7 +181,7 @@ public static partial class SessionLog
                     string game = group.Key;
                     double limit = AppSettings.Current.FpsLimits.TryGetValue("wine-" + game, out var l) ? l
                                  : AppSettings.Current.FpsLimits.GetValueOrDefault(game); // shortcut: o limite de agora, não o da hora da sessão
-                    if (Summarize(game, start, rows, minutes, limit, b.Select(f => f.FullName).ToList()) is { } s) store.Sessions.Add(s);
+                    if (Summarize(game, start, rows, minutes, limit, b.Select(f => f.FullName).ToList()) is { } s) store.Sessions.Add(WithBottleneck(s, b));
                     store.Seen.AddRange(b.Select(f => f.FullName));
                     changed = true;
                 }
@@ -186,6 +194,16 @@ public static partial class SessionLog
         }
     }
 
+    /// <summary>Junta as contagens de gargalo que o PHAROS gravou ao lado de cada log do lote (ver BottleneckSession.Save).</summary>
+    internal static GameSession WithBottleneck(GameSession s, IEnumerable<FileInfo> files)
+    {
+        var tallies = files.Select(f => BottleneckSession.Read(f.FullName)).OfType<BottleneckSession.Tally>().ToList();
+        int total = tallies.Sum(t => t.Total);
+        if (total == 0) return s;
+        var counts = tallies.SelectMany(t => t.Counts).GroupBy(kv => kv.Key).ToDictionary(g => g.Key, g => 100.0 * g.Sum(kv => kv.Value) / total);
+        return s with { Limiters = counts, HotPct = 100.0 * tallies.Sum(t => t.Hot) / total };
+    }
+
     /// <summary>Apaga da pasta do PHAROS os CSVs já resumidos com mais de 14 dias (e o _summary.csv que o MangoHud grava junto).</summary>
     private static bool Cleanup(Store store, string ownFolder)
     {
@@ -196,7 +214,7 @@ public static partial class SessionLog
         {
             string main = f.Name.EndsWith("_summary.csv") ? Path.Combine(f.DirectoryName!, f.Name[..^12] + ".csv") : f.FullName;
             if (DateTime.Now - f.LastWriteTime < KeepLogs || !(seen.Contains(main) || !File.Exists(main))) continue;
-            try { f.Delete(); any = true; } catch (IOException) { }
+            try { f.Delete(); File.Delete(BottleneckSession.TallyPath(f.FullName)); any = true; } catch (IOException) { }
         }
         return any;
     }

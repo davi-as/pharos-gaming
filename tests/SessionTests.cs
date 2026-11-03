@@ -115,3 +115,42 @@ public class FloorTests
         Assert.Null(FrameLimiter.TvName(new AppSettings(), screens.Take(1)));
     }
 }
+
+public class SessionBottleneckTests
+{
+    [Fact]
+    public void WithBottleneck_JoinsTalliesAndDrivesAdvice()
+    {
+        var dir = Directory.CreateTempSubdirectory("pharos-tally").FullName;
+        var a = new FileInfo(Path.Combine(dir, "eldenring_2026-11-03_10-00-00.csv"));
+        var b = new FileInfo(Path.Combine(dir, "eldenring_2026-11-03_10-20-00.csv"));
+        void Tally(FileInfo f, Dictionary<string, int> c, int hot, int total) =>
+            File.WriteAllText(BottleneckSession.TallyPath(f.FullName), System.Text.Json.JsonSerializer.Serialize(new BottleneckSession.Tally(c, hot, total)));
+        Tally(a, new() { ["MainThread"] = 60, ["Capped"] = 40 }, 10, 100);
+        Tally(b, new() { ["MainThread"] = 90, ["Gpu"] = 10 }, 90, 100);   // o 2º log da mesma sessão (config relida)
+
+        var s = new GameSession("eldenring", DateTime.Now, 40, 45, 30, 4, null, null, null, 60, 0, new(), BelowPct: 30, Drops: 12, WorstFps: 30);
+        var joined = SessionLog.WithBottleneck(s, new[] { a, b });
+        Assert.Equal(75, joined.Limiters!["MainThread"]);   // 150 de 200 amostras
+        Assert.Equal(50, joined.HotPct);
+        Assert.Equal(Limiter.MainThread, joined.MainLimiter);
+        Assert.Equal("Thread principal do jogo", SessionLog.Advice(joined).Title); // o motivo medido manda na dica
+        Assert.Null(SessionLog.WithBottleneck(s, new[] { new FileInfo(Path.Combine(dir, "sem.csv")) }).Limiters); // sem contagem: igual
+    }
+
+    [AvaloniaFact] // grava em MangoHud/: XDG_CONFIG_HOME temporário do TestApp
+    public void Ensure_CreatesOnceAndKeepsExisting()
+    {
+        var s = AppSettings.Current;
+        const string key = "wine-ensuretest";
+        string f = FrameLimiter.FileFor(key);
+        if (File.Exists(f)) File.Delete(f);
+        FrameLimiter.Ensure(s, key);
+        Assert.Contains("autostart_log=1", File.ReadAllLines(f)); // log e socket de controle desde a 1ª vez
+        Assert.Contains(File.ReadAllLines(f), l => l.StartsWith("control="));
+        Assert.False(s.FpsLimits.ContainsKey(key));               // não vira escolha de limite: o perfil da TV ainda vale
+        File.WriteAllText(f, "feito à mão");
+        FrameLimiter.Ensure(s, key);
+        Assert.Equal("feito à mão", File.ReadAllText(f));          // arquivo que já existe fica
+    }
+}

@@ -1,0 +1,11 @@
+#!/bin/bash
+# Hydra patcheado (workaround catálogo LaunchBox: match por SKU sem sufixo GH)
+# Reverter pra versão oficial: descomente a linha de baixo e apague o resto
+# exec "$HOME/.local/bin/hydra.AppImage" "$@"
+# ponytail: APPDIR explícito — a detecção do AppRun quebra com qualquer argumento (procura arquivo chamado "$1" e BIN vira /hydralauncher)
+export APPDIR="$HOME/.local/opt/hydra-patched"
+export MANGOHUD=1
+# ponytail: TV (DP-2) a 1.6 × 0.9375 = dpr 1.5 → borda da arte do BP (88 CSS px) cai em pixel inteiro, sem linha piscando
+# (o flag substitui o text-scaling-factor 0.9091 do GTK; se mudar a escala da TV, recalcular: dpr × 88 tem que ser inteiro)
+# Fullscreen na TV em HDR: com o color management do Wayland o Chromium se descreve pro Hyprland e pula o mapeamento SDR→HDR do monitor → cores lavadas
+exec "$HOME/.local/opt/hydra-patched/AppRun" --force-device-scale-factor=0.9375 --disable-features=WaylandWpColorManagerV1 "$@"

@@ -145,6 +145,32 @@ public sealed class BottleneckSession
 
     public Limiter? Main => _samples.Count == 0 ? null : Distribution()[0].Limiter;
 
+    /// <summary>Amostras com a GPU segurando o clock por temperatura (o aviso de calor do menu).</summary>
+    public int Hot => _samples.Count(x => x.Sample.GpuThermalCap);
+
+    /// <summary>
+    /// Grava a contagem ao lado do log do MangoHud ("x.csv" → "x.gargalo.json"), para o histórico achar o gargalo da sessão
+    /// (o resumo pode sair de outro processo do PHAROS). Não sobrescreve uma contagem maior: o menu residente mede desde o
+    /// começo, o app aberto depois teria menos amostras.
+    /// </summary>
+    public void Save(string csv)
+    {
+        string path = TallyPath(csv);
+        if (_samples.Count == 0 || Read(csv) is { } old && old.Total > _samples.Count) return;
+        var tally = new Tally(_samples.GroupBy(x => x.Limiter).ToDictionary(g => g.Key.ToString(), g => g.Count()), Hot, _samples.Count);
+        try { File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(tally)); } catch (IOException) { }
+    }
+
+    public sealed record Tally(Dictionary<string, int> Counts, int Hot, int Total);
+
+    public static string TallyPath(string csv) => Path.ChangeExtension(csv, ".gargalo.json");
+
+    public static Tally? Read(string csv)
+    {
+        try { return File.Exists(TallyPath(csv)) ? System.Text.Json.JsonSerializer.Deserialize<Tally>(File.ReadAllText(TallyPath(csv))) : null; }
+        catch (Exception e) when (e is IOException or System.Text.Json.JsonException) { return null; }
+    }
+
     public double? AvgFps
     {
         get

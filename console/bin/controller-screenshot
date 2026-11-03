@@ -1,0 +1,54 @@
+#!/bin/bash
+# controller-screenshot: captura da tela do jogo, disparada pelo botão Share do controle
+# (o daemon xbox-guide-hydra.py chama este script), como o Share fazia no Windows.
+#
+# - Captura o monitor com foco inteiro (grim -o), sem congelar a tela nem seletor de região
+#   (o "omarchy capture screenshot fullscreen" passa pelo freeze + picker, pesado no meio do jogo).
+# - Salva em ~/Pictures/Jogos/<data>_<jogo>.png e copia para a área de transferência.
+# - Aviso: som de captura + notificação com miniatura (clicar abre a imagem).
+set -uo pipefail
+
+DIR="${CONTROLLER_SCREENSHOT_DIR:-$(xdg-user-dir PICTURES 2>/dev/null || echo "$HOME/Pictures")/Jogos}"
+mkdir -p "$DIR"
+
+monitor=$(hyprctl monitors -j | jq -r '.[] | select(.focused) | .name' | head -1)
+win=$(hyprctl activewindow -j 2>/dev/null)
+title=$(jq -r '.title // ""' <<<"$win")
+class=$(jq -r '.class // ""' <<<"$win")
+
+# nome do jogo pro arquivo: o RPCS3 põe "FPS: .. | Vulkan | versão | Jogo [ID]" no título
+case "$class" in
+  *rpcs3*|*RPCS3*) title=${title##*| }; title=${title% \[*\]} ;;
+esac
+name=$(tr -c '[:alnum:] ._-' '_' <<<"${title:-$class}" | tr -s '_ ' | sed 's/^[_ ]*//; s/[_ ]*$//' | cut -c1-50)
+file="$DIR/$(date +'%Y-%m-%d_%H-%M-%S')${name:+_$name}.png"
+
+if ! grim ${monitor:+-o "$monitor"} "$file"; then
+  omarchy-notification-send -u critical "Falha na captura de tela" "grim não conseguiu capturar ${monitor:-a tela}" || true
+  exit 1
+fi
+
+# Jogo aberto pelo Hydra: a captura fica na biblioteca dele (~/Pictures/Hydra), com toast e som dele,
+# e a do grim é descartada. Se em 4 s não surgir arquivo (jogo fora do Hydra, permissão de captura
+# de tela ainda pendente), segue a do grim, então nenhuma captura se perde.
+if pgrep -f 'hydra-patched/hydralauncher --force' >/dev/null; then
+  HYDRA_DIR="$(dirname "$DIR")/Hydra"
+  cp "$file" "${TMPDIR:-/tmp}/hydra-share-frame.png.tmp" && mv -f "${TMPDIR:-/tmp}/hydra-share-frame.png.tmp" "${TMPDIR:-/tmp}/hydra-share-frame.png"  # o quadro do instante do clique
+  "$HOME/.local/bin/hydra" hydralauncher://screenshot >/dev/null 2>&1 &
+  for _ in $(seq 40); do
+    new=$(find "$HYDRA_DIR" -type f -name '*.jpeg' -newer "$file" 2>/dev/null | head -1)
+    if [ -n "$new" ]; then
+      rm -f "$file"
+      wl-copy --type image/jpeg <"$new" 2>/dev/null || true
+      echo "$new"
+      exit 0
+    fi
+    sleep 0.1
+  done
+fi
+
+pw-play /usr/share/sounds/freedesktop/stereo/screen-capture.oga >/dev/null 2>&1 &
+wl-copy --type image/png <"$file" 2>/dev/null || true
+omarchy-notification-send --app-name "Controle" -t 2500 --image "$file" \
+  "Captura salva" "$(basename "$file")" --exec xdg-open "$file" >/dev/null 2>&1 || true
+echo "$file"

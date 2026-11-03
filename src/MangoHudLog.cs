@@ -22,8 +22,8 @@ public static class MangoHudLog
     /// <summary>Arquivo que o jogo usa: o por jogo do limitador, se existir; senão o MangoHud.conf (mesma ordem do MangoHud).</summary>
     public static string ConfFor(string key) => File.Exists(FrameLimiter.FileFor(key)) ? FrameLimiter.FileFor(key) : MangoHudConfig.FilePath;
 
-    /// <summary>Chamado a cada poucos segundos fora da thread da interface.</summary>
-    public static void Tick()
+    /// <summary>Chamado a cada poucos segundos fora da thread da interface. Devolve o jogo aberto (o que tem janela).</summary>
+    public static RunningGame? Tick()
     {
         var games = FrameLimiter.Running().Where(g => g.Key != "wine-explorer").ToList();
         Lsfg.Settle(AppSettings.Current, games.Select(g => g.Key).ToHashSet());
@@ -38,6 +38,11 @@ public static class MangoHudLog
             // volta até o log aparecer; logging=1 liga (não alterna), então repetir não desliga nada
             if (Send(name, ":logging=1;")) Started[g.Pid] = name;
         }
+        // jogo novo já sai com o arquivo do PHAROS: log, socket de controle (View + Start em jogo Wayland) e o resto
+        var windows = FrameLimiter.WindowPids();
+        var game = FrameLimiter.Pick(games, windows);
+        if (game != null && windows.Contains(game.Pid)) FrameLimiter.Ensure(AppSettings.Current, game.Key); // sem janela: pode ser um ajudante do Wine
+        return game;
     }
 
     /// <summary>Algum log do PHAROS foi escrito nos últimos segundos (o MangoHud grava a cada 250 ms).</summary>

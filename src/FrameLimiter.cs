@@ -160,10 +160,20 @@ public static partial class FrameLimiter
         if (File.Exists(f + ".pharos-bak")) File.Move(f + ".pharos-bak", f); // devolve a config que já existia
     }
 
-    /// <summary>Regrava todos (o overlay do PHAROS ou o MangoHud.conf do usuário mudou).</summary>
+    /// <summary>Regrava todos (o overlay do PHAROS ou o MangoHud.conf do usuário mudou): os com limite e os criados sozinhos.</summary>
     public static void RewriteAll(AppSettings s)
     {
-        foreach (var key in s.FpsLimits.Keys) Write(s, key);
+        var ours = Directory.Exists(Dir) ? Directory.EnumerateFiles(Dir, "*.conf").Where(IsOurs).Select(Path.GetFileNameWithoutExtension) : [];
+        foreach (var key in s.FpsLimits.Keys.Union(ours!).Where(k => k != "MangoHud").ToList()) Write(s, key!);
+    }
+
+    /// <summary>
+    /// Arquivo do PHAROS para um jogo visto pela 1ª vez (sem limite: não conta como escolha, o perfil da TV ainda vale).
+    /// Sem ele o jogo usa o MangoHud.conf: sem log com o HUD escondido e sem socket de controle. Arquivo que já existe fica.
+    /// </summary>
+    public static void Ensure(AppSettings s, string key)
+    {
+        if (!File.Exists(FileFor(key))) Write(s, key);
     }
 
     private static bool IsOurs(string f) => File.Exists(f) && File.ReadLines(f).FirstOrDefault()?.StartsWith(Header) == true;
@@ -175,7 +185,7 @@ public static partial class FrameLimiter
         bool existed = File.Exists(f);
         if (existed && !IsOurs(f) && !File.Exists(f + ".pharos-bak")) File.Copy(f, f + ".pharos-bak"); // config por jogo feita à mão: guarda antes
         // troca atômica: o MangoHud relê no IN_DELETE_SELF (espera 100 ms pelo arquivo novo) e nunca vê o arquivo pela metade
-        File.WriteAllText(f + ".tmp", Build(key, s.FpsLimits[key], BaseLines(), s.OverlayHidden.TryGetValue(key, out bool h) ? h : null, s.FastVsync.Contains(key)));
+        File.WriteAllText(f + ".tmp", Build(key, s.FpsLimits.GetValueOrDefault(key), BaseLines(), s.OverlayHidden.TryGetValue(key, out bool h) ? h : null, s.FastVsync.Contains(key)));
         File.Move(f + ".tmp", f, overwrite: true);
         if (!existed) Poke();
     }

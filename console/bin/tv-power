@@ -1,0 +1,205 @@
+#!/usr/bin/env python3
+# Liga/desliga a TV Samsung (Tizen) pela rede: tv-power on|off|pc|status
+# pc  = troca pra entrada do PC (HDMI1); no controle: Guide + Start (xbox-guide daemon)
+# up/down = volume +/- (no controle: Guide + RB / Guide + LB)
+# on  = Wake-on-LAN (TV desligada) / KEY_POWER (TV em standby de rede)
+# off = KEY_POWER pelo WebSocket da TV (wss :8002), só se ela estiver ligada
+# 1ª conexão: a TV mostra "Permitir?" -> aceitar no controle; o token fica salvo.
+import base64, json, os, socket, ssl, struct, sys, time, urllib.request
+
+
+def config(path=os.path.expanduser("~/.config/console/config.env")):
+    """KEY=valor de ~/.config/console/config.env (o mesmo arquivo que o bash lê com source)."""
+    with open(path) as f:
+        return dict(l.strip().split("=", 1) for l in f if "=" in l and not l.lstrip().startswith("#"))
+
+
+_conf = config()
+TV_IP, TV_MAC = _conf["TV_IP"], _conf["TV_MAC"]
+APP_NAME = base64.b64encode(b"PC Console").decode()
+TOKEN = os.path.expanduser("~/.config/tv-power/token")
+
+
+def power_state():
+    """'on' | 'standby' | None (TV desligada de vez / fora da rede)."""
+    try:
+        with urllib.request.urlopen(f"http://{TV_IP}:8001/api/v2/", timeout=2) as r:
+            return json.load(r)["device"].get("PowerState", "on")
+    except (OSError, ValueError, KeyError) as e:
+        print(f"power_state: {e!r}", file=sys.stderr)
+        return None
+
+
+def wait_network(secs=40):
+    """Logo após o resume o NM ainda está pegando IP (DHCP leva ~8s): espera ter rota."""
+    for _ in range(secs):
+        try:
+            socket.create_connection((TV_IP, 8001), timeout=1).close()
+            return
+        except OSError as e:
+            if e.errno not in (101, 113):  # unreachable/no route = rede fora; outros = TV fora
+                return
+            time.sleep(1)
+
+
+def wol():
+    pkt = b"\xff" * 6 + bytes.fromhex(TV_MAC.replace(":", "")) * 16
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        for dst in (TV_IP.rsplit(".", 1)[0] + ".255", TV_IP, "255.255.255.255"):
+            try:  # logo após o resume ainda não há rota default (vem do DHCP)
+                s.sendto(pkt, (dst, 9))
+            except OSError:
+                pass
+
+
+# --- WebSocket mínimo (cliente, frames de texto) pra não depender de pacote ---
+def ws_send(sock, text):
+    data = text.encode()
+    mask = os.urandom(4)
+    n = len(data)
+    hdr = b"\x81" + (bytes([0x80 | n]) if n < 126 else struct.pack("!BH", 0x80 | 126, n))
+    sock.sendall(hdr + mask + bytes(b ^ mask[i % 4] for i, b in enumerate(data)))
+
+
+def ws_recv(sock):
+    def read(k):
+        buf = b""
+        while len(buf) < k:
+            chunk = sock.recv(k - len(buf))
+            if not chunk:
+                raise ConnectionError("ws fechado")
+            buf += chunk
+        return buf
+    b1, b2 = read(2)
+    n = b2 & 0x7F
+    if n == 126:
+        n = struct.unpack("!H", read(2))[0]
+    elif n == 127:
+        n = struct.unpack("!Q", read(8))[0]
+    return read(n).decode(errors="replace")
+
+
+def ws_connect(timeout=30):
+    """WebSocket autenticado no canal de controle remoto (pareia na 1ª vez)."""
+    token = ""
+    try:
+        token = open(TOKEN).read().strip()
+    except OSError:
+        pass
+    path = f"/api/v2/channels/samsung.remote.control?name={APP_NAME}" + (f"&token={token}" if token else "")
+    ctx = ssl.create_default_context()
+    ctx.check_hostname, ctx.verify_mode = False, ssl.CERT_NONE  # cert autoassinado da TV
+    raw = socket.create_connection((TV_IP, 8002), timeout=timeout)
+    sock = ctx.wrap_socket(raw, server_hostname=TV_IP)
+    try:
+        key64 = base64.b64encode(os.urandom(16)).decode()
+        sock.sendall((f"GET {path} HTTP/1.1\r\nHost: {TV_IP}:8002\r\nUpgrade: websocket\r\n"
+                      f"Connection: Upgrade\r\nSec-WebSocket-Key: {key64}\r\n"
+                      "Sec-WebSocket-Version: 13\r\n\r\n").encode())
+        resp = b""
+        while b"\r\n\r\n" not in resp:
+            resp += sock.recv(1024)
+        if b" 101 " not in resp.split(b"\r\n", 1)[0]:
+            raise ConnectionError(resp.split(b"\r\n", 1)[0].decode())
+        # espera ms.channel.connect (sem token, só chega depois de aceitar na TV)
+        while True:
+            msg = json.loads(ws_recv(sock))
+            if msg.get("event") == "ms.channel.connect":
+                new = msg.get("data", {}).get("token")
+                if new and new != token:
+                    os.makedirs(os.path.dirname(TOKEN), exist_ok=True)
+                    open(TOKEN, "w").write(new)
+                return sock
+            if msg.get("event") == "ms.channel.unauthorized":
+                raise PermissionError("TV recusou (aceite 'PC Console' na TV)")
+    except BaseException:
+        sock.close()
+        raise
+
+
+def click(sock, key):
+    ws_send(sock, json.dumps({"method": "ms.remote.control", "params": {
+        "Cmd": "Click", "DataOfCmd": key, "Option": "false", "TypeOfRemote": "SendRemoteKey"}}))
+
+
+def send_key(key, timeout=30, *more):
+    """Envia uma ou mais teclas; um número no meio é uma pausa em segundos."""
+    sock = ws_connect(timeout)
+    try:
+        for k in (key, *more):
+            if isinstance(k, (int, float)):
+                time.sleep(k)
+                continue
+            click(sock, k)
+        time.sleep(0.3)
+    finally:
+        sock.close()
+
+
+def select_pc():
+    """Volta pra entrada do PC (HDMI1). KEY_HDMI1 não funciona nessa TV (2023) e fechar app
+    cai na tela inicial. O menu Fonte é uma grade [TV, Ajuda] / [PC, Controle universal] /
+    [SmartThings] com o cursor na entrada atual (TV ou PC, ambos na coluna da esquerda):
+    cima + baixo cai no PC nos dois casos."""
+    send_key("KEY_SOURCE", 5, 1.5, "KEY_UP", 0.4, "KEY_DOWN", 0.4, "KEY_ENTER")
+
+
+def installed_apps(timeout=5):
+    sock = ws_connect(timeout)
+    try:
+        ws_send(sock, json.dumps({"method": "ms.channel.emit",
+                                  "params": {"event": "ed.installedApp.get", "to": "host"}}))
+        while True:
+            msg = json.loads(ws_recv(sock))
+            if msg.get("event") == "ed.installedApp.get":
+                return {a["appId"]: a.get("name", "") for a in msg["data"]["data"]}
+    finally:
+        sock.close()
+
+
+def wait_state(want, secs):
+    end = time.time() + secs
+    while time.time() < end:
+        if power_state() == want:
+            return True
+        time.sleep(1)
+    return False
+
+
+def main():
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
+    st = power_state()
+    if cmd == "status":
+        print(st or "off")
+    elif cmd == "on":
+        wait_network()
+        # TV em standby de rede só liga com KEY_POWER; totalmente desligada, só com WoL
+        for _ in range(3):
+            st = power_state()
+            print(f"estado={st}", file=sys.stderr)
+            if st == "on":
+                return
+            if st == "standby":
+                try:
+                    send_key("KEY_POWER", timeout=5)
+                except OSError as e:
+                    print(f"send_key: {e!r}", file=sys.stderr)
+            wol()
+            if wait_state("on", 8):
+                return
+        sys.exit("TV não ligou (ative 'Ligar com dispositivo móvel' na TV)")
+    elif cmd == "pc":
+        select_pc()
+    elif cmd in ("up", "down"):
+        send_key("KEY_VOLUP" if cmd == "up" else "KEY_VOLDOWN", 3)
+    elif cmd == "off":
+        print(f"estado={st}", file=sys.stderr)
+        if st == "on":
+            send_key("KEY_POWER", timeout=5 if os.path.exists(TOKEN) else 30)
+    else:
+        sys.exit("uso: tv-power on|off|pc|up|down|status")
+
+
+if __name__ == "__main__":
+    main()

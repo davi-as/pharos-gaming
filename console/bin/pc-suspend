@@ -1,0 +1,5 @@
+#!/bin/sh
+# Suspende o PC desligando a TV antes: depois do `systemctl suspend` o NetworkManager
+# tira o IP da placa na hora (nem hook system-sleep nem pre-down do NM têm rede).
+timeout 6 "$HOME/.local/bin/tv-power" off 2>&1 | logger -t tv-power
+exec systemctl suspend

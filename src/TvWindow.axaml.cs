@@ -46,10 +46,6 @@ public partial class TvWindow : Window
     private readonly bool _overlay;
     private bool _entered;
     private PosixSignalRegistration? _toggle;
-    private readonly ThreadLoad _threads = new();
-    private BottleneckSession? _bn; // gargalo da sessão do jogo aberto: amostra a cada segundo, aparecendo ou não
-    private string? _bnGame;
-    private float? _threadNow;
     private readonly Dictionary<int, bool> _vsyncAtLaunch = new(); // pid do jogo → V-Sync rápido quando o Pharos o viu (o que vale até reabrir)
     private readonly List<(TextBlock Label, TextBlock Value)> _stats = new();
 
@@ -179,7 +175,6 @@ public partial class TvWindow : Window
     {
         bool shown = IsVisible; // overlay escondido: só acha o jogo e mede o gargalo (nada de ddcutil, bateria, som)
         if (shown) Clock.Text = DateTime.Now.ToString("HH:mm");
-        if (_ticks % 2 == 0) SampleBottleneck(); // 1 por segundo, antes do await abaixo
         if (_ticks++ % 4 == 0 && !_scanning) // jogo e tela a cada 2 s
         {
             _scanning = true;
@@ -205,15 +200,6 @@ public partial class TvWindow : Window
         ShowTiles();
     }
 
-    /// <summary>Uma amostra do gargalo (BottleneckAnalyzer) com a thread mais ocupada do jogo; troca de jogo começa outra sessão.</summary>
-    private void SampleBottleneck()
-    {
-        if (_game == null || Live.Frames == null || Live.Cpu == null || Live.Mem == null) return;
-        var thread = _threadNow = _threads.Sample(_game.Pid);
-        if (_bnGame != _game.Key) (_bn, _bnGame) = (new BottleneckSession(), _game.Key);
-        if (thread != null) _bn!.Add(Live.Sample() with { GameThread = thread });
-    }
-
     private void ShowSession()
     {
         var f = _game != null ? Live.Frames : null;
@@ -232,7 +218,7 @@ public partial class TvWindow : Window
         Stat(1, "Quedas", floor == null ? "—" : floor.Drops == 0 ? "nenhuma" : $"{floor.Drops}, a pior em {floor.WorstFps:0}");
         var v = f != null ? FrameLimiter.Judge(Live.FrameTimes, Limit()) : null;
         Stat(2, "Ritmo dos quadros", v == null ? "—" : v.Title);
-        var bn = _game != null && _bnGame == _game.Key ? _bn : null;
+        var bn = _game != null ? Live.Bottleneck : null; // medido no Live (o mesmo que a página de gargalo do app)
         var main = bn?.Distribution().FirstOrDefault();
         ShowBottleneck(main, f != null);
         var last = _game == null ? null : SessionLog.Load().Sessions.Where(x => x.Game == _game.Name).MaxBy(x => x.Start);
@@ -244,7 +230,8 @@ public partial class TvWindow : Window
             lim > 0 ? $"limite {lim:0.##} FPS" : "sem limite",
             want >= 2 ? $"geração {want}×" + (mult != want ? " ao reabrir" : "") + (_s.FgLight.Contains(_game.Key) ? " leve" : "") : mult >= 2 ? "geração desliga ao reabrir" : "sem geração",
             hiddenNow ? "FPS escondido" : "FPS visível") + (_s.FastVsync.Contains(_game.Key) ? "  ·  V-Sync rápido" : "");
-        Stat(3, "Sessão anterior", last?.BelowPct is double b ? $"{100 - b:0.#}% acima de 60" : last != null ? $"{last.AvgFps:0} FPS médio" : "—");
+        Stat(3, "Sessão anterior", last?.BelowPct is double b ? $"{100 - b:0.#}% acima" + (last.MainLimiter is Limiter pl ? $" · {Who(pl)}" : " de 60")
+                                   : last != null ? $"{last.AvgFps:0} FPS médio" : "—");
 
         var tip = last != null ? SessionLog.Advice(last) : null;
         TipBox.IsVisible = _game != null;
@@ -253,7 +240,11 @@ public partial class TvWindow : Window
                 ? $". Motivo: {BottleneckAnalyzer.Short(why.Limiter)}"
                 : ". " + (tip != null && !tip.Good ? tip.Text : "Se continuar, baixe um degrau nos gráficos ou ligue upscaling (FSR, XeSS ou DLSS) em Qualidade."))
             : tip != null ? $"{tip.Title}. {tip.Text}" : "Segurando 60. A sugestão do jogo aparece aqui quando houver o que ajustar.";
-        bool warn = floor != null && floor.BelowPct >= 0.5 || tip is { Good: false };
+        // calor: a GPU segurando o clock em boa parte da sessão vem antes de tudo (derruba a folga de qualquer ajuste)
+        double hot = bn is { Count: >= 30 } ? 100.0 * bn.Hot / bn.Count : 0;
+        if (_game != null && hot >= 20)
+            Tip.Text = $"GPU quente: perdeu clock por temperatura em {hot:0}% da sessão{(Live.Gpu?.Temp is float ht ? $", agora a {ht:0} °C" : "")}. Confira ventilação e poeira. " + Tip.Text;
+        bool warn = floor != null && floor.BelowPct >= 0.5 || tip is { Good: false } || hot >= 20;
         TipBox.BorderBrush = Br(warn ? "TvWarn" : "TvEdge");
         TipIcon.Data = (Geometry)this.FindResource(warn ? "ic-alert-circle" : "ic-check-circle")!;
         TipIcon.Foreground = Br(warn ? "TvWarn" : "TvOk");
@@ -269,9 +260,10 @@ public partial class TvWindow : Window
         LimTitle.Text = main is { } m ? BottleneckAnalyzer.Title(m.Limiter) : live ? "medindo…" : "—";
         LimPct.Text = main is { } p ? $"{p.Pct:0}% da sessão" : "";
         LimTitle.Foreground = Br(main?.Limiter is Limiter.Gpu or Limiter.Capped or null ? "TvInk" : "TvWarn");
-        float? gpu = live ? Live.Gpu?.Load : null, thread = live ? _threadNow : null;
+        float? gpu = live ? Live.Gpu?.Load : null, thread = live ? Live.GameThread : null;
         string Temp(float? t) => t is float v ? $" · {v:0} °C" : "";
         GpuText.Text = gpu is float g ? $"{g:0}%{Temp(Live.Gpu?.Temp)}" : "—";
+        GpuText.Foreground = Br(live && Live.Gpu?.ThermalCap == true ? "TvWarn" : "TvInk"); // segurando o clock por temperatura
         ThreadText.Text = thread is float th ? $"{Math.Min(th, 100):0}%" + (Live.Cpu?.Temp is float ct ? $" · CPU {ct:0} °C" : "") : "—";
         foreach (var (bar, v) in new[] { (GpuBar, gpu), (ThreadBar, thread) })
         {
@@ -542,19 +534,28 @@ public partial class TvWindow : Window
     private void Toggle()
     {
         if (IsVisible && _entered) { Dismiss(); return; }
-        OverlayRule(); // recarregar a config do Hyprland apaga a regra
+        OverlayRule(_screen?.Name); // recarregar a config do Hyprland apaga a regra; _screen é a tela do jogo (ou a em foco)
         _ticks = 0;
         Show();
         Enter();
         Tick();
     }
 
+    /// <summary>Quem limitou, curto, para a linha da sessão anterior.</summary>
+    private static string Who(Limiter l) => l switch
+    {
+        Limiter.MainThread => "thread do jogo", Limiter.Gpu => "GPU", Limiter.Cpu => "CPU", Limiter.Thermal => "temperatura",
+        Limiter.Vram => "VRAM", Limiter.Ram => "RAM", _ => "nada no limite",
+    };
+
     /// <summary>
-    /// Regra do Hyprland para o overlay: flutuante, fixo na tela em foco (a do jogo), do tamanho dela, sem receber foco ao
+    /// Regra do Hyprland para o overlay: flutuante, fixo na tela do jogo, do tamanho dela, sem receber foco ao
     /// aparecer. Assim fica por cima do jogo em tela cheia e o jogo continua com o foco. Com nome: aplicar de novo só atualiza.
     /// </summary>
-    private static void OverlayRule() =>
+    private static void OverlayRule(string? monitor = null) =>
         Sys.RunAsync("hyprctl", "eval", "hl.window_rule({ name = \"pharos-gaming-overlay\", match = { title = \"^" + OverlayTitle + "$\" }, " +
+            // na tela do jogo, não na que tem foco (o monitor em pé ao lado espremeria o menu); só nomes simples entram no Lua
+            (monitor is { Length: > 0 } && monitor.All(c => char.IsAsciiLetterOrDigit(c) || c == '-') ? $"monitor = \"{monitor}\", " : "") +
             "float = true, pin = true, no_initial_focus = true, no_dim = true, no_blur = true, no_anim = true, no_shadow = true, " +
             "border_size = 0, rounding = 0, tag = \"-default-opacity\", opacity = \"1 1\", size = { \"monitor_w\", \"monitor_h\" }, move = { 0, 0 } })")
             .GetAwaiter().GetResult();

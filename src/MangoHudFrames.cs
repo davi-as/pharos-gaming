@@ -38,6 +38,8 @@ public sealed partial class MangoHudFrames
 
     /// <summary>Quando o log atual começou (pelo nome do arquivo).</summary>
     public DateTime? SessionStart => _file != null ? SessionLog.FromName(_file)?.Start : null;
+    /// <summary>O CSV que está sendo lido (a sessão do gargalo é a deste arquivo).</summary>
+    public string? CurrentFile => _file;
 
     public MangoHudFrames()
     {

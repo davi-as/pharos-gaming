@@ -52,10 +52,13 @@ que vê o jogo rodando (os da Steam pelo `SteamAppId`; os do Hydra fora da Steam
 - **Menu rápido na TV:** Guide + View no controle abre o Pharos como overlay, translúcido por cima do jogo, sem tirar o
   foco nem a tela cheia dele (como o overlay da Steam). O processo fica aberto depois da 1ª vez, então abre e fecha na
   hora (o daemon do console manda SIGUSR1 ao `pharos-gaming --tv`), e o controle fica preso só para o menu enquanto ele
-  aparece: o jogo não recebe os botões. O Pharos aplica a própria regra de janela do Hyprland. Com `pharos-gaming --tv --hidden` no autostart, ele já
-  fica escondido desde o login, medindo o jogo desde o começo. Mostra a sessão ao vivo (quanto do tempo ficou acima de 60, quedas, ritmo, temperaturas,
-  a sessão anterior, o gráfico do tempo de cada quadro no último minuto e a sugestão do jogo), a bateria do controle e
-  ajustes que valem com o jogo aberto: limite, geração de quadros (2×, 3× quando a tela permite, modelo leve), overlay,
+  aparece: o jogo não recebe os botões. O Pharos aplica a própria regra de janela do Hyprland e abre o menu na tela do
+  jogo. Com `pharos-gaming --tv --hidden` no autostart, ele já fica escondido desde o login, medindo o jogo desde o começo;
+  jogo novo ganha o arquivo do MangoHud do PHAROS na 1ª vez que aparece (log com o HUD escondido e o socket de controle
+  que o View + Start usa em jogo Wayland). Mostra a sessão ao vivo (quanto do tempo ficou acima de 60, quedas, ritmo, o
+  gargalo com a folga da GPU e da thread principal do jogo, aviso quando a GPU perde clock por temperatura, a sessão
+  anterior com o que a limitou, o gráfico do tempo de cada quadro no último minuto e a sugestão do jogo), a bateria do controle e
+  ajustes que valem com o jogo aberto: limite, geração de quadros (2×, 3× quando a tela permite, modelo leve), V-Sync rápido, overlay,
   saída de som e volume, perfil de energia, desligar as outras telas, desligar o controle, captura e Big Picture. Navega pelo controle (direcional ou analógico, A muda, B ou Guide + View
   volta ao jogo); pela página PC como console abre como janela comum, em tela cheia, que também anda pelas setas.
 - **Perfil da TV:** todo jogo novo que aparece na TV ganha o limite igual à taxa dela (59,95), e cada sessão mede o
@@ -114,6 +117,17 @@ Publica o app self-contained em `~/.local/share/pharos-gaming/app` (abre sem o .
 atalho "Pharos Gaming" no menu de aplicativos (no Omarchy, Super + Espaço). Rode de novo depois de atualizar o código;
 `scripts/install.sh --uninstall` remove (as configurações em `~/.config/pharos-gaming` ficam).
 
+### PC como console (controle, TV, menu por cima do jogo)
+```
+scripts/install-console.sh           # instala/atualiza e corrige
+scripts/install-console.sh --check   # só confere, sem mudar nada
+```
+Instala o que fica fora do app, a partir de `console/`: o daemon do controle (`xbox-guide`: Guide abre o Hydra, Guide +
+View o menu do PHAROS, View + Start o MangoHud, Guide segurado suspende), o `tv-power` (TV Samsung pela rede), o wrapper
+do Hydra com `MANGOHUD=1`, a captura de tela e a reconexão do Xbox por Bluetooth. Também confere o `config.env` (IP e MAC
+da TV, MAC do controle: os valores da máquina não vão para o repositório), põe `MANGOHUD=1` no atalho da Steam (os jogos
+da Steam nascem dela) e o PHAROS escondido (`--tv --hidden`) no autostart do Hyprland. Só troca o que mudou, com backup.
+
 ## Identidade visual
 A mesma do [Pharos](https://github.com/davi-as/pharos) (`docs/DESIGN.md` de lá): o Φ do Farol de Alexandria, tema claro
 "papiro" e escuro "noite do Nilo" seguindo o tema do sistema, lápis-lazúli no que age, ouro na luz, turquesa no ok e
@@ -136,11 +150,13 @@ Usa ferramentas que as distros já trazem: `lspci`, `lsblk`, `udevadm`, `journal
 ```
 mise exec -- dotnet test tests
 ```
-100 testes xunit: os parsers (sysfs, udev, lspci, lsblk, smartctl, journal, MangoHud, VDF da Steam), os cálculos (gargalo,
+Mais de 100 testes xunit: os parsers (sysfs, udev, lspci, lsblk, smartctl, journal, MangoHud, VDF da Steam), os cálculos (gargalo,
 EXPO, frametime, efeitos de luz), os scripts de root (aspas e conteúdo), o protocolo do OpenRGB contra um servidor falso,
 a leitura desta máquina e a interface inteira em modo headless (abre as 24 páginas e o modo TV). Os testes de GPU rodam a cena, o ray
 tracing e o stress por um instante quando há GPU com aceleração, e passam sem rodar quando não há (CI). O CI do GitHub
 roda a suíte no Ubuntu a cada push.
+
+Daemon do controle (Python, sem dependências): `cd console/lib && python3 -m pytest -q`.
 
 Capturas de todas as páginas, para revisar a interface: `PHAROS_SHOTS=pasta dotnet test tests --filter Screenshots`
 (com `PHAROS_SHOTS_THEME=dark` ou `light` para escolher o tema).
@@ -158,6 +174,7 @@ Capturas de todas as páginas, para revisar a interface: `PHAROS_SHOTS=pasta dot
 ```
 src/             app Avalonia (.NET 10): uma página por arquivo em src/Pages
 tests/           testes xunit + Avalonia.Headless
+console/         PC como console: daemon do controle, scripts (tv-power, hydra...) e serviços systemd (scripts/install-console.sh)
 legacy-windows/  código original do RESET EXPLODE, referência
 ```
 

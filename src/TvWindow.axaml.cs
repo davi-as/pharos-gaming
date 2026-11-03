@@ -36,7 +36,7 @@ public partial class TvWindow : Window
 
     private static readonly Dictionary<string, string> Icons = new()
     {
-        ["limit"] = "timer-outline", ["fg"] = "animation-outline", ["fglight"] = "feather", ["overlay"] = "eye-outline",
+        ["limit"] = "timer-outline", ["fg"] = "animation-outline", ["fglight"] = "feather", ["overlay"] = "eye-outline", ["vsync"] = "refresh",
         ["audio"] = "speaker", ["voldown"] = "volume-minus", ["volup"] = "volume-plus", ["power"] = "lightning-bolt-outline",
         ["screens"] = "monitor-multiple", ["pad"] = "bluetooth-off", ["shot"] = "camera-outline", ["bp"] = "play-circle-outline",
         ["theme"] = "theme-light-dark", ["scale"] = "magnify", ["motion"] = "animation-outline", ["reset"] = "restart",
@@ -50,6 +50,7 @@ public partial class TvWindow : Window
     private BottleneckSession? _bn; // gargalo da sessão do jogo aberto: amostra a cada segundo, aparecendo ou não
     private string? _bnGame;
     private float? _threadNow;
+    private readonly Dictionary<int, bool> _vsyncAtLaunch = new(); // pid do jogo → V-Sync rápido quando o Pharos o viu (o que vale até reabrir)
     private readonly List<(TextBlock Label, TextBlock Value)> _stats = new();
 
     public TvWindow() : this(false) { }
@@ -59,7 +60,7 @@ public partial class TvWindow : Window
         _overlay = overlay;
         InitializeComponent();
         // seções: o que precisa do jogo aberto, o que é do PC e os atalhos (com a sugestão ao lado)
-        (string, string)[] game = { ("limit", "LIMITE"), ("fg", "GERAÇÃO"), ("fglight", "QUALIDADE"), ("overlay", "OVERLAY") };
+        (string, string)[] game = { ("limit", "LIMITE"), ("fg", "GERAÇÃO"), ("fglight", "QUALIDADE"), ("vsync", "V-SYNC"), ("overlay", "OVERLAY") };
         (string, string)[] system = { ("audio", "SOM"), ("power", "ENERGIA"), ("screens", "TELAS"), ("pad", "CONTROLE") };
         (string, string)[] shortcuts = { ("shot", "CAPTURA"), ("bp", "HYDRA") };
         (string, string)[] settings = { ("theme", "TEMA"), ("scale", "TAMANHO"), ("motion", "ANIMAÇÕES"), ("reset", "PADRÃO") };
@@ -97,19 +98,22 @@ public partial class TvWindow : Window
 
     private void AddTile(string name, string label, Grid grid, int col)
     {
-        var icon = new Border { Classes = { "ico" }, Child = new PathIcon { Data = (Geometry)this.FindResource("ic-" + Icons[name])!, Width = 22, Height = 22 } };
-        var v = new TextBlock { Classes = { "serif" }, FontSize = 22, Text = "—", TextTrimming = TextTrimming.CharacterEllipsis, Margin = new(0, 10, 0, 0) };
-        var h = new TextBlock { Classes = { "soft" }, FontSize = 15, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new(0, 3, 0, 0) };
+        bool compact = grid == GameTiles; // a seção do jogo tem 5 botões: um pouco menores para os textos caberem
+        var icon = new Border { Classes = { "ico" }, Child = new PathIcon { Data = (Geometry)this.FindResource("ic-" + Icons[name])!, Width = compact ? 19 : 22, Height = compact ? 19 : 22 } };
+        if (compact) (icon.Width, icon.Height, icon.CornerRadius) = (36, 36, new CornerRadius(18));
+        var v = new TextBlock { Classes = { "serif" }, FontSize = compact ? 19 : 22, Text = "—", TextTrimming = TextTrimming.CharacterEllipsis, Margin = new(0, 10, 0, 0) };
+        var h = new TextBlock { Classes = { "soft" }, FontSize = compact ? 13.5 : 15, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new(0, 3, 0, 0) };
         var panel = new StackPanel();
         var top = new Grid { ColumnDefinitions = new("Auto,*") };
         top.Children.Add(icon);
-        var cap = new TextBlock { Classes = { "cap" }, FontSize = 12, Text = label, VerticalAlignment = VerticalAlignment.Center, Margin = new(12, 0, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis };
+        var cap = new TextBlock { Classes = { "cap" }, FontSize = 12, Text = label, VerticalAlignment = VerticalAlignment.Center, Margin = new(compact ? 9 : 12, 0, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis };
         Grid.SetColumn(cap, 1);
         top.Children.Add(cap);
         panel.Children.Add(top);
         panel.Children.Add(v);
         panel.Children.Add(h);
         var b = new Button { Classes = { "tile" }, Content = panel, Height = 140 };
+        if (compact) b.Padding = new Thickness(15, 16);
         b.Click += (_, _) => Activate(name);
         Grid.SetColumn(b, col);
         grid.Children.Add(b);
@@ -187,6 +191,7 @@ public partial class TvWindow : Window
             _scanning = false;
             _game = g;
             _screen = sc;
+            if (g != null) _vsyncAtLaunch.TryAdd(g.Pid, _s.FastVsync.Contains(g.Key));
             if (!IsVisible) return;
             _screensOff = await Task.Run(() => QuickActions.OthersOff(sc?.Name));
             var bats = await Task.Run(() => QuickActions.PadBatteries());
@@ -238,7 +243,7 @@ public partial class TvWindow : Window
         ConfigLine.Text = _game == null ? "—" : string.Join("  ·  ",
             lim > 0 ? $"limite {lim:0.##} FPS" : "sem limite",
             want >= 2 ? $"geração {want}×" + (mult != want ? " ao reabrir" : "") + (_s.FgLight.Contains(_game.Key) ? " leve" : "") : mult >= 2 ? "geração desliga ao reabrir" : "sem geração",
-            hiddenNow ? "FPS escondido" : "FPS visível");
+            hiddenNow ? "FPS escondido" : "FPS visível") + (_s.FastVsync.Contains(_game.Key) ? "  ·  V-Sync rápido" : "");
         Stat(3, "Sessão anterior", last?.BelowPct is double b ? $"{100 - b:0.#}% acima de 60" : last != null ? $"{last.AvgFps:0} FPS médio" : "—");
 
         var tip = last != null ? SessionLog.Advice(last) : null;
@@ -348,9 +353,13 @@ public partial class TvWindow : Window
         T("fg", want >= 2 ? (Lsfg.Choices(ScreenHz).Max() > want ? $"Usar {want + 1}×" : "Desligar") : "Ligar 2×",
           fgMissing ?? (want != mult ? "vale ao reabrir o jogo" : want >= 2 ? $"{ScreenHz / want:0.##} reais × {want}" : "2× = metade reais"),
           has && fgMissing == null, want >= 2);
-        T("fglight", light ? "Modo normal" : "Modo leve", has && want < 2 ? "com a geração ligada" : light ? "imagem melhor" : "mais rápido, menos nítido",
+        T("fglight", light ? "Modo normal" : "Modo leve", has && want < 2 ? "com geração ligada" : light ? "imagem melhor" : "mais rápido",
           has && want >= 2 && fgMissing == null, light);
-        T("overlay", hidden ? "Mostrar FPS" : "Esconder FPS", has && !limited ? "precisa de limite" : "o FPS chega ao Pharos igual", limited, has && !hidden);
+        bool fast = has && _s.FastVsync.Contains(_game!.Key);
+        bool vsyncPending = has && _vsyncAtLaunch.TryGetValue(_game!.Pid, out bool was) && was != fast;
+        T("vsync", fast ? "Usar normal" : "Usar rápido",
+          vsyncPending ? "vale ao reabrir" : fast ? "não cai para 30" : "evita cair p/ 30", has, fast);
+        T("overlay", hidden ? "Mostrar FPS" : "Esconder FPS", has && !limited ? "precisa de limite" : "segue medindo", limited, has && !hidden);
         T("power", _power == "performance" ? "Desempenho" : _power == null ? "—" : "Equilibrado",
           _power == null ? "sem power-profiles-daemon" : _power == "performance" ? "trocar para equilibrado" : "trocar para desempenho", _power != null, _power == "performance");
         T("audio", _sink != null ? QuickActions.Short(_sink) : "—", "trocar a saída", _sink != null, true);
@@ -399,6 +408,12 @@ public partial class TvWindow : Window
                     break;
                 case "fglight" when g != null:
                     Lsfg.SetLight(_s, g.Key, !_s.FgLight.Contains(g.Key), ScreenHz);
+                    break;
+                case "vsync" when g != null:
+                    if (!_s.FastVsync.Remove(g.Key)) _s.FastVsync.Add(g.Key);
+                    _s.FpsLimits.TryAdd(g.Key, 0); // o arquivo do jogo precisa de um limite: 0 = sem limite
+                    _s.Save();
+                    FrameLimiter.Write(_s, g.Key);
                     break;
                 case "overlay" when g != null:
                     bool hid = _s.OverlayHidden.TryGetValue(g.Key, out bool hv) ? hv : ConsoleSetup.MangoHidden(Sys.Read(MangoHudConfig.FilePath) ?? "");

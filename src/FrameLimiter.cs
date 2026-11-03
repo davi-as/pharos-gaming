@@ -95,11 +95,11 @@ public static partial class FrameLimiter
 
     /// <summary>
     /// O jogo entre os processos com MangoHud: o que tem janela (o explorer.exe /desktop do Wine também carrega o
-    /// MangoHud, sem janela); sem lista de janelas, o primeiro fora da lista negra do MangoHud.
+    /// MangoHud, sem janela, e o steam.exe do Proton, que abre o jogo); sem lista de janelas, o primeiro fora da lista negra do MangoHud.
     /// </summary>
     public static RunningGame? Pick(IEnumerable<RunningGame> games, ISet<int> windowPids)
     {
-        var real = games.Where(g => g.Key != "wine-explorer").ToList();
+        var real = games.Where(g => g.Key is not ("wine-explorer" or "wine-steam")).ToList();
         return real.FirstOrDefault(g => windowPids.Contains(g.Pid)) ?? real.FirstOrDefault();
     }
 
@@ -115,12 +115,14 @@ public static partial class FrameLimiter
     }
 
     /// <summary>Config do jogo: a base inteira (o arquivo é lido no lugar dela, não junto) + o limite e o log que o PHAROS lê.</summary>
-    public static string Build(string key, double limit, IEnumerable<string> baseLines, bool? hidden = null)
+    public static string Build(string key, double limit, IEnumerable<string> baseLines, bool? hidden = null, bool fastVsync = false)
     {
         var lines = new List<string> { $"{Header} Jogo: {Display(key)}. Edições manuais são substituídas." };
         lines.AddRange(baseLines.Where(l => !l.StartsWith("# Gerado pelo PHAROS") && !Owned.Contains(l.Split('=', 2)[0].Trim())
-                                            && !(hidden != null && l.Trim().StartsWith("no_display"))));
+                                            && !(hidden != null && l.Trim().StartsWith("no_display"))
+                                            && !(fastVsync && l.Split('=', 2)[0].Trim() == "vsync")));
         if (hidden == true) lines.Add("no_display=1"); // escolhido no menu rápido para este jogo
+        if (fastVsync) lines.Add("vsync=2"); // mailbox: sem a queda para 30 do V-Sync comum (vale ao recriar a swapchain, ao reabrir)
         string fps = limit.ToString("0.##", CultureInfo.InvariantCulture);
         lines.AddRange(new[]
         {
@@ -173,7 +175,7 @@ public static partial class FrameLimiter
         bool existed = File.Exists(f);
         if (existed && !IsOurs(f) && !File.Exists(f + ".pharos-bak")) File.Copy(f, f + ".pharos-bak"); // config por jogo feita à mão: guarda antes
         // troca atômica: o MangoHud relê no IN_DELETE_SELF (espera 100 ms pelo arquivo novo) e nunca vê o arquivo pela metade
-        File.WriteAllText(f + ".tmp", Build(key, s.FpsLimits[key], BaseLines(), s.OverlayHidden.TryGetValue(key, out bool h) ? h : null));
+        File.WriteAllText(f + ".tmp", Build(key, s.FpsLimits[key], BaseLines(), s.OverlayHidden.TryGetValue(key, out bool h) ? h : null, s.FastVsync.Contains(key)));
         File.Move(f + ".tmp", f, overwrite: true);
         if (!existed) Poke();
     }

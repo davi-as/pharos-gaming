@@ -94,6 +94,11 @@ public sealed class AppSettings
     public Dictionary<string, double> FgScreenHz { get; set; } = new();
     /// <summary>Jogos com o modelo leve do lsfg-vk (performance_mode: mais rápido, um pouco menos de qualidade).</summary>
     public HashSet<string> FgLight { get; set; } = new();
+    /// <summary>
+    /// Jogos com o V-Sync rápido (mailbox, vsync=2 do MangoHud): o quadro atrasado repete o anterior em vez de o jogo
+    /// esperar a vez e cair para 30. O adaptativo (FIFO_RELAXED) não existe em janela Wayland na NVIDIA. Vale ao reabrir.
+    /// </summary>
+    public HashSet<string> FastVsync { get; set; } = new();
     /// <summary>Overlay do MangoHud por jogo pelo menu rápido: true = escondido; ausente = o do MangoHud.conf.</summary>
     public Dictionary<string, bool> OverlayHidden { get; set; } = new();
     /// <summary>Saída do Hyprland que é a TV (ex. DP-2); null = adivinhar pela descrição do monitor.</summary>

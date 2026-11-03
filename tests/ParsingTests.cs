@@ -60,6 +60,16 @@ public class ParsingTests
     }
 
     [Fact]
+    public void Build_FastVsync()
+    {
+        string[] base_ = { "fps", "vsync=3" };
+        var fast = FrameLimiter.Build("wine-eldenring", 0, base_, fastVsync: true).Split('\n');
+        Assert.Contains("vsync=2", fast);                       // mailbox
+        Assert.DoesNotContain("vsync=3", fast);                 // o do MangoHud.conf sai
+        Assert.Contains("vsync=3", FrameLimiter.Build("wine-eldenring", 0, base_).Split('\n')); // desligado: vale o do usuário
+    }
+
+    [Fact]
     public void ThreadLoad_TicksFromStat()
     {
         // nome com espaço e parênteses (threads do Wine): os campos contam depois do último ")"

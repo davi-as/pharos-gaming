@@ -18,6 +18,7 @@ public class LimiterTests
         Assert.Equal("wine-Hades", FrameLimiter.Pick(games, new HashSet<int> { 12 })!.Key);
         Assert.Equal("wine-launcher", FrameLimiter.Pick(games, new HashSet<int>())!.Key); // sem janelas: nunca o explorer
         Assert.Null(FrameLimiter.Pick(new[] { new RunningGame(10, "wine-explorer") }, new HashSet<int>()));
+        Assert.Equal("wine-eldenring", FrameLimiter.Pick(new[] { new RunningGame(9, "wine-steam"), new RunningGame(13, "wine-eldenring") }, new HashSet<int>())!.Key); // steam.exe do Proton
     }
 
     [Fact]

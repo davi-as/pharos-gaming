@@ -47,4 +47,24 @@ public class ParsingTests
         Assert.Equal(Limiter.Cpu, (s with { GpuLoad = 60 }).Classify());
         Assert.Equal(Limiter.Vram, (s with { VramPct = 98 }).Classify());
     }
+
+    [Fact]
+    public void Classify_MainThreadAndThermal()
+    {
+        // o Elden Ring medido: GPU a 61% e quente (segurando o clock), CPU total 17%, thread principal a 87% de um núcleo
+        var s = new LoadSample(61, 17, 40, null, 47, 30, 88, 68, true, 33, GameThread: 87);
+        Assert.Equal(Limiter.MainThread, s.Classify());              // GPU quente mas sobrando não é o limite
+        Assert.Equal(Limiter.Capped, (s with { GameThread = 40 }).Classify());
+        Assert.Equal(Limiter.Thermal, (s with { GpuLoad = 97 }).Classify()); // cheia e segurando o clock: aí é térmico
+        Assert.Equal(Limiter.Gpu, (s with { GpuLoad = 97, GpuThermalCap = false }).Classify());
+    }
+
+    [Fact]
+    public void ThreadLoad_TicksFromStat()
+    {
+        // nome com espaço e parênteses (threads do Wine): os campos contam depois do último ")"
+        const string stat = "2616618 (eldenring (x).exe) R 1 2 3 4 5 6 7 8 9 10 2900 1500 0 0 20 0 80";
+        Assert.Equal(4400, ThreadLoad.Ticks(stat));
+        Assert.Null(ThreadLoad.Ticks("1 (x) R 1"));
+    }
 }

@@ -49,12 +49,15 @@ que vê o jogo rodando (os da Steam pelo `SteamAppId`; os do Hydra fora da Steam
   controle; Hydra (abrir com o sistema, MangoHud nos jogos), Steam com `MANGOHUD=1` (os jogos da Steam que o Hydra abre
   nascem da Steam), TV (`tv-power`), reconexão do controle por Bluetooth, MangoHud escondido no início e o diagnóstico
   do `gaming-doctor`. Cada arquivo editado ganha uma cópia `.pharos-bak` na primeira mudança.
-- **Menu rápido na TV:** Guide + View no controle abre o Pharos em tela cheia por cima do jogo (o daemon do console
-  devolve o jogo ao fechar). Mostra a sessão ao vivo (quanto do tempo ficou acima de 60, quedas, ritmo, temperaturas,
+- **Menu rápido na TV:** Guide + View no controle abre o Pharos como overlay, translúcido por cima do jogo, sem tirar o
+  foco nem a tela cheia dele (como o overlay da Steam). O processo fica aberto depois da 1ª vez, então abre e fecha na
+  hora (o daemon do console manda SIGUSR1 ao `pharos-gaming --tv`), e o controle fica preso só para o menu enquanto ele
+  aparece: o jogo não recebe os botões. O Pharos aplica a própria regra de janela do Hyprland. Com `pharos-gaming --tv --hidden` no autostart, ele já
+  fica escondido desde o login, medindo o jogo desde o começo. Mostra a sessão ao vivo (quanto do tempo ficou acima de 60, quedas, ritmo, temperaturas,
   a sessão anterior, o gráfico do tempo de cada quadro no último minuto e a sugestão do jogo), a bateria do controle e
   ajustes que valem com o jogo aberto: limite, geração de quadros (2×, 3× quando a tela permite, modelo leve), overlay,
-  saída de som e volume, perfil de energia, desligar as outras telas, desligar o controle, captura e Big Picture. Navega pelo controle (direcional ou analógico, A muda, B volta ao jogo) ou
-  pelas setas; também abre pela página e com `pharos-gaming --tv`.
+  saída de som e volume, perfil de energia, desligar as outras telas, desligar o controle, captura e Big Picture. Navega pelo controle (direcional ou analógico, A muda, B ou Guide + View
+  volta ao jogo); pela página PC como console abre como janela comum, em tela cheia, que também anda pelas setas.
 - **Perfil da TV:** todo jogo novo que aparece na TV ganha o limite igual à taxa dela (59,95), e cada sessão mede o
   tempo abaixo de 60 e sugere o ajuste que falta (upscaling ou gráficos quando a GPU está cheia; CPU quando não está).
 - **Geração de quadros (lsfg-vk):** por jogo, pelo menu rápido. O PHAROS escreve `~/.config/lsfg-vk/conf.toml` (um

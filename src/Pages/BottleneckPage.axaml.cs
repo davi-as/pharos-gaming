@@ -52,7 +52,7 @@ public partial class BottleneckPage : UserControl
         LiveGame.Text = frames != null
             ? $"{frames.Game} · {frames.Fps:0} FPS · mínimo 10 s {frames.MinFps:0}"
             : "Nenhum jogo enviando FPS pelo MangoHud (as cargas abaixo valem mesmo assim)";
-        bool alert = lim is Limiter.Cpu or Limiter.Vram or Limiter.Ram or Limiter.Thermal;
+        bool alert = lim is Limiter.Cpu or Limiter.MainThread or Limiter.Vram or Limiter.Ram or Limiter.Thermal;
         LiveCard.Background = alert ? App.Brush("BadFill") : App.Brush("Card");
         LiveTitle.Foreground = alert ? App.Brush("OnFlame") : App.Brush("Fg");
         LiveLabel.Foreground = LiveGame.Foreground = LiveAdvice.Foreground = alert ? App.Brush("OnFlame") : App.Brush("Muted");

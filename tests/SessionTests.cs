@@ -11,9 +11,17 @@ public class SessionTests
         yield return "fps,frametime,cpu_load,cpu_power,gpu_load,cpu_temp,gpu_temp,gpu_core_clock,gpu_mem_clock,gpu_vram_used,gpu_power,ram_used,swap_used,process_rss,cpu_mhz,elapsed";
         for (int i = 0; i < rows; i++)
         {
-            double t = ft + (i % 2 == 0 ? jitter : -jitter);
+            double t = ft + (i % 2 == 0 ? jitter : -jitter) + i * 1e-7; // um log real nunca repete a linha com todas as casas
             yield return FormattableString.Invariant($"{1000 / t},{t},20,0,{60 + i % 3},{70 + i % 5},55,1800,7000,3.5,90,11,0,0,4500,{i * 250_000_000L}");
         }
+    }
+
+    [Fact]
+    public void Parse_SkipsFrozenRows()
+    {
+        // jogo atrás do Big Picture: o MangoHud repete a última linha; só a primeira conta
+        var csv = Csv(3, 16.67).Concat(Enumerable.Repeat("21.27,47.01,20,0,60,70,55,1800,7000,3.5,90,11,0,0,4500,0", 40));
+        Assert.Equal(4, SessionLog.Parse(csv).Count);
     }
 
     [Fact]

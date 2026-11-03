@@ -10,7 +10,7 @@ namespace PharosGaming;
 /// </summary>
 public static class MangoHudLog
 {
-    private static readonly Dictionary<int, string> Started = new(); // pid → socket que já recebeu o comando
+    private static readonly Dictionary<int, string> Started = new(); // pid → socket que recebeu o comando e já tem log andando
 
     /// <summary>Linha nova a cada gravação (o carimbo muda o nome do socket).</summary>
     public static string ControlLine() => $"control=mangohud-%p-{DateTime.UtcNow:HHmmssfff}";
@@ -33,10 +33,17 @@ public static class MangoHudLog
             FrameLimiter.Learn(AppSettings.Current, g);
             FrameLimiter.AutoTv(AppSettings.Current, g);
             string? name = ControlName(Sys.Read(ConfFor(g.Key)) ?? "", g.Pid);
-            if (name == null || Started.GetValueOrDefault(g.Pid) == name) continue;
+            if (name == null || Started.GetValueOrDefault(g.Pid) == name && Logging()) continue;
+            // conectar não basta: carregando (anticheat, splash) o MangoHud pode não processar o comando. Repete a cada
+            // volta até o log aparecer; logging=1 liga (não alterna), então repetir não desliga nada
             if (Send(name, ":logging=1;")) Started[g.Pid] = name;
         }
     }
+
+    /// <summary>Algum log do PHAROS foi escrito nos últimos segundos (o MangoHud grava a cada 250 ms).</summary>
+    private static bool Logging() =>
+        Directory.Exists(MangoHudFrames.OwnFolder) && new DirectoryInfo(MangoHudFrames.OwnFolder).EnumerateFiles("*.csv")
+            .Any(f => !f.Name.EndsWith("_summary.csv") && DateTime.UtcNow - f.LastWriteTimeUtc < TimeSpan.FromSeconds(5));
 
     /// <summary>Socket abstrato do Linux ("\0nome"), o que o os_socket_listen_abstract do MangoHud cria.</summary>
     public static bool Send(string name, string command)

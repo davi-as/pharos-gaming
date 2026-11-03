@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
@@ -16,12 +17,23 @@ public partial class App : Application
     public static void ApplyTheme(string theme) =>
         Current!.RequestedThemeVariant = theme switch { "light" => Avalonia.Styling.ThemeVariant.Light, "dark" => Avalonia.Styling.ThemeVariant.Dark, _ => Avalonia.Styling.ThemeVariant.Default };
 
+    private TvWindow? _overlay; // --tv --hidden: a janela existe sem aparecer
+
     public override void OnFrameworkInitializationCompleted()
     {
         ApplyTheme(AppSettings.Current.Theme);
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            // --tv: só o modo TV (o controle abre assim, pela ação "Pharos na TV" do daemon do console)
-            desktop.MainWindow = desktop.Args?.Contains("--tv") == true ? new TvWindow() : new MainWindow();
+        {
+            var args = desktop.Args ?? Array.Empty<string>();
+            // --tv: só o menu, como overlay residente (o Guide + View do daemon do console abre e esconde com SIGUSR1).
+            // --hidden (autostart do login): já mede o jogo desde o começo, e o 1º Guide + View só mostra
+            if (args.Contains("--tv") && args.Contains("--hidden"))
+            {
+                desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                _overlay = new TvWindow(overlay: true);
+            }
+            else desktop.MainWindow = args.Contains("--tv") ? new TvWindow(overlay: true) : new MainWindow();
+        }
         base.OnFrameworkInitializationCompleted();
     }
 }

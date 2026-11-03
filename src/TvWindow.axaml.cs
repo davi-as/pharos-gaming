@@ -8,14 +8,16 @@ using Avalonia.Media.Transformation;
 using Avalonia.Animation;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using System.Runtime.InteropServices;
 
 namespace PharosGaming;
 
 /// <summary>
 /// Menu rápido do Pharos na TV: a sessão do jogo aberto ("nunca abaixo de 60") e ajustes que valem com o jogo aberto
-/// (limite, geração de quadros, overlay, energia), navegável pelo controle ou pelas setas. Abre com Guide + View (o
-/// daemon do console põe a janela em tela cheia por cima do jogo e devolve o jogo quando ela fecha), pela página
-/// PC como console ou com pharos-gaming --tv.
+/// (limite, geração de quadros, overlay, energia), navegável pelo controle ou pelas setas. Pela página PC como console
+/// abre como janela em tela cheia. Com pharos-gaming --tv é o overlay: o processo fica aberto, o Guide + View do daemon
+/// do console manda SIGUSR1 e a janela aparece translúcida por cima do jogo, sem tirar o foco nem a tela cheia dele
+/// (regra de janela do Hyprland), com o controle preso só para o menu; B ou Guide + View esconde de novo.
 /// </summary>
 public partial class TvWindow : Window
 {
@@ -40,10 +42,21 @@ public partial class TvWindow : Window
         ["theme"] = "theme-light-dark", ["scale"] = "magnify", ["motion"] = "animation-outline", ["reset"] = "restart",
     };
     private static readonly double[] Scales = { 0.85, 1.0, 1.15, 1.3 };
+    public const string OverlayTitle = "Pharos Gaming · Overlay";
+    private readonly bool _overlay;
+    private bool _entered;
+    private PosixSignalRegistration? _toggle;
+    private readonly ThreadLoad _threads = new();
+    private BottleneckSession? _bn; // gargalo da sessão do jogo aberto: amostra a cada segundo, aparecendo ou não
+    private string? _bnGame;
+    private float? _threadNow;
     private readonly List<(TextBlock Label, TextBlock Value)> _stats = new();
 
-    public TvWindow()
+    public TvWindow() : this(false) { }
+
+    public TvWindow(bool overlay)
     {
+        _overlay = overlay;
         InitializeComponent();
         // seções: o que precisa do jogo aberto, o que é do PC e os atalhos (com a sugestão ao lado)
         (string, string)[] game = { ("limit", "LIMITE"), ("fg", "GERAÇÃO"), ("fglight", "QUALIDADE"), ("overlay", "OVERLAY") };
@@ -52,14 +65,25 @@ public partial class TvWindow : Window
         (string, string)[] settings = { ("theme", "TEMA"), ("scale", "TAMANHO"), ("motion", "ANIMAÇÕES"), ("reset", "PADRÃO") };
         foreach (var (grid, items) in new[] { (GameTiles, game), (SystemTiles, system), (ShortcutTiles, shortcuts), (SettingsTiles, settings) })
             for (int i = 0; i < items.Length; i++) AddTile(items[i].Item1, items[i].Item2, grid, i);
-        for (int r = 0; r < 8; r++) AddStat(r);
-        // o controle só manda aqui com a janela em foco: com o jogo na frente, os botões são do jogo
-        _pad = new Gamepad(nav => Dispatcher.UIThread.Post(() => { if (IsActive) Navigate(nav); }));
+        for (int r = 0; r < 4; r++) AddStat(PerfStats, r); // a sessão
+        // janela comum: o controle só manda aqui com ela em foco (com o jogo na frente, os botões são do jogo);
+        // overlay: nunca tem foco, manda enquanto aparece (o controle fica preso para o menu)
+        _pad = new Gamepad(nav => Dispatcher.UIThread.Post(() => { if (_overlay ? IsVisible && _entered : IsActive) Navigate(nav); }));
         KeyDown += OnKey;
         _floorGradient = FloorBar.Background;
         ApplyLook();
-        Opened += (_, _) => { Intro(); FirstEnabled()?.Focus(); };
-        Closed += (_, _) => { _pad.Dispose(); Live.Tick -= Tick; };
+        Opened += (_, _) => Enter();
+        Closed += (_, _) => { _pad.Dispose(); Live.Tick -= Tick; _toggle?.Dispose(); };
+        if (overlay)
+        {
+            Title = OverlayTitle;
+            WindowState = WindowState.Normal; // tela cheia tiraria a do jogo: o tamanho vem da regra do Hyprland
+            SystemDecorations = SystemDecorations.None;
+            TransparencyLevelHint = new[] { WindowTransparencyLevel.Transparent };
+            OverlayRule();
+            const PosixSignal SigUsr1 = (PosixSignal)10; // o daemon do console: Guide + View
+            _toggle = PosixSignalRegistration.Create(SigUsr1, c => { c.Cancel = true; Dispatcher.UIThread.Post(Toggle); });
+        }
         Live.Start();
         Live.Tick += Tick;
         _ = ReadPower();
@@ -110,6 +134,14 @@ public partial class TvWindow : Window
         Word.Children.Clear();
         var letters = "haros".Select(ch => new TextBlock { Classes = { "ink" }, Text = ch.ToString(), FontSize = 50, FontWeight = FontWeight.Medium, Margin = new(0, 0, -0.5, -6) }).ToList();
         foreach (var l in letters) Word.Children.Add(l);
+        if (_overlay)
+        {
+            // overlay: um esmaecer só, rápido, do menu inteiro (como o da Steam); a cascata da marca é da janela comum
+            Phi.Opacity = 1;
+            Zoom.Transitions = anim ? new Transitions { new DoubleTransition { Property = OpacityProperty, Duration = TimeSpan.FromMilliseconds(140), Easing = new Avalonia.Animation.Easings.CubicEaseOut() } } : null;
+            Zoom.Opacity = 1;
+            return;
+        }
         Prepare(Zoom, 0); // no Zoom, não no Root: o RenderTransform do Root é a escala do tamanho
         Prepare(Phi, 18);
         foreach (var l in letters) Prepare(l, 12);
@@ -124,17 +156,16 @@ public partial class TvWindow : Window
         for (int i = 0; i < tiles.Count; i++) { var t = tiles[i]; DispatcherTimer.RunOnce(() => t.ClearValue(OpacityProperty), TimeSpan.FromMilliseconds(220 + 30 * i)); }
     }
 
-    private void AddStat(int row)
+    private void AddStat(Grid stats, int row)
     {
-        // as 3 últimas linhas (limite, geração, overlay) são a configuração do jogo: separadas por um respiro
-        var gap = row == 5 ? new Thickness(0, 16, 0, 2) : new Thickness(0, 2);
-        var l = new TextBlock { Classes = { "soft" }, FontSize = 16.5, Margin = gap };
-        var v = new TextBlock { Classes = { "ink" }, FontSize = 16.5, FontWeight = FontWeight.Medium, HorizontalAlignment = HorizontalAlignment.Right, Margin = gap };
+        var gap = new Thickness(0, 3);
+        var l = new TextBlock { Classes = { "soft" }, FontSize = 19, Margin = gap };
+        var v = new TextBlock { Classes = { "ink" }, FontSize = 19, FontWeight = FontWeight.Medium, HorizontalAlignment = HorizontalAlignment.Right, Margin = gap };
         Grid.SetRow(l, row);
         Grid.SetRow(v, row);
         Grid.SetColumn(v, 1);
-        Stats.Children.Add(l);
-        Stats.Children.Add(v);
+        stats.Children.Add(l);
+        stats.Children.Add(v);
         _stats.Add((l, v));
     }
 
@@ -142,7 +173,9 @@ public partial class TvWindow : Window
 
     private async void Tick()
     {
-        Clock.Text = DateTime.Now.ToString("HH:mm");
+        bool shown = IsVisible; // overlay escondido: só acha o jogo e mede o gargalo (nada de ddcutil, bateria, som)
+        if (shown) Clock.Text = DateTime.Now.ToString("HH:mm");
+        if (_ticks % 2 == 0) SampleBottleneck(); // 1 por segundo, antes do await abaixo
         if (_ticks++ % 4 == 0 && !_scanning) // jogo e tela a cada 2 s
         {
             _scanning = true;
@@ -154,15 +187,26 @@ public partial class TvWindow : Window
             _scanning = false;
             _game = g;
             _screen = sc;
+            if (!IsVisible) return;
             _screensOff = await Task.Run(() => QuickActions.OthersOff(sc?.Name));
             var bats = await Task.Run(() => QuickActions.PadBatteries());
             BatteryRow.IsVisible = bats.Count > 0;
             Battery.Text = string.Join(" · ", bats.Select(QuickActions.Text));
             Battery.Foreground = Br(bats.Any(QuickActions.Low) ? "TvBad" : "TvSoft");
         }
+        if (!IsVisible) return;
         if (_ticks % 8 == 1) _ = ReadAudio(); // alguém pode mudar o som por fora
         ShowSession();
         ShowTiles();
+    }
+
+    /// <summary>Uma amostra do gargalo (BottleneckAnalyzer) com a thread mais ocupada do jogo; troca de jogo começa outra sessão.</summary>
+    private void SampleBottleneck()
+    {
+        if (_game == null || Live.Frames == null || Live.Cpu == null || Live.Mem == null) return;
+        var thread = _threadNow = _threads.Sample(_game.Pid);
+        if (_bnGame != _game.Key) (_bn, _bnGame) = (new BottleneckSession(), _game.Key);
+        if (thread != null) _bn!.Add(Live.Sample() with { GameThread = thread });
     }
 
     private void ShowSession()
@@ -179,30 +223,56 @@ public partial class TvWindow : Window
         FloorBar.Background = above >= 99.5 || floor == null ? _floorGradient : Br("TvWarn");
         FloorPct.Text = floor == null ? "" : $"{above:0.#}%";
         var start = Live.SessionStart;
-        Stat(0, "Acima de 60", floor == null ? "—" : $"{above:0.#}% do tempo" + (start is DateTime t ? $" · {(DateTime.Now - t).TotalMinutes:0} min" : ""));
+        Stat(0, "Tempo jogando", start is DateTime t && floor != null ? $"{(DateTime.Now - t).TotalMinutes:0} min" : "—");
         Stat(1, "Quedas", floor == null ? "—" : floor.Drops == 0 ? "nenhuma" : $"{floor.Drops}, a pior em {floor.WorstFps:0}");
         var v = f != null ? FrameLimiter.Judge(Live.FrameTimes, Limit()) : null;
         Stat(2, "Ritmo dos quadros", v == null ? "—" : v.Title);
-        Stat(3, "GPU · CPU", $"{(Live.Gpu?.Temp is float gt ? $"{gt:0} °C" : "—")} · {(Live.Cpu?.Temp is float ct ? $"{ct:0} °C" : "—")}");
+        var bn = _game != null && _bnGame == _game.Key ? _bn : null;
+        var main = bn?.Distribution().FirstOrDefault();
+        ShowBottleneck(main, f != null);
         var last = _game == null ? null : SessionLog.Load().Sessions.Where(x => x.Game == _game.Name).MaxBy(x => x.Start);
         double lim = Limit();
         int want = _game != null ? Lsfg.Multiplier(_s, _game.Key) : 1;
         bool hiddenNow = _game != null && (_s.OverlayHidden.TryGetValue(_game.Key, out bool oh) ? oh : ConsoleSetup.MangoHidden(Sys.Read(MangoHudConfig.FilePath) ?? ""));
-        Stat(5, "Limite", _game == null ? "—" : lim > 0 ? $"{lim:0.##} FPS" : "sem limite");
-        Stat(6, "Geração de quadros", _game == null ? "—" : want >= 2 ? $"{want}×" + (mult != want ? " ao reabrir" : "") + (_s.FgLight.Contains(_game.Key) ? " · leve" : "") : mult >= 2 ? "desliga ao reabrir" : "desligada");
-        Stat(7, "Overlay", _game == null ? "—" : hiddenNow ? "escondido" : "visível");
-        Stat(4, "Sessão anterior", last?.BelowPct is double b ? $"{100 - b:0.#}% acima de 60" : last != null ? $"{last.AvgFps:0} FPS médio" : "—");
+        // limite · geração · overlay numa linha (os botões ao lado mudam cada um)
+        ConfigLine.Text = _game == null ? "—" : string.Join("  ·  ",
+            lim > 0 ? $"limite {lim:0.##} FPS" : "sem limite",
+            want >= 2 ? $"geração {want}×" + (mult != want ? " ao reabrir" : "") + (_s.FgLight.Contains(_game.Key) ? " leve" : "") : mult >= 2 ? "geração desliga ao reabrir" : "sem geração",
+            hiddenNow ? "FPS escondido" : "FPS visível");
+        Stat(3, "Sessão anterior", last?.BelowPct is double b ? $"{100 - b:0.#}% acima de 60" : last != null ? $"{last.AvgFps:0} FPS médio" : "—");
 
         var tip = last != null ? SessionLog.Advice(last) : null;
         TipBox.IsVisible = _game != null;
         Tip.Text = _game == null ? "" : floor != null && floor.BelowPct >= 0.5
-            ? $"Abaixo de 60 em {floor.BelowPct:0.#}% do tempo até agora. " + (tip != null && !tip.Good ? tip.Text : "Se continuar, baixe um degrau nos gráficos ou ligue upscaling (FSR, XeSS ou DLSS) em Qualidade.")
+            ? $"Abaixo de 60 em {floor.BelowPct:0.#}% do tempo até agora" + (main is { } why
+                ? $". Motivo: {BottleneckAnalyzer.Short(why.Limiter)}"
+                : ". " + (tip != null && !tip.Good ? tip.Text : "Se continuar, baixe um degrau nos gráficos ou ligue upscaling (FSR, XeSS ou DLSS) em Qualidade."))
             : tip != null ? $"{tip.Title}. {tip.Text}" : "Segurando 60. A sugestão do jogo aparece aqui quando houver o que ajustar.";
         bool warn = floor != null && floor.BelowPct >= 0.5 || tip is { Good: false };
         TipBox.BorderBrush = Br(warn ? "TvWarn" : "TvEdge");
         TipIcon.Data = (Geometry)this.FindResource(warn ? "ic-alert-circle" : "ic-check-circle")!;
         TipIcon.Foreground = Br(warn ? "TvWarn" : "TvOk");
         DrawGraph(f != null ? Live.RecentFrameTimes : Array.Empty<double>());
+    }
+
+    /// <summary>
+    /// Bloco do gargalo: quem mais segurou o FPS na sessão e, agora, o uso da GPU e da thread mais ocupada do jogo (a folga
+    /// de cada uma: a CPU total parece sobrar quando o jogo depende de uma thread só). Temperaturas ao lado.
+    /// </summary>
+    private void ShowBottleneck((Limiter Limiter, double Pct)? main, bool live)
+    {
+        LimTitle.Text = main is { } m ? BottleneckAnalyzer.Title(m.Limiter) : live ? "medindo…" : "—";
+        LimPct.Text = main is { } p ? $"{p.Pct:0}% da sessão" : "";
+        LimTitle.Foreground = Br(main?.Limiter is Limiter.Gpu or Limiter.Capped or null ? "TvInk" : "TvWarn");
+        float? gpu = live ? Live.Gpu?.Load : null, thread = live ? _threadNow : null;
+        string Temp(float? t) => t is float v ? $" · {v:0} °C" : "";
+        GpuText.Text = gpu is float g ? $"{g:0}%{Temp(Live.Gpu?.Temp)}" : "—";
+        ThreadText.Text = thread is float th ? $"{Math.Min(th, 100):0}%" + (Live.Cpu?.Temp is float ct ? $" · CPU {ct:0} °C" : "") : "—";
+        foreach (var (bar, v) in new[] { (GpuBar, gpu), (ThreadBar, thread) })
+        {
+            bar.Width = Math.Max(0, (bar.Parent as Control)?.Bounds.Width * Math.Clamp(v ?? 0, 0, 100) / 100 ?? 0);
+            bar.Background = Br(v >= 80 ? "TvWarn" : "TvLapis"); // perto do limite acende em âmbar
+        }
     }
 
     /// <summary>Tempo de cada quadro no último minuto: linha reta = liso; picos = engasgos. A linha fina é o alvo (16,7 ms).</summary>
@@ -350,7 +420,7 @@ public partial class TvWindow : Window
                 case "pad":
                     _padConfirm = false;
                     await QuickActions.DisconnectPads();
-                    Close();
+                    Dismiss();
                     return;
                 case "power" when _power != null:
                     await Sys.RunAsync("powerprofilesctl", "set", _power == "performance" ? "balanced" : "performance");
@@ -359,10 +429,11 @@ public partial class TvWindow : Window
                 case "shot":
                     // depois que o menu fecha e o jogo volta à frente
                     await Sys.RunAsync("systemd-run", "--user", "--collect", "--quiet", "sh", "-c", $"sleep 1; exec {Sys.Quote(ConsoleSetup.Bin("controller-screenshot"))}");
-                    Close();
+                    Dismiss();
                     return;
                 case "bp":
                     await Sys.RunAsync("systemd-run", "--user", "--collect", "--quiet", ConsoleSetup.HydraWrapper, "--big-picture");
+                    if (_overlay) { Dismiss(); return; } // o overlay fica por cima de tudo: sai da frente do Big Picture
                     break;
                 case "theme":
                     _s.TvTheme = _s.TvTheme == "light" ? "dark" : "light";
@@ -402,7 +473,8 @@ public partial class TvWindow : Window
     /// <summary>Navegação espacial: o botão mais próximo na direção pedida, pela posição na tela.</summary>
     private void Navigate(PadNav nav)
     {
-        if (nav == PadNav.Back) { if (SettingsPanel.IsVisible) ShowSettings(false); else Close(); return; }
+        if (nav == PadNav.Menu) { Dismiss(); return; }
+        if (nav == PadNav.Back) { if (SettingsPanel.IsVisible) ShowSettings(false); else Dismiss(); return; }
         var buttons = this.GetVisualDescendants().OfType<Button>().Where(b => b.IsEffectivelyVisible && b.IsEffectivelyEnabled).ToList();
         var cur = buttons.FirstOrDefault(b => b.IsFocused);
         if (nav == PadNav.Confirm) { cur?.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); return; }
@@ -420,7 +492,57 @@ public partial class TvWindow : Window
         next?.Focus(NavigationMethod.Directional);
     }
 
-    private void Close_Click(object? sender, RoutedEventArgs e) => Close();
+    private void Close_Click(object? sender, RoutedEventArgs e) => Dismiss();
+
+    /// <summary>Entrada a cada vez que a janela aparece (o Opened pode vir de novo no Show do overlay: roda uma vez só).</summary>
+    private void Enter()
+    {
+        if (_entered) return;
+        _entered = true;
+        if (SettingsPanel.IsVisible) ShowSettings(false);
+        // depois do 1º quadro: na abertura a frio os tempos da cascata corriam antes do desenho e botões ficavam apagados
+        RequestAnimationFrame(_ =>
+        {
+            Intro();
+            // só se nada tem foco: quem já andou com o direcional nesse meio-tempo não perde o lugar
+            if (!this.GetVisualDescendants().OfType<Button>().Any(b => b.IsFocused)) FirstEnabled()?.Focus();
+        });
+        if (_overlay) _pad.Grab = true;
+    }
+
+    /// <summary>Overlay: some e solta o controle (o processo continua, para abrir na hora); janela comum: fecha.</summary>
+    private void Dismiss()
+    {
+        if (!_overlay) { Close(); return; }
+        _padConfirm = false;
+        _entered = false;
+        _pad.Grab = false;
+        // apaga o conteúdo e só esconde depois de desenhar: o XWayland guarda o último quadro e a próxima abertura
+        // mostraria o menu velho por um instante antes do esmaecer
+        Zoom.Transitions = null;
+        Zoom.Opacity = 0;
+        RequestAnimationFrame(_ => RequestAnimationFrame(_ => { if (!_entered) Hide(); }));
+    }
+
+    private void Toggle()
+    {
+        if (IsVisible && _entered) { Dismiss(); return; }
+        OverlayRule(); // recarregar a config do Hyprland apaga a regra
+        _ticks = 0;
+        Show();
+        Enter();
+        Tick();
+    }
+
+    /// <summary>
+    /// Regra do Hyprland para o overlay: flutuante, fixo na tela em foco (a do jogo), do tamanho dela, sem receber foco ao
+    /// aparecer. Assim fica por cima do jogo em tela cheia e o jogo continua com o foco. Com nome: aplicar de novo só atualiza.
+    /// </summary>
+    private static void OverlayRule() =>
+        Sys.RunAsync("hyprctl", "eval", "hl.window_rule({ name = \"pharos-gaming-overlay\", match = { title = \"^" + OverlayTitle + "$\" }, " +
+            "float = true, pin = true, no_initial_focus = true, no_dim = true, no_blur = true, no_anim = true, no_shadow = true, " +
+            "border_size = 0, rounding = 0, tag = \"-default-opacity\", opacity = \"1 1\", size = { \"monitor_w\", \"monitor_h\" }, move = { 0, 0 } })")
+            .GetAwaiter().GetResult();
 
     private void Settings_Click(object? sender, RoutedEventArgs e) => ShowSettings(!SettingsPanel.IsVisible);
 
@@ -449,5 +571,7 @@ public partial class TvWindow : Window
         double k = Math.Clamp(_s.TvScale, 0.5, 2); // settings.json pode vir editado à mão
         Zoom.LayoutTransform = new ScaleTransform(k, k);
         Zoom.Classes.Set("still", !_s.TvMotion);
+        // overlay: o fundo deixa o jogo aparecer atrás (o vidro dos cartões já é translúcido)
+        if (_overlay && Br("TvBg") is ISolidColorBrush bg) Background = new SolidColorBrush(bg.Color, 0.84);
     }
 }

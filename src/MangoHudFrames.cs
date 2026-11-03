@@ -81,6 +81,7 @@ public sealed partial class MangoHudFrames
             _hist.Clear();
             _all.Clear();
             _recent.Clear();
+            _prevRow = null;
             _colFps = _colFt = -1;
         }
 
@@ -115,6 +116,7 @@ public sealed partial class MangoHudFrames
                 _colFt = Array.IndexOf(cols, "frametime");
                 continue;
             }
+            if (Frozen(cols, ref _prevRow)) continue;
             if (_colFps < 0 || !double.TryParse(cols[_colFps], NumberStyles.Float, CultureInfo.InvariantCulture, out double fps)) continue;
             double ft = _colFt >= 0 && _colFt < cols.Length &&
                         double.TryParse(cols[_colFt], NumberStyles.Float, CultureInfo.InvariantCulture, out var t) ? t : 1000 / fps;
@@ -124,6 +126,21 @@ public sealed partial class MangoHudFrames
             if (_recent.Count > RecentMax) _recent.Dequeue();
         }
         while (_hist.Count > 0 && (now - _hist.Peek().At).TotalSeconds > WindowSec) _hist.Dequeue();
+    }
+
+    private string? _prevRow;
+
+    /// <summary>
+    /// Linha igual à anterior (FPS e tempo de quadro com todas as casas): o jogo não está apresentando quadros (atrás do Big
+    /// Picture, por exemplo) e o MangoHud repete o último valor a cada intervalo. Contar isso inventaria minutos a 21 ou a 56 FPS.
+    /// </summary>
+    public static bool Frozen(string[] cols, ref string? prev)
+    {
+        if (cols.Length < 2) return false;
+        string key = cols[0] + "," + cols[1];
+        bool same = key == prev;
+        prev = key;
+        return same;
     }
 
     /// <summary>Tempos de quadro dos últimos 10 s (para o veredito do limitador).</summary>

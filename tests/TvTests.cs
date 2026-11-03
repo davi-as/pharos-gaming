@@ -26,6 +26,17 @@ public class GamepadTests
     }
 
     [Fact]
+    public void Map_GuideViewIsMenu()
+    {
+        var s = new Gamepad.Stick();
+        Assert.Null(Gamepad.Map(1, 314, 1, s));                      // View sozinho: nada
+        Assert.Null(Gamepad.Map(1, 316, 1, s));                      // Guide apertado...
+        Assert.Equal(PadNav.Menu, Gamepad.Map(1, 314, 1, s));        // ...+ View fecha o menu
+        Assert.Null(Gamepad.Map(1, 316, 0, s));
+        Assert.Null(Gamepad.Map(1, 314, 1, s));                      // Guide solto: View volta a não fazer nada
+    }
+
+    [Fact]
     public void Devices_OnlyJoysticksWithoutImu()
     {
         const string devs = "I: Bus=0005\nN: Name=\"Pro Controller\"\nH: Handlers=event21 js0\n\nN: Name=\"Pro Controller (IMU)\"\nH: Handlers=event22 js1\n\nN: Name=\"Teclado\"\nH: Handlers=sysrq kbd event3 leds\n";

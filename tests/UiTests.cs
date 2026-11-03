@@ -14,6 +14,7 @@ public class TestApp
         // configurações numa pasta temporária: os testes nunca tocam em ~/.config/pharos-gaming
         Environment.SetEnvironmentVariable("PHAROS_CONFIG_DIR", Directory.CreateTempSubdirectory("pharos-test").FullName);
         Environment.SetEnvironmentVariable("XDG_CONFIG_HOME", Directory.CreateTempSubdirectory("pharos-xdg").FullName); // MangoHud.conf, autostart, buttons.env
+        Gamepad.Off = true; // o controle de quem estiver jogando não mexe nos menus dos testes
         return AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
     }
 }

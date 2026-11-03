@@ -69,10 +69,12 @@ public static partial class SessionLog
     {
         var rows = new List<Row>();
         Dictionary<string, int>? col = null;
+        string? prev = null;
         foreach (var line in lines)
         {
             var c = line.Trim().Split(',');
             if (c[0] == "fps") { col = c.Select((n, i) => (n, i)).ToDictionary(x => x.n, x => x.i); continue; }
+            if (MangoHudFrames.Frozen(c, ref prev)) continue;
             if (col == null || !Num(c, col, "fps", out double fps) || fps <= 0) continue;
             double? Opt(string name) => Num(c, col, name, out double v) && v > 0 ? v : null;
             rows.Add(new Row(fps, Num(c, col, "frametime", out double ft) && ft > 0 ? ft : 1000 / fps,

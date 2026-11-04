@@ -87,13 +87,6 @@ public sealed class AppSettings
 
     // PC como console: na TV, todo jogo novo ganha o limite igual à taxa dela (59,95)
     public bool AutoTvProfile { get; set; } = true;
-    /// <summary>Geração de quadros por jogo (lsfg-vk): multiplicador; ausente = desligada.</summary>
-    public Dictionary<string, int> FgMultiplier { get; set; } = new();
-    /// <summary>Multiplicador com que o limite do jogo está hoje (troca só com o jogo fechado: o lsfg-vk escolhe o perfil ao abrir).</summary>
-    public Dictionary<string, int> FgApplied { get; set; } = new();
-    public Dictionary<string, double> FgScreenHz { get; set; } = new();
-    /// <summary>Jogos com o modelo leve do lsfg-vk (performance_mode: mais rápido, um pouco menos de qualidade).</summary>
-    public HashSet<string> FgLight { get; set; } = new();
     /// <summary>
     /// Jogos com o V-Sync rápido (mailbox, vsync=2 do MangoHud): o quadro atrasado repete o anterior em vez de o jogo
     /// esperar a vez e cair para 30. O adaptativo (FIFO_RELAXED) não existe em janela Wayland na NVIDIA. Vale ao reabrir.

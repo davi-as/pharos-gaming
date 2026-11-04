@@ -95,8 +95,13 @@ def mangohud_sockets():
 
 
 def mangohud_toggle():
-    """View + Start: mostra/esconde o HUD pelo socket (":hud;"), que vale em jogo Wayland nativo
-    (PROTON_ENABLE_WAYLAND), onde o MangoHud 0.8 não vê o atalho de teclado. Sem socket, o Ctrl+Shift+Q de antes."""
+    """View + Start: com o Pharos --tv aberto, SIGUSR2 e ele regrava a config do jogo (no_display), o que vale em
+    qualquer jogo. Sem ele, o socket (":hud;"; nos jogos DX12/vkd3d ninguém aceita a conexão) e o Ctrl+Shift+Q."""
+    pid = pharos_pid()
+    if pid:
+        log(f"mangohud: alterna pelo Pharos ({pid})")
+        os.kill(pid, signal.SIGUSR2)
+        return
     sent = 0
     for name in mangohud_sockets():
         try:
@@ -338,12 +343,16 @@ def do(name):
 PHAROS = f"{HOME}/.local/share/pharos-gaming/app/pharos-gaming"  # instalado pelo scripts/install.sh do Pharos Gaming
 
 
+def pharos_pid():
+    return next((pid for pid, argv in cmdlines() if argv[0] == PHAROS.encode() and b"--tv" in argv), None)
+
+
 def pharos_tv():
     """Menu do Pharos, overlay por cima do jogo: o Pharos --tv fica aberto e alterna (aparece/some) com SIGUSR1. Ele
     aparece sem tirar o foco nem a tela cheia do jogo (regra de janela que ele mesmo aplica) e prende o controle
     enquanto aparece: aí o Guide + View nem chega aqui, é o Pharos que fecha. Sem Pharos aberto, abre um (já visível)
     fora do cgroup deste serviço."""
-    pid = next((pid for pid, argv in cmdlines() if argv[0] == PHAROS.encode() and b"--tv" in argv), None)
+    pid = pharos_pid()
     if pid:
         log(f"menu do Pharos: alterna ({pid})")
         os.kill(pid, signal.SIGUSR1)

@@ -42,6 +42,14 @@ public class GamepadTests
         const string devs = "I: Bus=0005\nN: Name=\"Pro Controller\"\nH: Handlers=event21 js0\n\nN: Name=\"Pro Controller (IMU)\"\nH: Handlers=event22 js1\n\nN: Name=\"Teclado\"\nH: Handlers=sysrq kbd event3 leds\n";
         Assert.Equal(new[] { "/dev/input/event21" }, Gamepad.Devices(devs));
     }
+
+    [Fact]
+    public void SteamVirtualPad_DoesNotNavigate()
+    {
+        Assert.True(Gamepad.IsSteamMirror("28de\n"));
+        Assert.False(Gamepad.IsSteamMirror("057e\n")); // Pro Controller
+        Assert.False(Gamepad.IsSteamMirror(null));
+    }
 }
 
 public class TvWindowTests
@@ -107,44 +115,6 @@ public class TvWindowTests
     }
 }
 
-public class LsfgTests
-
-{
-    [Fact]
-    public void Build_OneProfilePerGameWithExe()
-    {
-        var toml = Lsfg.Build(new Dictionary<string, int> { ["wine-eldenring"] = 2, ["retroarch"] = 3, ["wine-hades"] = 1 }, "/h/.local/share/pharos-gaming/lsfg-vk.dll");
-        Assert.Contains("version = 2", toml);
-        Assert.Contains("dll = \"/h/.local/share/pharos-gaming/lsfg-vk.dll\"", toml);
-        Assert.Contains("active_in = [ \"eldenring.exe\" ]", toml);
-        Assert.Contains("active_in = [ \"retroarch\" ]", toml);
-        Assert.Contains("multiplier = 3", toml);
-        Assert.DoesNotContain("hades", toml); // 1× = desligada: sem perfil
-        Assert.Equal(2, toml.Split("[[profile]]").Length - 1);
-    }
-
-    [Fact]
-    public void Build_KeepsConfigValidWithNoGames() =>
-        Assert.Contains("active_in = [ \"pharos-nenhum-jogo\" ]", Lsfg.Build(new Dictionary<string, int>(), "/x.dll"));
-
-    [AvaloniaFact] // grava configs: XDG_CONFIG_HOME temporário do TestApp
-    public void Settle_ChangesLimitOnlyWithGameClosed()
-    {
-        var s = new AppSettings();
-        s.FpsLimits["wine-eldenring"] = 59.95;
-        Lsfg.Set(s, "wine-eldenring", 2, 59.95);
-        Assert.True(Lsfg.Pending(s, "wine-eldenring"));
-        Assert.Empty(Lsfg.Settle(s, new HashSet<string> { "wine-eldenring" })); // aberto: o limite fica
-        Assert.Equal(59.95, s.FpsLimits["wine-eldenring"]);
-        Assert.Single(Lsfg.Settle(s, new HashSet<string>()));                    // fechou: 29,98 reais × 2
-        Assert.Equal(29.98, s.FpsLimits["wine-eldenring"]);
-        Lsfg.Set(s, "wine-eldenring", 1, 59.95);
-        Lsfg.Settle(s, new HashSet<string>());
-        Assert.Equal(59.95, s.FpsLimits["wine-eldenring"]);
-        Assert.False(Lsfg.Pending(s, "wine-eldenring"));
-    }
-}
-
 public class QuickActionsTests
 {
     private const string Status = "PipeWire 'pipewire-0' [1.4.8]\n └─ Clients:\n\nAudio\n ├─ Devices:\n │      64. Fosi Audio SK02                     [alsa]\n │  \n ├─ Sinks:\n │  *   50. Fosi Audio SK02 Analog Stereo       [vol: 0.50]\n │      55. GA106 High Definition Audio Controller Digital Stereo (HDMI 2) [vol: 1.00]\n │      57. Starship/Matisse HD Audio Controller Digital Stereo (IEC958) [vol: 0.40]\n │  \n ├─ Sources:\n │      70. Microfone                          [vol: 1.00]\n\nVideo\n ├─ Sinks:\n │      90. Câmera                             [vol: 1.00]\n";
@@ -189,13 +159,5 @@ public class QuickActionsTests
         Assert.Equal(new[] { "8BitDo baixa", "Xbox 80%" }, b.Select(QuickActions.Text));
         Assert.True(QuickActions.Low(b[0]));
         Assert.False(QuickActions.Low(b[1]));
-    }
-
-    [Fact]
-    public void Choices_KeepAtLeast30Real()
-    {
-        Assert.Equal(new[] { 2 }, Lsfg.Choices(59.95));
-        Assert.Equal(new[] { 2, 3, 4 }, Lsfg.Choices(165));
-        Assert.Contains("performance_mode = true", Lsfg.Build(new Dictionary<string, int> { ["wine-x"] = 2 }, "/d", new HashSet<string> { "wine-x" }));
     }
 }

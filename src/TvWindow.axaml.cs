@@ -36,7 +36,7 @@ public partial class TvWindow : Window
 
     private static readonly Dictionary<string, string> Icons = new()
     {
-        ["limit"] = "timer-outline", ["fg"] = "animation-outline", ["fglight"] = "feather", ["overlay"] = "eye-outline", ["vsync"] = "refresh",
+        ["limit"] = "timer-outline", ["overlay"] = "eye-outline", ["vsync"] = "refresh",
         ["audio"] = "speaker", ["voldown"] = "volume-minus", ["volup"] = "volume-plus", ["power"] = "lightning-bolt-outline",
         ["screens"] = "monitor-multiple", ["pad"] = "bluetooth-off", ["shot"] = "camera-outline", ["bp"] = "play-circle-outline",
         ["theme"] = "theme-light-dark", ["scale"] = "magnify", ["motion"] = "animation-outline", ["reset"] = "restart",
@@ -46,6 +46,7 @@ public partial class TvWindow : Window
     private readonly bool _overlay;
     private bool _entered;
     private PosixSignalRegistration? _toggle;
+    private PosixSignalRegistration? _hudToggle;
     private readonly Dictionary<int, bool> _vsyncAtLaunch = new(); // pid do jogo → V-Sync rápido quando o Pharos o viu (o que vale até reabrir)
     private readonly List<(TextBlock Label, TextBlock Value)> _stats = new();
 
@@ -56,7 +57,7 @@ public partial class TvWindow : Window
         _overlay = overlay;
         InitializeComponent();
         // seções: o que precisa do jogo aberto, o que é do PC e os atalhos (com a sugestão ao lado)
-        (string, string)[] game = { ("limit", "LIMITE"), ("fg", "GERAÇÃO"), ("fglight", "QUALIDADE"), ("vsync", "V-SYNC"), ("overlay", "OVERLAY") };
+        (string, string)[] game = { ("limit", "LIMITE"), ("vsync", "V-SYNC"), ("overlay", "OVERLAY") };
         (string, string)[] system = { ("audio", "SOM"), ("power", "ENERGIA"), ("screens", "TELAS"), ("pad", "CONTROLE") };
         (string, string)[] shortcuts = { ("shot", "CAPTURA"), ("bp", "HYDRA") };
         (string, string)[] settings = { ("theme", "TEMA"), ("scale", "TAMANHO"), ("motion", "ANIMAÇÕES"), ("reset", "PADRÃO") };
@@ -70,7 +71,7 @@ public partial class TvWindow : Window
         _floorGradient = FloorBar.Background;
         ApplyLook();
         Opened += (_, _) => Enter();
-        Closed += (_, _) => { _pad.Dispose(); Live.Tick -= Tick; _toggle?.Dispose(); };
+        Closed += (_, _) => { _pad.Dispose(); Live.Tick -= Tick; _toggle?.Dispose(); _hudToggle?.Dispose(); };
         if (overlay)
         {
             Title = OverlayTitle;
@@ -80,6 +81,10 @@ public partial class TvWindow : Window
             OverlayRule();
             const PosixSignal SigUsr1 = (PosixSignal)10; // o daemon do console: Guide + View
             _toggle = PosixSignalRegistration.Create(SigUsr1, c => { c.Cancel = true; Dispatcher.UIThread.Post(Toggle); });
+            // View + Start: mostra/esconde o MangoHud do jogo regravando a config (o socket de controle não chega à
+            // instância que desenha nos jogos DX12/vkd3d: as conexões ficam na fila sem ninguém aceitar)
+            const PosixSignal SigUsr2 = (PosixSignal)12;
+            _hudToggle = PosixSignalRegistration.Create(SigUsr2, c => { c.Cancel = true; Dispatcher.UIThread.Post(() => Activate("overlay")); });
         }
         Live.Start();
         Live.Tick += Tick;
@@ -205,8 +210,7 @@ public partial class TvWindow : Window
         var f = _game != null ? Live.Frames : null;
         Game.Text = _game?.Name ?? "Nenhum jogo aberto";
         Fps.Text = f != null ? $"{f.Fps:0}" : "—";
-        int mult = _game != null ? _s.FgApplied.GetValueOrDefault(_game.Key, 1) : 1; // a que está valendo agora
-        Ft.Text = f == null ? "" : mult >= 2 ? $"reais · {f.Fps * mult:0} na tela ({mult}×)" : $"{f.FrameTimeMs:0.0} ms por quadro";
+        Ft.Text = f == null ? "" : $"{f.FrameTimeMs:0.0} ms por quadro";
 
         var floor = f != null ? Live.SessionFloor : null;
         double above = floor != null ? 100 - floor.BelowPct : 0;
@@ -223,12 +227,10 @@ public partial class TvWindow : Window
         ShowBottleneck(main, f != null);
         var last = _game == null ? null : SessionLog.Load().Sessions.Where(x => x.Game == _game.Name).MaxBy(x => x.Start);
         double lim = Limit();
-        int want = _game != null ? Lsfg.Multiplier(_s, _game.Key) : 1;
         bool hiddenNow = _game != null && (_s.OverlayHidden.TryGetValue(_game.Key, out bool oh) ? oh : ConsoleSetup.MangoHidden(Sys.Read(MangoHudConfig.FilePath) ?? ""));
-        // limite · geração · overlay numa linha (os botões ao lado mudam cada um)
+        // limite · overlay numa linha (os botões ao lado mudam cada um)
         ConfigLine.Text = _game == null ? "—" : string.Join("  ·  ",
             lim > 0 ? $"limite {lim:0.##} FPS" : "sem limite",
-            want >= 2 ? $"geração {want}×" + (mult != want ? " ao reabrir" : "") + (_s.FgLight.Contains(_game.Key) ? " leve" : "") : mult >= 2 ? "geração desliga ao reabrir" : "sem geração",
             hiddenNow ? "FPS escondido" : "FPS visível") + (_s.FastVsync.Contains(_game.Key) ? "  ·  V-Sync rápido" : "");
         Stat(3, "Sessão anterior", last?.BelowPct is double b ? $"{100 - b:0.#}% acima" + (last.MainLimiter is Limiter pl ? $" · {Who(pl)}" : " de 60")
                                    : last != null ? $"{last.AvgFps:0} FPS médio" : "—");
@@ -302,12 +304,8 @@ public partial class TvWindow : Window
         Graph.Children.Add(new Avalonia.Controls.Shapes.Polyline { Points = pts, Stroke = Br("TvLapis"), StrokeThickness = 2.5, StrokeJoin = PenLineJoin.Round });
     }
 
-    /// <summary>Os valores do botão de limite, na ordem em que o A anda (com geração ligada, o limite é dos quadros reais).</summary>
-    private List<double> LimitSteps()
-    {
-        int mult = _game != null ? _s.FgApplied.GetValueOrDefault(_game.Key, 1) : 1;
-        return FrameLimiter.Candidates(ScreenHz, _screen?.Vrr == true).Select(v => Math.Round(v / mult, 2)).Append(0).Distinct().ToList();
-    }
+    /// <summary>Os valores do botão de limite, na ordem em que o A anda.</summary>
+    private List<double> LimitSteps() => FrameLimiter.Candidates(ScreenHz, _screen?.Vrr == true).Append(0).Distinct().ToList();
 
     private double NextLimit()
     {
@@ -335,18 +333,9 @@ public partial class TvWindow : Window
         bool has = _game != null;
         GameChip.Opacity = has ? 0 : 1; // sem jogo: a seção fica apagada e a etiqueta diz por quê
         double lim = Limit();
-        int mult = has ? _s.FgApplied.GetValueOrDefault(_game!.Key, 1) : 1; // valendo agora
-        int want = has ? Lsfg.Multiplier(_s, _game!.Key) : 1;             // pedida (vale ao reabrir)
-        string? fgMissing = Lsfg.Missing();
         bool limited = has && _s.FpsLimits.ContainsKey(_game!.Key);
         bool hidden = has && (_s.OverlayHidden.TryGetValue(_game!.Key, out bool h) ? h : ConsoleSetup.MangoHidden(Sys.Read(MangoHudConfig.FilePath) ?? ""));
-        bool light = has && _s.FgLight.Contains(_game!.Key);
         T("limit", "Mudar limite", has ? $"próximo: {NextLimitText()}" : "próximo valor da TV", has, lim > 0);
-        T("fg", want >= 2 ? (Lsfg.Choices(ScreenHz).Max() > want ? $"Usar {want + 1}×" : "Desligar") : "Ligar 2×",
-          fgMissing ?? (want != mult ? "vale ao reabrir o jogo" : want >= 2 ? $"{ScreenHz / want:0.##} reais × {want}" : "2× = metade reais"),
-          has && fgMissing == null, want >= 2);
-        T("fglight", light ? "Modo normal" : "Modo leve", has && want < 2 ? "com geração ligada" : light ? "imagem melhor" : "mais rápido",
-          has && want >= 2 && fgMissing == null, light);
         bool fast = has && _s.FastVsync.Contains(_game!.Key);
         bool vsyncPending = has && _vsyncAtLaunch.TryGetValue(_game!.Pid, out bool was) && was != fast;
         T("vsync", fast ? "Usar normal" : "Usar rápido",
@@ -391,15 +380,6 @@ public partial class TvWindow : Window
             {
                 case "limit" when g != null:
                     FrameLimiter.Set(_s, g.Key, NextLimit());
-                    break;
-                case "fg" when g != null:
-                    // desligada → 2× → 3× (se der ≥ 30 reais na tela) → desligada; ligar/desligar vale ao reabrir, trocar vale já
-                    var steps = new List<int> { 1 }.Concat(Lsfg.Choices(ScreenHz)).ToList();
-                    int cur = Lsfg.Multiplier(_s, g.Key);
-                    Lsfg.Set(_s, g.Key, steps[(steps.IndexOf(cur) + 1) % steps.Count], ScreenHz, running: true);
-                    break;
-                case "fglight" when g != null:
-                    Lsfg.SetLight(_s, g.Key, !_s.FgLight.Contains(g.Key), ScreenHz);
                     break;
                 case "vsync" when g != null:
                     if (!_s.FastVsync.Remove(g.Key)) _s.FastVsync.Add(g.Key);

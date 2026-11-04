@@ -38,6 +38,8 @@ public sealed partial class Gamepad : IDisposable
         procDevices.Split("\n\n").Where(b => JsRe().IsMatch(b) && !b.Contains("(IMU)") && !b.Contains("Motion"))
             .Select(b => EventRe().Match(b)).Where(m => m.Success).Select(m => "/dev/input/" + m.Value).ToList();
 
+    public static bool IsSteamMirror(string? vendorFile) => vendorFile?.Trim() == "28de";
+
     [GeneratedRegex(@"H: Handlers=.*\bjs\d+")] private static partial Regex JsRe();
     [GeneratedRegex(@"event\d+")] private static partial Regex EventRe();
 
@@ -78,6 +80,9 @@ public sealed partial class Gamepad : IDisposable
             r = new Reader(fs);
             lock (_open) _open.Add(r);
             r.Sync(_grab);
+            // o controle virtual da Steam (Steam Input, vendor 28de da Valve) repete cada botão do real: só prende, não navega,
+            // senão cada toque anda duas casas. shortcut: um Steam Controller/Deck de verdade também é 28de; separar pelo Sysfs virtual se precisar
+            bool mirror = IsSteamMirror(Sys.Read($"/sys/class/input/{Path.GetFileName(dev)}/device/id/vendor"));
             var state = new Stick();
             var buf = new byte[24];
             while (!_stop && fs.Read(buf, 0, 24) == 24)
@@ -85,7 +90,7 @@ public sealed partial class Gamepad : IDisposable
                 int type = BitConverter.ToUInt16(buf, 16), code = BitConverter.ToUInt16(buf, 18), value = BitConverter.ToInt32(buf, 20);
                 r.Track(type, code, value, _grab);
                 // Guide + View de um controle solto é do daemon (ele abre e fecha o menu); preso, só o Pharos vê
-                if (Map(type, code, value, state) is { } nav && !_stop && (nav != PadNav.Menu || r.Grabbed)) _onNav(nav);
+                if (!mirror && Map(type, code, value, state) is { } nav && !_stop && (nav != PadNav.Menu || r.Grabbed)) _onNav(nav);
             }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { } // desconectou ou sem permissão: o rescan tenta de novo

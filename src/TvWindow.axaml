@@ -299,7 +299,7 @@
                             </StackPanel>
                         </Border>
                     </Grid>
-                    <Grid x:Name="GameTiles" ColumnDefinitions="*,*,*,*,*"/>
+                    <Grid x:Name="GameTiles" ColumnDefinitions="*,*,*"/>
                     <TextBlock Classes="cap" Text="SISTEMA" Margin="8,12,0,2"/>
                     <Grid x:Name="SystemTiles" ColumnDefinitions="*,*,*,*"/>
                     <TextBlock Classes="cap" Text="ATALHOS" Margin="8,12,0,2"/>

@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
-"""Tela base do Hydra OS: camada preta na TV, por baixo de qualquer janela em tela cheia (BP, jogo) e por cima
-da barra, do dock, do papel de parede e das janelas soltas. Cobre o intervalo entre o Neo fechar o BP e o jogo abrir.
+"""Tela base do Hydra OS: preto na TV no lugar do papel de parede, da barra e do dock, para cobrir o intervalo entre
+o Neo fechar o BP e o jogo abrir (e o fim do jogo até o BP voltar).
 
 Quem manda é o daemon do controle (~/.local/lib/console/daemon.py), pelo stdin, um comando por linha:
-  on | off        preta | transparente (fora da área 4)
-  text <msg>      texto no centro com um spinner ("text" sozinho: só preto)
+  off             tudo transparente (TV fora da área 4)
+  base            preto só no nível "bottom": cobre o papel de parede, fica sempre por baixo das janelas
+                  (o BP e o jogo em tela cheia aparecem normalmente)
+  cover           preto também no nível "top", com o texto: cobre a barra, o dock e janelas soltas. Só no intervalo
+                  sem nada em tela cheia na área 4 (quem sabe disso é o daemon)
+  text <msg>      texto no centro do "cover", com um spinner ("text" sozinho: só preto)
 Fim do stdin (daemon parou): sai.
 
-A camada nunca é desmapeada: o Hyprland só esconde camadas "top" atrás da tela cheia quando a tela cheia começa
-ou a área troca, e uma camada que aparece com a tela cheia já na frente fica por cima dela (testado no Hyprland
-0.56.2). Por isso ela nasce transparente e só alterna a cor. Cliques passam direto (região de input vazia).
+Por que duas camadas e não uma "top" que o Hyprland esconde atrás da tela cheia: esse esmaecimento não é confiável
+para uma camada nova (Hyprland 0.56.2: a 1ª ida à área 4 depois de ela nascer deixou a TV preta por cima do BP, e
+nem trocar de nível consertou). Uma camada "bottom" nunca fica por cima de janela; a "top" só fica preta quando não
+há tela cheia. As camadas nunca são desmapeadas (só trocam de cor) e deixam os cliques passar.
 Uso: hydraos-backdrop --monitor "<descrição ou conector>"
 """
 import os, sys
@@ -45,37 +50,45 @@ def find_monitor(want):
     return None
 
 
+def layer_window(app, monitor, level, namespace):
+    win = Gtk.Window(application=app)
+    Layer.init_for_window(win)
+    Layer.set_layer(win, level)
+    Layer.set_namespace(win, namespace)
+    Layer.set_monitor(win, monitor)
+    for edge in (Layer.Edge.TOP, Layer.Edge.BOTTOM, Layer.Edge.LEFT, Layer.Edge.RIGHT):
+        Layer.set_anchor(win, edge, True)
+    Layer.set_exclusive_zone(win, -1)  # cobre a barra em vez de respeitar o espaço dela
+    Layer.set_keyboard_mode(win, Layer.KeyboardMode.NONE)
+    return win
+
+
 class Backdrop:
     def __init__(self, app, monitor):
-        self.on, self.text, self.buf = False, "", b""
-        win = self.win = Gtk.Window(application=app)
-        Layer.init_for_window(win)
-        Layer.set_layer(win, Layer.Layer.TOP)
-        Layer.set_namespace(win, "hydraos-backdrop")
-        Layer.set_monitor(win, monitor)
-        for edge in (Layer.Edge.TOP, Layer.Edge.BOTTOM, Layer.Edge.LEFT, Layer.Edge.RIGHT):
-            Layer.set_anchor(win, edge, True)
-        Layer.set_exclusive_zone(win, -1)  # cobre a barra em vez de respeitar o espaço dela
-        Layer.set_keyboard_mode(win, Layer.KeyboardMode.NONE)
+        self.state, self.text, self.buf = "off", "", b""
+        self.base = layer_window(app, monitor, Layer.Layer.BOTTOM, "hydraos-base")
+        self.cover = layer_window(app, monitor, Layer.Layer.TOP, "hydraos-cover")
 
         css = Gtk.CssProvider()
         css.load_from_string(CSS % max(16, round(monitor.get_geometry().height * 0.025)))
-        Gtk.StyleContext.add_provider_for_display(win.get_display(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        Gtk.StyleContext.add_provider_for_display(self.cover.get_display(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         self.label, self.spinner = Gtk.Label(), Gtk.Spinner()
         self.spinner.set_size_request(32, 32)
         self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=24, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
         self.box.append(self.label)
         self.box.append(self.spinner)
-        win.set_child(self.box)
-        win.present()
-        win.get_surface().set_input_region(cairo.Region())  # vazia: cliques vão para o que está embaixo
+        self.cover.set_child(self.box)
+        for win in (self.base, self.cover):
+            win.present()
+            win.get_surface().set_input_region(cairo.Region())  # vazia: cliques vão para o que está embaixo
         self.render()
         GLib.io_add_watch(GLib.IOChannel.unix_new(0), GLib.PRIORITY_DEFAULT, GLib.IO_IN | GLib.IO_HUP, self.stdin)
 
     def render(self):
-        (self.win.add_css_class if self.on else self.win.remove_css_class)("on")
-        show = self.on and bool(self.text)
+        for win, on in ((self.base, self.state != "off"), (self.cover, self.state == "cover")):
+            (win.add_css_class if on else win.remove_css_class)("on")
+        show = self.state == "cover" and bool(self.text)
         self.label.set_label(self.text)
         self.box.set_visible(show)
         self.spinner.set_spinning(show)
@@ -84,13 +97,13 @@ class Backdrop:
         # os.read + split: o readline do Python guardaria linhas no buffer dele e o watch não dispararia de novo
         data = os.read(0, 4096)
         if not data:
-            self.win.get_application().quit()
+            self.cover.get_application().quit()
             return False
         *lines, self.buf = (self.buf + data).split(b"\n")
         for line in lines:
             cmd, _, arg = line.decode(errors="replace").strip().partition(" ")
-            if cmd in ("on", "off"):
-                self.on = cmd == "on"
+            if cmd in ("off", "base", "cover"):
+                self.state = cmd
             elif cmd == "text":
                 self.text = arg.strip()
         self.render()

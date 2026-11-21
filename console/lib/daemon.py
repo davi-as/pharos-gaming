@@ -7,7 +7,7 @@ thread separada, então a leitura dos controles nunca trava.
 Valores da máquina (MACs, IP da TV) ficam em ~/.config/console/config.env; o que cada gesto do
 controle faz fica em ~/.config/console/buttons.env (editado pelo PHAROS GAMING, que reinicia o serviço).
 """
-import fcntl, importlib.machinery, importlib.util, os, queue, select, signal, socket, struct, subprocess, threading, time
+import fcntl, importlib.machinery, importlib.util, os, queue, re, select, signal, socket, struct, subprocess, threading, time
 
 import buttons, hypr
 
@@ -15,7 +15,7 @@ NAMES = ("Xbox Wireless Controller", buttons.PRO)  # IMU do 8BitDo ("... (IMU)")
 HOME = os.path.expanduser("~")
 BIN = f"{HOME}/.local/bin"
 HYDRA = f"{BIN}/hydra"
-HYDRA_BIN = f"{HOME}/.local/opt/hydra-patched/hydralauncher"
+HYDRA_BIN = f"{HOME}/.local/opt/hydra-neo/usr/bin/hydra"  # Hydra Neo (nativo)
 TICK = 3  # rescan de segurança + checagem de resume quando nada acontece
 
 LOG = f"{HOME}/.local/state/xbox-guide/guide-press.log"
@@ -167,14 +167,12 @@ def act(fn, *args):
 
 
 # --- Hydra Big Picture ---
-# Protocolo do singleton do Chromium (patch do Electron): START\0<cwd>\0<nargs>\0<argv...>
-SOCK = f"{HOME}/.config/hydralauncher/SingletonSocket"
-SIGNAL = b"\0".join([b"START", HOME.encode(), b"2", HYDRA.encode(), b"--big-picture"])
 
 # Janela do BP rastreada pelo ENDEREÇO, não pelo fullscreen: o Hyprland só deixa uma janela
 # fullscreen por workspace, então o BP perde o fullscreen quando o jogo ganha foco e continua vivo.
 bp_addr = None
 game_addr, game_fs = None, False  # janela de antes do BP, e se estava em fullscreen
+WARM_WS = "special:hydrabp"  # BP aquecido fica escondido aqui até o Guide
 
 
 def bp_window(cs):
@@ -182,8 +180,13 @@ def bp_window(cs):
     global bp_addr
     if not any(c["address"] == bp_addr for c in cs):
         bp_addr = next((c["address"] for c in cs
-                        if "hydra" in c.get("class", "").lower() and c.get("fullscreen")), None)
+                        if "hydra" in c.get("class", "").lower() and c.get("fullscreen")
+                        and c["workspace"]["name"] != WARM_WS), None)
     return bp_addr
+
+
+def warm_window(cs):
+    return next((c["address"] for c in cs if c["workspace"]["name"] == WARM_WS), None)
 
 
 def focus(addr, fullscreen):
@@ -201,8 +204,8 @@ def focused_monitor():
 def bring_here(addr, cs):
     """BP vivo em outro monitor -> vem para o monitor em foco (escolhido com Guide + D-pad)."""
     mon, win = focused_monitor(), next((c for c in cs if c["address"] == addr), {})
-    if mon and win.get("monitor") != mon["id"]:
-        ws = mon["activeWorkspace"]["name"]
+    ws = mon and game_ws(mon)
+    if mon and win.get("workspace", {}).get("name") != ws:
         log(f"press: BP vem para o workspace {ws} ({mon['name']})")
         hypr.dispatch(f'hl.dsp.window.move({{ workspace = "{ws}", window = "address:{addr}" }})')
 
@@ -220,23 +223,23 @@ def screen(direction):
 
 
 def send_signal():
-    """Manda --big-picture para o Hydra que já está rodando. True se ele respondeu ACK."""
+    """Manda --big-picture para o Hydra Neo que já está rodando: o próprio binário repassa à instância única
+    (socket abstrato @hydra-native-*.sock) e sai em ~0,1 s. True se repassou."""
+    if not hydra_main():
+        return False  # sem instância, o comando abriria um Hydra novo dentro do cgroup do daemon
     try:
-        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
-            s.settimeout(1)
-            s.connect(os.readlink(SOCK))
-            s.sendall(SIGNAL)
-            s.shutdown(socket.SHUT_WR)
-            return s.recv(8) == b"ACK"
-    except OSError:
+        r = subprocess.run([HYDRA, "--big-picture"], capture_output=True, timeout=3)
+    except subprocess.TimeoutExpired:
         return False
+    return b"handed the launch over" in r.stdout + r.stderr
 
 
 def press():
     """Guide: BP em foco -> volta ao jogo; BP vivo -> foca; senão abre (Hydra quente ou frio)."""
     global game_addr, game_fs, bp_addr
     cs, cur = hypr.clients() or [], hypr.active()
-    addr = bp_window(cs)
+    addr = bp_window(cs) or warm_window(cs)
+    bp_addr = addr
     fs = {c["address"]: bool(c.get("fullscreen")) for c in cs}
     if addr and cur == addr:
         log(f"press: BP em foco -> volta para {game_addr} (fullscreen={game_fs})")
@@ -253,8 +256,7 @@ def press():
         log("press: Hydra fora do ar -> abre direto no BP")
         launch_hydra("big-picture")
         return
-    # O BP pronto (patch do hydra-update) ganha foco em ~20 ms. A tela cheia vem daqui: o
-    # Electron perde o setFullScreen() de uma janela que nunca tinha sido mostrada.
+    # O Neo abre o BP em ~0,35 s já em tela cheia; o focus() garante foco e tela cheia mesmo assim.
     deadline = time.monotonic() + 4
     while time.monotonic() < deadline:
         w = hypr.active_window()
@@ -272,22 +274,98 @@ def press():
 FS_ON_OPEN = {"eldenring.exe"}
 
 
+# --- workspace 4: só Hydra e jogos, na TV (regras visuais em ~/.config/hypr/hyprland.lua) ---
+GAME_WS = "4"
+TV_DESC = "Samsung Electric Company SAMSUNG 0x01000E00"
+# classes que podem ficar no 4; além delas, qualquer janela cujo processo descende do Hydra
+GAME_CLASS = re.compile(r"(?i)^(hydralauncher|steam_app_.*|.*\.exe|gamescope|towerfall|shadps4|(dev\.eden_emu\.)?eden"
+                        r"|rpcs3|pcsx2.*|duckstation.*|dolphin-emu|(com\.libretro\.)?retroarch)$")
+OMARCHY_SHELL = "/usr/share/omarchy/bin/omarchy-shell"
+DND_PREV = f"{HOME}/.local/state/xbox-guide/dnd-before-ws4"  # estado do "não perturbe" antes de entrar no 4
+
+
+def game_ws(mon):
+    """Workspace onde o BP deve ficar nesse monitor: o 4 na TV, o visível nos outros."""
+    return GAME_WS if mon.get("description") == TV_DESC else mon["activeWorkspace"]["name"]
+
+
+def from_hydra(pid):
+    """O processo (ou um ancestral) é o Hydra: jogos e emuladores abertos por ele."""
+    for _ in range(64):
+        if not pid or pid <= 1:
+            return False
+        try:
+            with open(f"/proc/{pid}/cmdline", "rb") as f:
+                if f.read().split(b"\0")[0] == HYDRA_BIN.encode():
+                    return True
+            with open(f"/proc/{pid}/stat") as f:
+                pid = int(f.read().rsplit(")", 1)[1].split()[1])
+        except (OSError, ValueError, IndexError):
+            return False
+    return False
+
+
+def game_window(c):
+    return bool(GAME_CLASS.match(c.get("class", "") or c.get("initialClass", ""))) or from_hydra(c.get("pid"))
+
+
+def expel(addr):
+    """Janela que não é jogo caiu no 4 -> vai para o 3 (desktop da TV), sem levar o foco."""
+    c = next((c for c in hypr.clients() or [] if c["address"] == addr), None)
+    if not c or c["workspace"]["name"] != GAME_WS or game_window(c):
+        return
+    log(f"ws{GAME_WS}: {c.get('class')} não é jogo -> workspace 3")
+    hypr.dispatch(f'hl.dsp.window.move({{ workspace = "3", window = "address:{addr}", follow = false }})')
+    notify(f"Workspace {GAME_WS} é só para jogos: {c.get('class') or c.get('title')} foi para o 3", 2500)
+
+
+def sync_dnd():
+    """'Não perturbe' ligado enquanto o 4 aparece na TV; ao sair volta ao estado de antes."""
+    tv = next((m for m in hypr._json("j/monitors") or [] if m.get("description") == TV_DESC), None)
+    on_ws4 = bool(tv and tv["activeWorkspace"]["name"] == GAME_WS and tv.get("dpmsStatus", True))
+    try:
+        if on_ws4 and not os.path.exists(DND_PREV):
+            prev = subprocess.run([OMARCHY_SHELL, "notifications", "dndState"], capture_output=True, text=True, timeout=3).stdout.strip()
+            with open(DND_PREV, "w") as f:
+                f.write(prev or "off")
+            subprocess.run([OMARCHY_SHELL, "notifications", "setDnd", "on"], capture_output=True, timeout=3)
+            log(f"ws{GAME_WS} na TV: não perturbe ligado (antes: {prev})")
+        elif not on_ws4 and os.path.exists(DND_PREV):
+            with open(DND_PREV) as f:
+                prev = f.read().strip() or "off"
+            subprocess.run([OMARCHY_SHELL, "notifications", "setDnd", prev], capture_output=True, timeout=3)
+            os.remove(DND_PREV)
+            log(f"ws{GAME_WS} saiu da TV: não perturbe volta a {prev}")
+    except (OSError, subprocess.SubprocessError) as e:
+        log(f"não perturbe: {e!r}")
+
+
 def game_exit_watch():
     """Jogo em tela cheia fechou com o BP vivo no mesmo workspace -> foco + tela cheia de volta
     ao BP. O Hyprland só deixa uma tela cheia por workspace, então o BP perde a dele quando o
     jogo entra. Vale para qualquer jogo (Steam, Eden, PCSX2, RPCS3, shadPS4)."""
     wins, last_active = {}, None
+    act(sync_dnd)  # daemon reiniciado com o 4 já na TV
     for ev, data in hypr.events():
         if ev == "closewindow":
             w = wins.pop("0x" + data, None)
+            if w and "hydra" in w.get("class", "").lower() and (w.get("fullscreen") or w["address"] == bp_addr):
+                threading.Thread(target=bp_closed_to_tray, args=(w["pid"],), daemon=True).start()
+                continue
             if not (w and w.get("fullscreen") and w["address"] != bp_addr):
                 continue
             bp = next((c for c in hypr.clients() or [] if c["address"] == bp_addr), None)
             if bp and bp["workspace"]["id"] == w["workspace"]["id"]:
                 log(f"jogo {w.get('class')} fechou -> tela cheia de volta ao BP")
                 act(focus, bp_addr, True)
+        elif ev in ("workspacev2", "focusedmonv2", "monitoraddedv2", "monitorremovedv2"):
+            act(sync_dnd)
+            continue
         elif ev in ("openwindow", "fullscreen", "movewindowv2") or (ev == "activewindowv2" and data != last_active):
             addr, _, cls = (data.split(",", 3) + ["", ""])[:3]
+            parts = data.split(",")
+            if (ev == "openwindow" and parts[1:2] == [GAME_WS]) or (ev == "movewindowv2" and parts[2:3] == [GAME_WS]):
+                act(expel, "0x" + addr)
             if ev == "openwindow" and cls in FS_ON_OPEN:
                 log(f"jogo {cls} abriu -> tira a tela cheia do BP e dá ao jogo")
                 act(focus, "0x" + addr, True)
@@ -300,6 +378,49 @@ def launch_hydra(mode):
     """Abre o Hydra fora do cgroup deste serviço: reiniciar o daemon mataria um filho direto."""
     subprocess.run(["systemd-run", "--user", "--collect", "--quiet", HYDRA, f"--{mode}"],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+# --- workarounds do Hydra 4.4 (bundle ofuscado, sem os patches do hydra-update): feitos por fora, pelo Hyprland ---
+def bp_closed_to_tray(pid):
+    """Saiu do BP: o Hydra mostra a janela principal. Fecha ela e o Hydra fica na bandeja (patch "BP→bandeja").
+    Só janelas do mesmo processo: um Hydra reiniciado pelo daemon tem outro pid e o BP novo dele fica."""
+    deadline = time.monotonic() + 2.5
+    while time.monotonic() < deadline:
+        main = next((c for c in hypr.clients() or [] if c.get("pid") == pid and not c.get("fullscreen")
+                     and "hydra" in c.get("class", "").lower()), None)
+        if main:
+            log("saiu do BP -> janela principal para a bandeja")
+            hypr.dispatch(f'hl.dsp.window.close({{ window = "address:{main["address"]}" }})')
+            return
+        time.sleep(0.05)
+
+
+def warm_bp(pid):
+    """Hydra novo na bandeja (--hidden): abre o BP já escondido em WARM_WS, e o 1º Guide só traz a janela
+    (~20 ms em vez de ~0,8 s; patch "BP pronto no boot"). Custa ~250 MB e um piscar do BP ao subir."""
+    try:
+        with open(f"/proc/{pid}/cmdline", "rb") as f:
+            if b"--hidden" not in f.read().split(b"\0"):
+                return
+    except OSError:
+        return
+    deadline = time.monotonic() + 30  # a instância única só aceita depois do startup
+    while time.monotonic() < deadline:
+        cs = hypr.clients()
+        if cs is None or any(c.get("pid") == pid for c in cs) or game_running():
+            return  # alguém já abriu uma janela do Hydra, ou tem jogo: não mexe
+        if send_signal():
+            break
+        time.sleep(1)
+    else:
+        return
+    while time.monotonic() < deadline:
+        w = next((c for c in hypr.clients() or [] if c.get("pid") == pid), None)
+        if w:
+            hypr.dispatch(f'hl.dsp.window.move({{ workspace = "{WARM_WS}", window = "address:{w["address"]}", follow = false }})')
+            log(f"BP aquecido e escondido {w['address']}")
+            return
+        time.sleep(0.02)
 
 
 def wake_open():
@@ -385,7 +506,7 @@ def run(action):
 
 
 # --- 8BitDo em modo Switch: Steam x Hydra brigando pelo hidraw ---
-# O Chromium do Hydra lê controle Nintendo só pelo hidraw (handshake próprio) e não refaz o
+# O Chromium do Hydra Electron lia controle Nintendo só pelo hidraw (mantido no Neo até confirmar que ele não precisa) e não refaz o
 # handshake num hotplug: o BP para de navegar até reiniciar o Hydra. E o SDL do Steam, ao
 # soltar o controle, devolve ele ao modo HID simples (0x3f), que o hid-nintendo não entende ->
 # nenhum evento evdev (nem o Home). Ver gotchas/hydra-bp-pro-controller-not-detected.md no ai-memory.
@@ -440,7 +561,7 @@ def ensure_full_mode(dev):
 
 
 def restart_hydra(mode):
-    """Fecha o Hydra (SIGTERM só no processo principal: saída limpa do Electron) e reabre."""
+    """Fecha o Hydra (SIGTERM no processo principal: saída limpa) e reabre."""
     global bp_addr
     pid = hydra_main()
     if not pid:
@@ -469,6 +590,8 @@ def pro_connected(sysfs, wake):
         if wake:
             wake_open()
         return
+    if wake:  # o BP vem do restart abaixo; só falta a TV
+        spawn(f"{BIN}/tv-power", "on")
     mode = "big-picture" if wake or bp_window(hypr.clients() or []) else "hidden"
     if game_running():
         restart_pending = mode
@@ -530,7 +653,7 @@ def slept_total():
     return time.clock_gettime(time.CLOCK_BOOTTIME) - time.clock_gettime(time.CLOCK_MONOTONIC)
 
 
-WAKE_WINDOW = 30  # controle que conecta até 30s após acordar = PC ligado pelo controle
+WAKE_WINDOW = 90  # 8BitDo leva ~60s pra reconectar após o resume (handle BT velho); controle que conecta até 90s após acordar = PC ligado pelo controle
 
 
 class Daemon:
@@ -541,6 +664,7 @@ class Daemon:
         self.slept_ref, self.resume_at = slept_total(), None
         self.last_mode_check = float("-inf")
         self.denied = set()  # controles que não abriram (loga uma vez só)
+        self.hydra_pid = None
 
     def check_resume(self):
         s = slept_total()
@@ -590,6 +714,11 @@ class Daemon:
     def periodic(self):
         global restart_pending
         self.rescan()
+        pid = hydra_main()
+        if pid != self.hydra_pid:
+            self.hydra_pid = pid
+            if pid:
+                threading.Thread(target=warm_bp, args=(pid,), daemon=True).start()
         # Steam fechando devolve o 8BitDo pro modo 0x3f sem reconectar: confere a cada ~10s
         if time.monotonic() - self.last_mode_check > 10:
             self.last_mode_check = time.monotonic()

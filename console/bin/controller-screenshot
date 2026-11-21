@@ -31,12 +31,11 @@ fi
 # Jogo aberto pelo Hydra: a captura fica na biblioteca dele (~/Pictures/Hydra), com toast e som dele,
 # e a do grim é descartada. Se em 4 s não surgir arquivo (jogo fora do Hydra, permissão de captura
 # de tela ainda pendente), segue a do grim, então nenhuma captura se perde.
-if pgrep -f 'hydra-patched/hydralauncher --force' >/dev/null; then
+if pgrep -x hydra >/dev/null; then  # Hydra Neo
   HYDRA_DIR="$(dirname "$DIR")/Hydra"
-  cp "$file" "${TMPDIR:-/tmp}/hydra-share-frame.png.tmp" && mv -f "${TMPDIR:-/tmp}/hydra-share-frame.png.tmp" "${TMPDIR:-/tmp}/hydra-share-frame.png"  # o quadro do instante do clique
   "$HOME/.local/bin/hydra" hydralauncher://screenshot >/dev/null 2>&1 &
   for _ in $(seq 40); do
-    new=$(find "$HYDRA_DIR" -type f -name '*.jpeg' -newer "$file" 2>/dev/null | head -1)
+    new=$(find "$HYDRA_DIR" -type f \( -name '*.jpeg' -o -name '*.jpg' -o -name '*.png' -o -name '*.webp' \) -newer "$file" 2>/dev/null | head -1)
     if [ -n "$new" ]; then
       rm -f "$file"
       wl-copy --type image/jpeg <"$new" 2>/dev/null || true

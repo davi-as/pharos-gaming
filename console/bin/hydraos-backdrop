@@ -13,8 +13,12 @@ Fim do stdin (daemon parou): sai.
 
 Por que duas camadas e não uma "top" que o Hyprland esconde atrás da tela cheia: esse esmaecimento não é confiável
 para uma camada nova (Hyprland 0.56.2: a 1ª ida à área 4 depois de ela nascer deixou a TV preta por cima do BP, e
-nem trocar de nível consertou). Uma camada "bottom" nunca fica por cima de janela; a "top" só fica preta quando não
-há tela cheia. As camadas nunca são desmapeadas (só trocam de cor) e deixam os cliques passar.
+nem trocar de nível consertou). Uma camada "bottom" nunca fica por cima de janela; a "top" só aparece quando não
+há tela cheia.
+As camadas são sempre pretas e o estado as MOSTRA ou ESCONDE (mapeia/desmapeia), nunca só troca a cor: escondida
+atrás de uma tela cheia, a camada não recebe o aviso de quadro exibido do Hyprland, o GTK para de desenhar e ela
+congelava preta fora da área 4. Camada recém-mostrada desenha do zero. Cliques passam direto (input vazio); a regra
+de camada no_anim (hyprland.lua) faz elas aparecerem e sumirem sem animação.
 Uso: hydraos-backdrop --monitor "<descrição ou conector>"
 """
 import os, sys
@@ -34,8 +38,7 @@ gi.require_foreign("cairo")
 from gi.repository import Gdk, Gio, GLib, Gtk, Gtk4LayerShell as Layer
 
 CSS = """
-window { background: transparent; }
-window.on { background: #000; }
+window { background: #000; }
 label { color: rgba(255, 255, 255, 0.6); font-size: %dpx; }
 spinner { color: rgba(255, 255, 255, 0.45); }
 """
@@ -80,14 +83,14 @@ class Backdrop:
         self.box.append(self.spinner)
         self.cover.set_child(self.box)
         for win in (self.base, self.cover):
-            win.present()
-            win.get_surface().set_input_region(cairo.Region())  # vazia: cliques vão para o que está embaixo
+            # a cada vez que aparece (superfície nova no Hyprland): input vazio, cliques vão para o que está embaixo
+            win.connect("map", lambda w: w.get_surface().set_input_region(cairo.Region()))
         self.render()
         GLib.io_add_watch(GLib.IOChannel.unix_new(0), GLib.PRIORITY_DEFAULT, GLib.IO_IN | GLib.IO_HUP, self.stdin)
 
     def render(self):
         for win, on in ((self.base, self.state != "off"), (self.cover, self.state == "cover")):
-            (win.add_css_class if on else win.remove_css_class)("on")
+            win.set_visible(on)
         show = self.state == "cover" and bool(self.text)
         self.label.set_label(self.text)
         self.box.set_visible(show)

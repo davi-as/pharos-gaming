@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+"""Tela base do Hydra OS: camada preta na TV, por baixo de qualquer janela em tela cheia (BP, jogo) e por cima
+da barra, do dock, do papel de parede e das janelas soltas. Cobre o intervalo entre o Neo fechar o BP e o jogo abrir.
+
+Quem manda é o daemon do controle (~/.local/lib/console/daemon.py), pelo stdin, um comando por linha:
+  on | off        preta | transparente (fora da área 4)
+  text <msg>      texto no centro com um spinner ("text" sozinho: só preto)
+Fim do stdin (daemon parou): sai.
+
+A camada nunca é desmapeada: o Hyprland só esconde camadas "top" atrás da tela cheia quando a tela cheia começa
+ou a área troca, e uma camada que aparece com a tela cheia já na frente fica por cima dela (testado no Hyprland
+0.56.2). Por isso ela nasce transparente e só alterna a cor. Cliques passam direto (região de input vazia).
+Uso: hydraos-backdrop --monitor "<descrição ou conector>"
+"""
+import os, sys
+
+LIB = "/usr/lib/libgtk4-layer-shell.so"
+# o gtk4-layer-shell precisa ser carregado antes da libwayland-client; pelo Python, só com LD_PRELOAD
+if LIB not in os.environ.get("LD_PRELOAD", ""):
+    os.environ["LD_PRELOAD"] = ":".join(p for p in (LIB, os.environ.get("LD_PRELOAD")) if p)
+    os.execv(sys.executable, [sys.executable, *sys.argv])
+
+import gi, cairo
+
+gi.require_version("Gdk", "4.0")
+gi.require_version("Gtk", "4.0")
+gi.require_version("Gtk4LayerShell", "1.0")
+gi.require_foreign("cairo")
+from gi.repository import Gdk, Gio, GLib, Gtk, Gtk4LayerShell as Layer
+
+CSS = """
+window { background: transparent; }
+window.on { background: #000; }
+label { color: rgba(255, 255, 255, 0.6); font-size: %dpx; }
+spinner { color: rgba(255, 255, 255, 0.45); }
+"""
+
+
+def find_monitor(want):
+    mons = Gdk.Display.get_default().get_monitors()
+    for i in range(mons.get_n_items()):
+        m = mons.get_item(i)
+        if m.get_connector() == want or (m.get_description() or "").startswith(want):
+            return m
+    return None
+
+
+class Backdrop:
+    def __init__(self, app, monitor):
+        self.on, self.text, self.buf = False, "", b""
+        win = self.win = Gtk.Window(application=app)
+        Layer.init_for_window(win)
+        Layer.set_layer(win, Layer.Layer.TOP)
+        Layer.set_namespace(win, "hydraos-backdrop")
+        Layer.set_monitor(win, monitor)
+        for edge in (Layer.Edge.TOP, Layer.Edge.BOTTOM, Layer.Edge.LEFT, Layer.Edge.RIGHT):
+            Layer.set_anchor(win, edge, True)
+        Layer.set_exclusive_zone(win, -1)  # cobre a barra em vez de respeitar o espaço dela
+        Layer.set_keyboard_mode(win, Layer.KeyboardMode.NONE)
+
+        css = Gtk.CssProvider()
+        css.load_from_string(CSS % max(16, round(monitor.get_geometry().height * 0.025)))
+        Gtk.StyleContext.add_provider_for_display(win.get_display(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+        self.label, self.spinner = Gtk.Label(), Gtk.Spinner()
+        self.spinner.set_size_request(32, 32)
+        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=24, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
+        self.box.append(self.label)
+        self.box.append(self.spinner)
+        win.set_child(self.box)
+        win.present()
+        win.get_surface().set_input_region(cairo.Region())  # vazia: cliques vão para o que está embaixo
+        self.render()
+        GLib.io_add_watch(GLib.IOChannel.unix_new(0), GLib.PRIORITY_DEFAULT, GLib.IO_IN | GLib.IO_HUP, self.stdin)
+
+    def render(self):
+        (self.win.add_css_class if self.on else self.win.remove_css_class)("on")
+        show = self.on and bool(self.text)
+        self.label.set_label(self.text)
+        self.box.set_visible(show)
+        self.spinner.set_spinning(show)
+
+    def stdin(self, _channel, _cond):
+        # os.read + split: o readline do Python guardaria linhas no buffer dele e o watch não dispararia de novo
+        data = os.read(0, 4096)
+        if not data:
+            self.win.get_application().quit()
+            return False
+        *lines, self.buf = (self.buf + data).split(b"\n")
+        for line in lines:
+            cmd, _, arg = line.decode(errors="replace").strip().partition(" ")
+            if cmd in ("on", "off"):
+                self.on = cmd == "on"
+            elif cmd == "text":
+                self.text = arg.strip()
+        self.render()
+        return True
+
+
+def main():
+    want = sys.argv[sys.argv.index("--monitor") + 1] if "--monitor" in sys.argv[:-1] else None
+    if not want:
+        sys.exit(__doc__.rsplit("Uso: ", 1)[1].strip())
+    app = Gtk.Application(application_id="org.pharos.hydraos.backdrop", flags=Gio.ApplicationFlags.NON_UNIQUE)
+    keep = []
+
+    def activate(a):
+        mon = find_monitor(want)
+        if not mon:
+            print(f"hydraos-backdrop: monitor {want!r} não encontrado", file=sys.stderr)
+            a.quit()
+            return
+        keep.append(Backdrop(a, mon))
+
+    app.connect("activate", activate)
+    app.run([])
+
+
+if __name__ == "__main__":
+    main()

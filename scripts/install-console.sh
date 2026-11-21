@@ -28,10 +28,10 @@ put() {
 }
 
 echo "Arquivos:"
-for f in daemon.py buttons.py hypr.py test_buttons.py e2e_virtual_pad.py; do
+for f in daemon.py buttons.py hypr.py hydraos.py neolog.py test_buttons.py test_hydraos.py test_neolog.py e2e_virtual_pad.py; do
 	put "$src/lib/$f" "$HOME/.local/lib/console/$f" 644 && daemon_new=1
 done
-for f in tv-power pc-suspend controller-screenshot hydra xbox-bt-autoconnect.sh; do
+for f in tv-power pc-suspend controller-screenshot hydra hydraos-backdrop xbox-bt-autoconnect.sh; do
 	put "$src/bin/$f" "$HOME/.local/bin/$f" 755 || true
 done
 for f in xbox-guide.service xbox-bt-autoconnect.service; do

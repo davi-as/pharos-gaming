@@ -127,6 +127,8 @@ def main():
             a.quit()
             return
         keep.append(Backdrop(a, mon))
+        # TV desligada ou em outra entrada: a saída some e a camada ficaria morta; sai, e o daemon reabre quando ela voltar
+        mon.connect("invalidate", lambda *_: a.quit())
 
     app.connect("activate", activate)
     app.run([])

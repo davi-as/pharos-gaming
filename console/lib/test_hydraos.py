@@ -2,7 +2,7 @@
 # Testes da máquina de estados do Hydra OS (área 4 da TV): python3 ~/.local/lib/console/test_hydraos.py
 import unittest
 
-from hydraos import HydraOS
+from hydraos import BP_TITLE, HydraOS, backdrop_state
 
 G, BP = "0xg", "0xbp"
 
@@ -109,6 +109,64 @@ class ExitTest(unittest.TestCase):
         h = HydraOS(game=G)
         self.assertEqual(h.phase, "playing")
         self.assertEqual(h.guide(False, None, None, G, 0), [("enter",), ("focus", G)])
+
+
+class ReviewTest(unittest.TestCase):
+    """Achados da revisão final (2026-11-21)."""
+
+    def test_dialogo_do_jogo_fecha_e_a_janela_principal_fica(self):
+        h = HydraOS(game=G); h.window("0xg2", "game", True, 10)  # 2ª janela do jogo (ex.: "Confirmar saída?")
+        self.assertEqual(h.window("0xg2", "game", False, 12, remaining=G), [])
+        self.assertEqual(h.game, G)
+        self.assertEqual(h.tick(20), [])
+
+    def test_launcher_demora_com_processo_vivo(self):
+        h = HydraOS(); h.launched("X", 0); h.process(True, 5); h.window(G, "game", True, 8)
+        h.window(G, "game", False, 100)
+        self.assertEqual(h.tick(105), [])  # janela sumiu, processo vivo: espera
+        self.assertEqual(h.process(False, 110), [("open_bp",)])
+
+    def test_janela_sumiu_com_processo_vivo_desiste_em_30s(self):
+        h = HydraOS(); h.launched("X", 0); h.process(True, 5); h.window(G, "game", True, 8)
+        h.window(G, "game", False, 100)
+        self.assertEqual(h.tick(129), [])
+        self.assertEqual(h.tick(131), [("open_bp",)])
+
+    def test_reinicio_do_hydra_nao_conta_como_sair_do_bp(self):
+        h = HydraOS()
+        self.assertEqual(h.bp_closed(False, 0, restarting=True), [])
+        self.assertEqual(h.bp_closed(True, 0, restarting=True), [])
+        self.assertEqual(h.tick(2), [])
+
+    def test_closed_atrasado_de_outro_jogo_e_ignorado(self):
+        h = HydraOS(); h.launched("B", 0, "steam:2")
+        self.assertEqual(h.process(False, 5, "steam:1"), [])
+        self.assertEqual(h.phase, "launching")
+        self.assertEqual(h.process(True, 6, "steam:2"), [])
+        self.assertTrue(h.proc)
+
+
+MAIN = {"class": "hydralauncher", "title": "Hydra", "fullscreen": 0}  # janela principal do Neo (vai para a bandeja)
+BPW = {"class": "hydralauncher", "title": BP_TITLE, "fullscreen": 2}
+
+
+class BackdropStateTest(unittest.TestCase):
+    def test_fora_da_area_4(self):
+        self.assertEqual(backdrop_state(False, [BPW], False), "off")
+
+    def test_area_4_vazia_ou_so_a_janela_principal_do_neo(self):
+        self.assertEqual(backdrop_state(True, [], False), "cover")
+        self.assertEqual(backdrop_state(True, [MAIN], False), "cover")
+
+    def test_bp_ou_jogo_em_tela_cheia(self):
+        self.assertEqual(backdrop_state(True, [BPW], False), "base")
+        self.assertEqual(backdrop_state(True, [{"class": "eldenring.exe", "title": "ELDEN RING", "fullscreen": 2}], False), "base")
+
+    def test_emulador_em_janela_nao_fica_sob_o_preto(self):
+        self.assertEqual(backdrop_state(True, [{"class": "pcsx2-qt", "title": "PCSX2", "fullscreen": 0}], False), "base")
+
+    def test_dialogo_da_steam_segurado(self):
+        self.assertEqual(backdrop_state(True, [], True), "base")
 
 
 if __name__ == "__main__":

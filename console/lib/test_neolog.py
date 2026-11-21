@@ -23,6 +23,9 @@ class ParseTest(unittest.TestCase):
     def test_closed(self):
         self.assertEqual(parse(P + "[ProcessWatcher] steam:1245620 closed (+2s)"), ("closed", "steam:1245620"))
 
+    def test_launched_sem_texto_depois_do_id(self):
+        self.assertEqual(parse(P + "Launched custom:abc"), ("launched", "custom:abc"))
+
     def test_outras_linhas(self):
         self.assertIsNone(parse(P + "Screenshot input started: keyboard evdev gamepad evdev hint None"))
         self.assertIsNone(parse(P + "Steam protocol launch delegates command wrappers to Steam settings: steam:1245620"))

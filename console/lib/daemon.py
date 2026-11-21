@@ -172,7 +172,7 @@ def act(fn, *args):
 # fullscreen por workspace, então o BP perde o fullscreen quando o jogo ganha foco e continua vivo.
 bp_addr = None
 WARM_WS = "special:hydrabp"  # BP aquecido fica escondido aqui até o Guide
-BP_TITLE = "Hydra Big Picture"
+BP_TITLE = hydraos.BP_TITLE
 warming = False  # warm_bp está abrindo o BP escondido: o openwindow dele não ganha foco
 bp_wanted_at = float("-inf")  # alguém pediu o BP agora (Guide, fim de jogo): o warm_bp não esconde esse
 
@@ -343,9 +343,8 @@ def sync_tv():
     tv = tv_monitor()
     visible = bool(tv and tv["activeWorkspace"]["name"] == GAME_WS and tv.get("dpmsStatus", True))
     if tv and backdrop_ensure(tv):
-        fs = any(c.get("fullscreen") and c["workspace"]["name"] == GAME_WS for c in hypr.clients() or [])
-        # diálogo da Steam no carregamento (hold): fica visível sobre o preto de baixo
-        want = "off" if not visible else "base" if fs or bd_hold else "cover"
+        ws4 = [c for c in hypr.clients() or [] if c["workspace"]["name"] == GAME_WS]
+        want = hydraos.backdrop_state(visible, ws4, bd_hold)
         if want != bd_sent and backdrop_send(want):
             bd_sent = want
     profile(visible and tv["focused"])
@@ -373,19 +372,25 @@ def profile(active):
         log(f"perfil do Hydra OS: {e!r}")
 
 
+enter_pending_until = float("-inf")  # Guide com a TV fora da lista de monitores: repete quando ela aparecer
+
+
 def enter():
-    """Leva ao Hydra OS: liga a TV, foca a TV na área 4 e tira o cursor do caminho."""
-    global bp_wanted_at
+    """Leva ao Hydra OS: liga a TV, foca a TV na área 4 e tira o cursor do caminho. False se a TV não está na lista
+    de monitores (desligada ou em outra entrada): o resto das ações espera ela aparecer (monitoraddedv2)."""
+    global bp_wanted_at, enter_pending_until
+    spawn(f"{BIN}/tv-power", "on")  # já ligada: só confere o estado (rede, em segundo plano)
     tv = tv_monitor()
     if not tv:
-        log("Hydra OS: TV fora da lista de monitores")
-        return
+        enter_pending_until = time.monotonic() + 30
+        log("Hydra OS: TV fora da lista de monitores; ligando e esperando ela aparecer")
+        return False
     bp_wanted_at = time.monotonic()
-    spawn(f"{BIN}/tv-power", "on")  # já ligada: só confere o estado (rede, em segundo plano)
     hypr.dispatch(f'hl.dsp.focus({{ monitor = "{tv["name"]}" }})')
     hypr.dispatch(f'hl.dsp.focus({{ workspace = "{GAME_WS}" }})')
     park_cursor(tv)
     sync_tv()
+    return True
 
 
 def park_cursor(tv=None):
@@ -429,8 +434,8 @@ def run_hos(actions):
     global bd_text, bd_hold, bp_wanted_at
     for kind, *args in actions:
         log(f"Hydra OS: {kind} {' '.join(map(str, args))}".rstrip())
-        if kind == "enter":
-            enter()
+        if kind == "enter" and not enter():
+            return  # sem TV: nada de focar BP/jogo em outro monitor
         elif kind == "focus":
             show(args[0])
         elif kind == "open_bp":
@@ -464,15 +469,15 @@ def hos_later(delay):
 
 
 def hos_launched(game_id):
-    run_hos(hos.launched(neolog.game_name(game_id), time.monotonic()))
+    run_hos(hos.launched(neolog.game_name(game_id), time.monotonic(), game_id))
 
 
-def hos_process(running):
-    run_hos(hos.process(running, time.monotonic()))
+def hos_process(running, game_id=None):
+    run_hos(hos.process(running, time.monotonic(), game_id))
 
 
 def hos_bp_closed():
-    run_hos(hos.bp_closed(hydra_main() is not None, time.monotonic()))
+    run_hos(hos.bp_closed(hydra_main() is not None, time.monotonic(), restarting=time.monotonic() < restarting_until))
     hos_later(hydraos.CLOSE_GRACE)
 
 
@@ -487,8 +492,12 @@ def hos_window_closed(addr):
         dialogs.discard(addr)
         run_hos(hos.window(addr, "dialog", False, time.monotonic()))
     elif addr == hos.game:
-        run_hos(hos.window(addr, "game", False, time.monotonic()))
+        # outra janela do jogo ainda na área 4 (fechou só um diálogo dele): ela vira o jogo, nada de BP
+        other = next((c["address"] for c in hypr.clients() or [] if c["workspace"]["name"] == GAME_WS
+                      and c["address"] != addr and c.get("class") != "hydralauncher" and game_window(c)), None)
+        run_hos(hos.window(addr, "game", False, time.monotonic(), remaining=other))
         hos_later(hydraos.EXIT_GRACE)
+        hos_later(hydraos.GONE_MAX)  # processo vivo sem janela: o limite de espera
 
 
 def neo_log_watch():
@@ -502,8 +511,20 @@ def neo_log_watch():
                 if kind == "launched":
                     act(hos_launched, game_id)
                 else:
-                    act(hos_process, kind == "opened")
+                    act(hos_process, kind == "opened", game_id)
         time.sleep(0.25)
+
+
+def tv_output_changed(added):
+    """A TV saiu ou voltou da lista de monitores (desligou, trocou de entrada): a tela base presa à saída antiga
+    morre sozinha (hydraos-backdrop sai no "invalidate"); reabre já, sem a trava de 10 s. Guide pendente: repete."""
+    global bd_spawned, enter_pending_until
+    bd_spawned = float("-inf")
+    if added and time.monotonic() < enter_pending_until:
+        enter_pending_until = float("-inf")
+        log("Hydra OS: TV apareceu, repetindo o Guide")
+        wake_open()
+    sync_tv()
 
 
 def adopt_snapshot():
@@ -524,8 +545,10 @@ def game_exit_watch():
     wins, last_active = {}, None
     act(adopt_snapshot)  # daemon reiniciado com o 4 já na TV (e talvez um jogo nele)
     for ev, data in hypr.events():
-        if ev == "fullscreen":
-            act(sync_tv)  # tela cheia começou/acabou na TV: tela base "base" ou "cover"
+        if ev in ("fullscreen", "openwindow", "closewindow", "movewindowv2"):
+            act(sync_tv)  # o que há na área 4 mudou: tela base "base" ou "cover"
+        if ev in ("monitoraddedv2", "monitorremovedv2") and TV_DESC in data:
+            act(tv_output_changed, ev == "monitoraddedv2")
         if ev == "closewindow":
             w = wins.pop("0x" + data, None)
             if w and is_bp(w) and w["workspace"]["name"] != WARM_WS:
@@ -650,7 +673,7 @@ def sleep_watch():
                         subprocess.run(["timeout", "3", f"{BIN}/tv-power", "off"], stdout=subprocess.DEVNULL, stderr=err)
                 lock.kill()
                 lock.wait()
-            elif "PrepareForSleep (false,)" in line and lock.poll() is not None:
+            elif ("PrepareForSleep (false,)" in line or "PrepareForShutdown (false,)" in line) and lock.poll() is not None:
                 lock = inhibit()  # acordou: segura de novo para a próxima
         lock.kill()  # gdbus caiu (dbus reiniciado): recomeça
         time.sleep(5)
@@ -733,6 +756,7 @@ def run(action):
 # nenhum evento evdev (nem o Home). Ver gotchas/hydra-bp-pro-controller-not-detected.md no ai-memory.
 GAME_PATTERNS = (b"wineserver", b"SteamLaunch", b"umu-run", b"/bin/eden -f -g", b"legendary", b"gogdl", b"RetroArch-Linux-x86_64")
 FULL_MODE = bytes([0x01, 0, 0x00, 0x01, 0x40, 0x40, 0x00, 0x01, 0x40, 0x40, 0x03, 0x30])
+restarting_until = float("-inf")
 restart_pending = None  # None | "hidden" | "big-picture": reinício adiado até o jogo fechar
 
 
@@ -787,7 +811,11 @@ def restart_hydra(mode):
     pid = hydra_main()
     if not pid:
         return
+    global restarting_until, bp_wanted_at
     log(f"reiniciando Hydra ({mode})")
+    restarting_until = time.monotonic() + 15  # o BP que fecha agora não é "Sair do BP" nem queda (hos_bp_closed)
+    if mode == "big-picture":
+        bp_wanted_at = time.monotonic()  # o warm_bp não esconde o BP que volta
     os.kill(pid, 15)
     for _ in range(100):
         if not os.path.exists(f"/proc/{pid}"):
@@ -936,6 +964,8 @@ class Daemon:
         global restart_pending
         self.rescan()
         if hos.phase == "launching":
+            if not hos.proc and game_running():
+                act(hos_process, True)  # Proton/umu já subiu (prefixo novo demora antes do exe do jogo existir)
             act(hos_tick)  # prazo do carregamento (sem o processo do jogo em 90 s: volta ao BP)
         pid = hydra_main()
         if pid != self.hydra_pid:

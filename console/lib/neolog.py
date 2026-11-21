@@ -11,7 +11,7 @@ HOME = os.path.expanduser("~")
 INFO_LOG = f"{HOME}/.config/hydralauncher-native/logs/info.txt"
 STEAM_VDF = f"{HOME}/.local/share/Steam/steamapps/libraryfolders.vdf"
 
-_LAUNCHED = re.compile(r"\bLaunched (\S+) ")
+_LAUNCHED = re.compile(r"\bLaunched (\S+)")  # jogo que não é da Steam pode não ter " through ..." depois
 _WATCHER = re.compile(r"\[ProcessWatcher\] (\S+) (opened|closed)\b")
 
 

@@ -9,9 +9,13 @@ BIN="$HOME/.local/opt/hydra-neo/usr/bin/hydra"
 # shortcut: o Neo 4.4.0 aberto do zero com --big-picture entra em pânico no Wayland (gpui "RefCell already mutably
 # borrowed" em big_picture::open_with) e trava. Sobe na bandeja e repassa o --big-picture (caminho que funciona).
 # Remover quando uma build nova abrir o BP frio direto: pkill -x hydra; hydra --big-picture
-if [[ " $* " == *" --big-picture "* ]] && ! pgrep -f "^$BIN( |$)" >/dev/null; then
-  # unidade própria: o --hidden não pode morrer com o cgroup de quem chamou (systemd-run do hydra-bp, Sunshine)
-  systemd-run --user --collect --quiet --slice=app-graphical.slice "$0" --hidden  # $0: o wrapper, pelo PATH/MANGOHUD
+if [[ " $* " == *" --big-picture "* ]]; then
+  if ! pgrep -f "^$BIN( |$)" >/dev/null; then
+    # unidade própria: o --hidden não pode morrer com o cgroup de quem chamou (systemd-run do hydra-bp, Sunshine)
+    systemd-run --user --collect --quiet --slice=app-graphical.slice "$0" --hidden  # $0: o wrapper, pelo PATH/MANGOHUD
+  fi
+  # também quando outro chamador acabou de subir o --hidden (Neo reiniciado pelo daemon + hydra-bp ao mesmo tempo):
+  # sem o socket da instância única, o --big-picture abriria um 2º Neo frio (o pânico acima)
   for _ in $(seq 150); do ss -xl 2>/dev/null | grep -q '@hydra-native-' && break; sleep 0.1; done
 fi
 exec "$BIN" "$@"

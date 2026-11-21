@@ -14,6 +14,18 @@ O daemon entrega fatos (Guide, log do Neo, janelas do Hyprland, relógio) e exec
 LAUNCH_TIMEOUT = 90.0  # lançou e o processo do jogo não apareceu: volta ao BP
 EXIT_GRACE = 1.5  # janela do jogo fechou: espera, pode ser o launcher trocando para o jogo
 CLOSE_GRACE = 1.0  # BP fechou sem "Launched" no log ainda: espera antes de concluir que você saiu do BP
+GONE_MAX = 30.0  # janela do jogo sumiu com o processo vivo (launcher lento, jogo minimizado): espera até isso
+BP_TITLE = "Hydra Big Picture"
+
+
+def backdrop_state(visible, windows, hold):
+    """Tela base: "off" fora da área 4; "cover" (preto por cima de tudo) só com a área 4 vazia ou só com a janela
+    principal do Neo (que vai para a bandeja); "base" (preto por baixo) com qualquer outra janela, em tela cheia ou não:
+    um emulador ou jogo em janela não pode ficar sob o preto. hold: diálogo da Steam segurado no carregamento."""
+    if not visible:
+        return "off"
+    neo_main = lambda c: c.get("class") == "hydralauncher" and c.get("title") != BP_TITLE
+    return "base" if hold or any(not neo_main(c) for c in windows) else "cover"
 
 
 class HydraOS:
@@ -25,6 +37,7 @@ class HydraOS:
         self.text = ""
         self.launch_at = self.exit_at = self.closed_at = None
         self.proc = False  # o Neo viu o processo do jogo (ProcessWatcher opened)
+        self.game_id = None  # id do Neo do último lançamento ("steam:1245620"): linhas de outro jogo são ignoradas
 
     def _clear_text(self):
         if not self.text:
@@ -50,21 +63,27 @@ class HydraOS:
             return [("focus", game)] if game else []
         return [("focus", bp)] if bp else [("open_bp",)]
 
-    def launched(self, name, now):
+    def launched(self, name, now, game_id=None):
         """Log do Neo: 'Launched <id>'. O BP ainda aparece; o texto fica pronto para quando ele fechar."""
         self.phase, self.launch_at, self.proc, self.closed_at = "launching", now, False, None
+        self.game_id = game_id
         self.text = f"Iniciando {name}…" if name else "Iniciando…"
         return [("text", self.text)]
 
-    def process(self, running, now):
-        """Log do Neo: ProcessWatcher opened/closed."""
+    def process(self, running, now, game_id=None):
+        """Log do Neo: ProcessWatcher opened/closed (ou o daemon vendo o Proton/umu subir, sem id)."""
+        if game_id and self.game_id and game_id != self.game_id:
+            return []  # "closed" atrasado do jogo anterior não cancela o lançamento de agora
         self.proc = running
         if running or self.phase == "home" or self.game:
             return []  # com janela de jogo viva, quem decide é o fechamento da janela
         self._home()
         return self._clear_text() + [("open_bp",)]
 
-    def bp_closed(self, neo_alive, now):
+    def bp_closed(self, neo_alive, now, restarting=False):
+        """restarting: o daemon está reiniciando o Neo (8BitDo reconectou): o BP volta sozinho, não é saída nem queda."""
+        if restarting:
+            return []
         if not neo_alive:
             self._home()
             return [("restart_neo",)]
@@ -75,7 +94,8 @@ class HydraOS:
         self.closed_at = now  # o "Launched" pode chegar logo depois: o tick decide
         return []
 
-    def window(self, addr, kind, opened, now):
+    def window(self, addr, kind, opened, now, remaining=None):
+        """remaining: ao fechar, outra janela de jogo que continua na área 4 (o jogo não acabou: ela vira o jogo)."""
         if kind == "dialog":
             return [("hold", opened)]
         if opened:
@@ -83,7 +103,7 @@ class HydraOS:
             self.phase, self.launch_at = "playing", None
             return self._clear_text()
         if addr == self.game:
-            self.game, self.exit_at = None, now
+            self.game, self.exit_at = (remaining, None) if remaining else (None, now)
         return []
 
     def focused(self, kind):
@@ -94,7 +114,8 @@ class HydraOS:
         if self.phase == "launching" and not self.proc and now - self.launch_at > LAUNCH_TIMEOUT:
             self._home()
             out += self._clear_text() + [("open_bp",)]
-        if self.exit_at is not None and now - self.exit_at >= EXIT_GRACE:
+        if self.exit_at is not None and now - self.exit_at >= EXIT_GRACE and not (self.proc and now - self.exit_at < GONE_MAX):
+            # processo vivo: quem encerra é o "closed" do Neo (process(False)), ou o limite GONE_MAX
             self.exit_at = None
             if self.game is None and self.phase == "playing":
                 self._home()

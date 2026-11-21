@@ -9,7 +9,7 @@ controle faz fica em ~/.config/console/buttons.env (editado pelo PHAROS GAMING, 
 """
 import fcntl, importlib.machinery, importlib.util, os, queue, re, select, signal, socket, struct, subprocess, threading, time
 
-import buttons, hydraos, hypr
+import buttons, hydraos, hypr, neolog
 
 NAMES = ("Xbox Wireless Controller", buttons.PRO)  # IMU do 8BitDo ("... (IMU)") fica de fora pelo match exato
 HOME = os.path.expanduser("~")
@@ -274,10 +274,24 @@ def game_window(c):
     return bool(GAME_CLASS.match(c.get("class", "") or c.get("initialClass", ""))) or from_hydra(c.get("pid"))
 
 
+# shortcut: títulos de janela da Steam que NÃO são diálogo; a lista cresce conforme aparecerem diálogos novos
+STEAM_NOT_DIALOG = {"", "Steam", "Launching...", "Special Offers", "Friends List"}
+dialogs = set()  # diálogos da Steam segurados na área 4 durante o carregamento
+
+
 def expel(addr):
-    """Janela que não é jogo caiu no 4 -> vai para o 3 (desktop da TV), sem levar o foco."""
+    """Janela que não é jogo caiu no 4 -> vai para o 3 (desktop da TV), sem levar o foco. Exceção: diálogo da Steam
+    durante o carregamento (conflito de nuvem etc.) trava o jogo se sumir: fica no centro, por cima do preto."""
     c = next((c for c in hypr.clients() or [] if c["address"] == addr), None)
     if not c or c["workspace"]["name"] != GAME_WS or game_window(c):
+        return
+    if hos.phase == "launching" and c.get("class") == "steam" and c.get("title") not in STEAM_NOT_DIALOG:
+        log(f"Hydra OS: diálogo da Steam no carregamento fica na área {GAME_WS}: {c.get('title')!r}")
+        dialogs.add(addr)
+        hypr.dispatch(f'hl.dsp.window.float({{ window = "address:{addr}", action = "set" }})')
+        hypr.dispatch(f'hl.dsp.window.center({{ window = "address:{addr}" }})')
+        hypr.dispatch(f'hl.dsp.focus({{window="address:{addr}"}})')
+        run_hos(hos.window(addr, "dialog", True, time.monotonic()))
         return
     log(f"ws{GAME_WS}: {c.get('class')} não é jogo -> workspace 3")
     hypr.dispatch(f'hl.dsp.window.move({{ workspace = "3", window = "address:{addr}", follow = false }})')
@@ -444,6 +458,54 @@ def hos_focused(kind):
     hos.focused(kind)  # pelo nome global: o adopt_snapshot troca o objeto
 
 
+def hos_later(delay):
+    """O tick do HydraOS resolve prazos curtos (saída do jogo, BP fechado); o periodic cobre o do carregamento."""
+    threading.Timer(delay + 0.1, act, (hos_tick,)).start()
+
+
+def hos_launched(game_id):
+    run_hos(hos.launched(neolog.game_name(game_id), time.monotonic()))
+
+
+def hos_process(running):
+    run_hos(hos.process(running, time.monotonic()))
+
+
+def hos_bp_closed():
+    run_hos(hos.bp_closed(hydra_main() is not None, time.monotonic()))
+    hos_later(hydraos.CLOSE_GRACE)
+
+
+def hos_window_opened(addr):
+    c = next((c for c in hypr.clients() or [] if c["address"] == addr), None)
+    if c and c["workspace"]["name"] == GAME_WS and c.get("class") != "hydralauncher" and game_window(c):
+        run_hos(hos.window(addr, "game", True, time.monotonic()))
+
+
+def hos_window_closed(addr):
+    if addr in dialogs:
+        dialogs.discard(addr)
+        run_hos(hos.window(addr, "dialog", False, time.monotonic()))
+    elif addr == hos.game:
+        run_hos(hos.window(addr, "game", False, time.monotonic()))
+        hos_later(hydraos.EXIT_GRACE)
+
+
+def neo_log_watch():
+    """Log do Neo: 'Launched' (o BP vai fechar; mostra 'Iniciando <jogo>…') e o ProcessWatcher (jogo abriu/fechou)."""
+    f = neolog.Follower(neolog.INFO_LOG)
+    while True:
+        for line in f.read():
+            if ev := neolog.parse(line):
+                kind, game_id = ev
+                log(f"Neo: {kind} {game_id}")
+                if kind == "launched":
+                    act(hos_launched, game_id)
+                else:
+                    act(hos_process, kind == "opened")
+        time.sleep(0.25)
+
+
 def adopt_snapshot():
     """Daemon (re)iniciado: um jogo em tela cheia na área 4 vira o jogo do Hydra OS."""
     global hos
@@ -466,15 +528,12 @@ def game_exit_watch():
             act(sync_tv)  # tela cheia começou/acabou na TV: tela base "base" ou "cover"
         if ev == "closewindow":
             w = wins.pop("0x" + data, None)
-            if w and "hydra" in w.get("class", "").lower() and (w.get("fullscreen") or w["address"] == bp_addr):
+            if w and is_bp(w) and w["workspace"]["name"] != WARM_WS:
                 threading.Thread(target=bp_closed_to_tray, args=(w["pid"],), daemon=True).start()
+                # o Neo fecha o BP ao lançar, ao "Sair do Big Picture" e ao cair: 0,4 s para saber se ele ainda vive
+                threading.Timer(0.4, act, (hos_bp_closed,)).start()
                 continue
-            if not (w and w.get("fullscreen") and w["address"] != bp_addr):
-                continue
-            bp = next((c for c in hypr.clients() or [] if c["address"] == bp_addr), None)
-            if bp and bp["workspace"]["id"] == w["workspace"]["id"]:
-                log(f"jogo {w.get('class')} fechou -> tela cheia de volta ao BP")
-                act(focus, bp_addr, True)
+            act(hos_window_closed, "0x" + data)  # jogo da área 4 fechou (volta ao BP) ou diálogo segurado sumiu
         elif ev in ("workspacev2", "focusedmonv2", "monitoraddedv2", "monitorremovedv2"):
             act(sync_tv)
             continue
@@ -483,6 +542,7 @@ def game_exit_watch():
             parts = data.split(",")
             if (ev == "openwindow" and parts[1:2] == [GAME_WS]) or (ev == "movewindowv2" and parts[2:3] == [GAME_WS]):
                 act(expel, "0x" + addr)
+                act(hos_window_opened, "0x" + addr)  # janela de jogo na área 4: carregamento acabou
             if ev == "openwindow" and cls == "hydralauncher" and data.split(",", 3)[3:] == [BP_TITLE] and not warming:
                 # BP novo nasce sem foco (regra "4 silent"): o Guide, o fim de jogo e o hydra-bp contam com ele focado
                 log(f"BP aberto 0x{addr} -> foco na área {GAME_WS}")
@@ -567,6 +627,33 @@ def wake_open():
 def suspend():
     time.sleep(0.5)  # deixa o aviso aparecer
     spawn(f"{BIN}/pc-suspend")  # desliga a TV antes (depois do suspend a rede já caiu)
+
+
+def sleep_watch():
+    """Suspender ou desligar por outro caminho (menu de energia do BP, que fala direto com o logind): a TV desliga
+    antes, se estava no Hydra OS (área 4). Segura um inhibitor "delay" do logind (até 5 s) e ouve o PrepareFor*."""
+    def inhibit():
+        return subprocess.Popen(["systemd-inhibit", "--what=sleep:shutdown", "--mode=delay", "--who=Hydra OS",
+                                 "--why=desligar a TV antes", "sleep", "infinity"],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    while True:
+        lock = inhibit()
+        mon = subprocess.Popen(["gdbus", "monitor", "--system", "--dest", "org.freedesktop.login1",
+                                "--object-path", "/org/freedesktop/login1"],
+                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        for line in mon.stdout:
+            if "PrepareForSleep (true,)" in line or "PrepareForShutdown (true,)" in line:
+                tv = tv_monitor()
+                if tv and tv["activeWorkspace"]["name"] == GAME_WS:
+                    log("suspender/desligar com o Hydra OS na TV: TV desliga antes")
+                    with open(LOG, "a") as err:
+                        subprocess.run(["timeout", "3", f"{BIN}/tv-power", "off"], stdout=subprocess.DEVNULL, stderr=err)
+                lock.kill()
+                lock.wait()
+            elif "PrepareForSleep (false,)" in line and lock.poll() is not None:
+                lock = inhibit()  # acordou: segura de novo para a próxima
+        lock.kill()  # gdbus caiu (dbus reiniciado): recomeça
+        time.sleep(5)
 
 
 # --- buttons.env: gesto do controle -> ação (parser em buttons.py) ---
@@ -848,6 +935,8 @@ class Daemon:
     def periodic(self):
         global restart_pending
         self.rescan()
+        if hos.phase == "launching":
+            act(hos_tick)  # prazo do carregamento (sem o processo do jogo em 90 s: volta ao BP)
         pid = hydra_main()
         if pid != self.hydra_pid:
             self.hydra_pid = pid
@@ -916,7 +1005,7 @@ class Daemon:
 
 
 if __name__ == "__main__":
-    for target in (vol_worker, action_worker, game_exit_watch):
+    for target in (vol_worker, action_worker, game_exit_watch, neo_log_watch, sleep_watch):
         threading.Thread(target=target, daemon=True).start()
     log("daemon iniciado")
     Daemon().loop()

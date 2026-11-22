@@ -244,6 +244,8 @@ GAME_CLASS = re.compile(r"(?i)^(hydralauncher|steam_app_.*|.*\.exe|gamescope|tow
                         r"|rpcs3|pcsx2.*|duckstation.*|dolphin-emu|(com\.libretro\.)?retroarch)$")
 OMARCHY_SHELL = "/usr/share/omarchy/bin/omarchy-shell"
 DND_PREV = f"{HOME}/.local/state/xbox-guide/dnd-before-ws4"  # estado do "não perturbe" antes de entrar no 4
+BAR_FLAG = f"{HOME}/.local/state/omarchy/toggles/bar-off"  # o Omarchy esconde a barra (todas as telas) com ele
+BAR_MARK = f"{HOME}/.local/state/xbox-guide/bar-hidden-by-hydraos"  # fomos nós que escondemos: devolver ao sair
 
 
 BACKDROP = f"{BIN}/hydraos-backdrop"
@@ -371,9 +373,25 @@ def unstick_layers(tv):
         hypr.dispatch('hl.dsp.workspace.toggle_special("hydrafix")')
 
 
+def bar(hide):
+    """Barra do Omarchy: some enquanto o Hydra OS está ativo. Com ela, todo BP fora de tela cheia (o Neo tira a
+    tela cheia dele ao lançar um jogo, até o jogo abrir) e todo jogo que abre em janela mostravam a barra na TV.
+    Barra que você mesmo escondeu (sem a nossa marca) não é mexida."""
+    if hide and not os.path.exists(BAR_FLAG):
+        subprocess.run(["omarchy-toggle", "bar-off", "on"], capture_output=True, timeout=3)
+        open(BAR_MARK, "w").close()
+    elif not hide and os.path.exists(BAR_MARK):
+        subprocess.run(["omarchy-toggle", "bar-off", "off"], capture_output=True, timeout=3)
+        os.remove(BAR_MARK)
+    else:
+        return
+    # o watch do shell pode perder trocas rápidas do arquivo (omarchy-toggle-bar faz o mesmo)
+    subprocess.run([OMARCHY_SHELL, "-q", "omarchy.bar", "syncHidden"], capture_output=True, timeout=3)
+
+
 def profile(active):
-    """Hydra OS ativo: 'não perturbe' e sem o diálogo 'não está respondendo' do Hyprland (um jogo compilando
-    shaders mostraria ele na TV). Ao sair, os dois voltam: o DND ao estado de antes, o ANR ao padrão (true)."""
+    """Hydra OS ativo: 'não perturbe', sem a barra do Omarchy e sem o diálogo 'não está respondendo' do Hyprland (um
+    jogo compilando shaders mostraria ele na TV). Ao sair, tudo volta: DND e barra ao estado de antes, ANR a true."""
     try:
         if active and not os.path.exists(DND_PREV):
             prev = subprocess.run([OMARCHY_SHELL, "notifications", "dndState"], capture_output=True, text=True, timeout=3).stdout.strip()
@@ -381,14 +399,16 @@ def profile(active):
                 f.write(prev or "off")
             subprocess.run([OMARCHY_SHELL, "notifications", "setDnd", "on"], capture_output=True, timeout=3)
             hypr.request("eval hl.config({ misc = { enable_anr_dialog = false } })")
-            log(f"Hydra OS ativo: não perturbe ligado (antes: {prev}), sem diálogo de travado")
+            bar(hide=True)
+            log(f"Hydra OS ativo: não perturbe ligado (antes: {prev}), sem barra e sem diálogo de travado")
         elif not active and os.path.exists(DND_PREV):
             with open(DND_PREV) as f:
                 prev = f.read().strip() or "off"
             subprocess.run([OMARCHY_SHELL, "notifications", "setDnd", prev], capture_output=True, timeout=3)
             os.remove(DND_PREV)
             hypr.request("eval hl.config({ misc = { enable_anr_dialog = true } })")
-            log(f"Hydra OS inativo: não perturbe volta a {prev}, diálogo de travado de volta")
+            bar(hide=False)
+            log(f"Hydra OS inativo: não perturbe volta a {prev}, barra e diálogo de travado de volta")
     except (OSError, subprocess.SubprocessError) as e:
         log(f"perfil do Hydra OS: {e!r}")
 

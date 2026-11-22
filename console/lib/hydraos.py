@@ -19,14 +19,22 @@ GONE_MAX = 30.0  # janela do jogo sumiu com o processo vivo (launcher lento, jog
 BP_TITLE = "Hydra Big Picture"
 
 
-def backdrop_state(visible, windows, hold):
+def backdrop_state(visible, windows, hold, launching=False):
     """Tela base: "off" fora da área 4; "cover" (preto por cima de tudo) só com a área 4 vazia ou só com a janela
     principal do Neo (que vai para a bandeja); "base" (preto por baixo) com qualquer outra janela, em tela cheia ou não:
-    um emulador ou jogo em janela não pode ficar sob o preto. hold: diálogo da Steam segurado no carregamento."""
+    um emulador ou jogo em janela não pode ficar sob o preto. hold: diálogo da Steam segurado no carregamento.
+    launching: a tela de carregamento cobre também o BP (o Neo o deixa aberto ao lançar) até a janela do jogo abrir."""
     if not visible:
         return "off"
-    neo_main = lambda c: c.get("class") == "hydralauncher" and c.get("title") != BP_TITLE
-    return "base" if hold or any(not neo_main(c) for c in windows) else "cover"
+    if hold:
+        return "base"
+    neo = lambda c: c.get("class") == "hydralauncher"
+    if launching:
+        # janelas da Steam no carregamento (avisos "notificationtoasts", "Launching...") não são o jogo; os diálogos
+        # que importam chegam pelo hold
+        return "base" if any(not neo(c) and c.get("class") != "steam" for c in windows) else "cover"
+    neo_main = lambda c: neo(c) and c.get("title") != BP_TITLE
+    return "base" if any(not neo_main(c) for c in windows) else "cover"
 
 
 def stuck_top_layers(layers_text, monitor):

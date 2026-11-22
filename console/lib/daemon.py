@@ -353,8 +353,9 @@ def sync_tv():
         toggle_bp_overlay()  # saiu do Hydra OS com o BP por cima do jogo: ele não vai junto para a área 3
     if tv and backdrop_ensure(tv):
         ws4 = [c for c in hypr.clients() or [] if c["workspace"]["name"] == GAME_WS]
-        want = hydraos.backdrop_state(visible, ws4, bd_hold)
+        want = hydraos.backdrop_state(visible, ws4, bd_hold, launching=hos.phase == "launching")
         if want != bd_sent and backdrop_send(want):
+            log(f"tela base: {want} (fase {hos.phase}, área 4: {[c.get('class') for c in ws4]})")
             bd_sent = want
         # a área especial abre no monitor em foco: só com a TV focada
         if visible and tv["focused"] and any(c.get("fullscreen") for c in ws4) and not bp_overlay_shown(tv):
@@ -548,12 +549,28 @@ def hos_launched(game_id):
     if not game_id.startswith("steam:") and not name:
         refresh_art()  # jogo personalizado novo: desta vez sem arte, da próxima já com
     run_hos(hos.launched(name, time.monotonic(), game_id, hero, logo))
+    sync_tv()  # tela de carregamento por cima do BP
 
 
 def hos_opened_untracked(game_id):
-    """Jogo que subiu sem "Launched": vira lançamento (tela de carregamento) se a janela dele ainda não abriu."""
-    if hos.game is None and hos.phase != "launching":
+    """Jogo que subiu sem "Launched": vira lançamento (tela de carregamento) se a janela dele ainda não abriu. Também
+    completa o "Iniciando…" genérico da janela de lançamento do Neo com o nome e a arte."""
+    if hos.game is None and (hos.phase != "launching" or hos.game_id is None):
         hos_launched(game_id)
+
+
+def neo_launch_window(addr):
+    """Janela sem título do Neo na área 4 com o BP aberto: a tela "Iniciando…" dele (capa num canto, texto solto: na
+    TV parece quebrada). Vai para uma área escondida e a tela de carregamento do Hydra OS entra no lugar; nome e arte
+    chegam com o log do Neo. Sem BP aberto é a janela principal (saída do BP): fica com o bp_closed_to_tray."""
+    cs = hypr.clients() or []
+    if not any(is_bp(c) for c in cs):
+        return
+    hypr.dispatch(f'hl.dsp.window.move({{ workspace = "special:hidden", window = "address:{addr}", follow = false }})')
+    if hos.game is None and hos.phase != "launching":
+        log("Hydra OS: o Neo começou a lançar um jogo -> tela de carregamento")
+        run_hos(hos.launched(None, time.monotonic()))
+    sync_tv()
 
 
 def hos_process(running, game_id=None):
@@ -659,6 +676,8 @@ def game_exit_watch():
             if (ev == "openwindow" and parts[1:2] == [GAME_WS]) or (ev == "movewindowv2" and parts[2:3] == [GAME_WS]):
                 act(expel, "0x" + addr)
                 act(hos_window_opened, "0x" + addr)  # janela de jogo na área 4: carregamento acabou
+            if ev == "openwindow" and cls == "hydralauncher" and data.split(",", 3)[3:] == [""] and parts[1:2] == [GAME_WS]:
+                act(neo_launch_window, "0x" + addr)
             if ev == "openwindow" and cls == "hydralauncher" and data.split(",", 3)[3:] == [BP_TITLE] and not warming:
                 # BP novo nasce sem foco (regra "4 silent"): o Guide, o fim de jogo e o hydra-bp contam com ele focado
                 log(f"BP aberto 0x{addr} -> foco na área {GAME_WS}")

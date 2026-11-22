@@ -23,7 +23,7 @@ congelava preta fora da área 4. Camada recém-mostrada desenha do zero. Cliques
 de camada no_anim (hyprland.lua) faz elas aparecerem e sumirem sem animação.
 Uso: hydraos-backdrop --monitor "<descrição ou conector>"
 """
-import os, sys
+import os, sys, urllib.parse
 
 LIB = "/usr/lib/libgtk4-layer-shell.so"
 # o gtk4-layer-shell precisa ser carregado antes da libwayland-client; pelo Python, só com LD_PRELOAD
@@ -85,8 +85,14 @@ class Backdrop:
         self.spinner.set_size_request(36, 36)
         self.hero = Gtk.Picture(content_fit=Gtk.ContentFit.COVER, can_shrink=True)
         self.hero.add_css_class("hero")
-        self.logo = Gtk.Picture(content_fit=Gtk.ContentFit.CONTAIN, can_shrink=True)
+        # logo como fundo CSS de uma caixa de tamanho fixo: o Gtk.Picture pede o tamanho da imagem (logo de 1280 px
+        # ocupava a TV inteira); o CSS escala para caber ("contain") e fica nítido na escala 2,4 da TV
+        self.logo = Gtk.Box()
+        self.logo.add_css_class("logo")
         self.logo.set_size_request(round(geo.width * 0.4), round(geo.height * 0.25))
+        self.logo_css = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(self.cover.get_display(), self.logo_css,
+                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
         self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=32, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
         for w in (self.logo, self.label, self.spinner):
             self.box.append(w)
@@ -108,10 +114,15 @@ class Backdrop:
         self.label.set_visible(not logo)  # com logo, o nome escrito sobra
         self.box.set_visible(show)
         self.spinner.set_spinning(show)
-        for pic, path in ((self.hero, hero), (self.logo, logo)):
-            if pic.get_file() is None or pic.get_file().get_path() != (path or None):
-                pic.set_filename(path or None)
-            pic.set_visible(bool(path))
+        if self.hero.get_file() is None or self.hero.get_file().get_path() != (hero or None):
+            self.hero.set_filename(hero or None)
+        self.hero.set_visible(bool(hero))
+        if logo != getattr(self, "logo_path", None):
+            self.logo_path = logo
+            url = "file://" + urllib.parse.quote(logo) if logo else "none"
+            self.logo_css.load_from_string(f'box.logo {{ background-image: url("{url}"); background-size: contain; '
+                                           'background-repeat: no-repeat; background-position: center; }')
+        self.logo.set_visible(bool(logo))
 
     def stdin(self, _channel, _cond):
         # os.read + split: o readline do Python guardaria linhas no buffer dele e o watch não dispararia de novo

@@ -123,6 +123,15 @@ class ArtTest(unittest.TestCase):
         self.assertEqual(h.guide(True, None, None, None, 1), [("text", ""), ("art", "", ""), ("open_bp",)])
 
 
+class OverlayLaunchTest(unittest.TestCase):
+    def test_janela_de_lancamento_do_neo_comeca_o_carregamento_e_o_log_completa(self):
+        h = HydraOS()
+        self.assertEqual(h.launched(None, 0), [("text", "Iniciando…")])
+        self.assertEqual(h.launched("Mario Kart 8 Deluxe", 3, "custom:1", hero="/h.png", logo="/l.png"),
+                         [("text", "Iniciando Mario Kart 8 Deluxe…"), ("art", "/h.png", "/l.png")])
+        self.assertEqual(h.phase, "launching")
+
+
 class ReviewTest(unittest.TestCase):
     """Achados da revisão final (2026-11-21)."""
 
@@ -179,6 +188,17 @@ class BackdropStateTest(unittest.TestCase):
 
     def test_dialogo_da_steam_segurado(self):
         self.assertEqual(backdrop_state(True, [], True), "base")
+
+    def test_carregamento_cobre_o_bp_ate_o_jogo_abrir(self):
+        bp_sem_tela_cheia = dict(BPW, fullscreen=0)  # o Neo tira a tela cheia do BP ao lançar
+        self.assertEqual(backdrop_state(True, [bp_sem_tela_cheia], False, launching=True), "cover")
+        self.assertEqual(backdrop_state(True, [BPW], False, launching=True), "cover")
+        jogo = {"class": "eden", "title": "Eden", "fullscreen": 2}
+        self.assertEqual(backdrop_state(True, [bp_sem_tela_cheia, jogo], False, launching=True), "base")
+
+    def test_aviso_da_steam_nao_tira_a_tela_de_carregamento(self):
+        aviso = {"class": "steam", "title": "notificationtoasts_10100_desktop", "fullscreen": 0}
+        self.assertEqual(backdrop_state(True, [dict(BPW, fullscreen=0), aviso], False, launching=True), "cover")
 
 
 LAYERS = """Monitor HDMI-A-1:

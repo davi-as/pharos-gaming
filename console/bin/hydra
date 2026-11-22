@@ -1,6 +1,6 @@
 #!/bin/bash
 # Hydra Neo (app nativo Rust/GPUI, extraído em ~/.local/opt/hydra-neo; instalar versão nova: hydra-update <AppImage>)
-# Rollback para o Electron: ~/.local/bin/hydra-electron (enquanto ~/.local/opt/hydra-patched existir)
+# O Hydra antigo (Electron) foi apagado em 2026-11-21; versão anterior do Neo: ~/.local/opt/hydra-neo.rollback
 # Sem flags do Chromium (escala 0.9375 / fix HDR): o Neo não é Chromium. HDR em tela cheia: render.cm_auto_hdr = 0 no looknfeel.lua.
 export MANGOHUD=1  # jogos herdam; o próprio Hydra está no blacklist do ~/.config/MangoHud/MangoHud.conf
 # launch overrides: o xdg-open daqui troca steam://<appid> pelo script de ~/.config/hydra-launch-overrides.json

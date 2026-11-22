@@ -11,6 +11,9 @@ Quem manda é o daemon do controle (~/.local/lib/console/daemon.py), pelo stdin,
   text <msg>      texto no centro do "cover", com um spinner ("text" sozinho: só preto)
   art <fundo>\t<logo>  arte do jogo no "cover": fundo escurecido e desfocado, logo no centro no lugar do texto
                   (caminhos de arquivo; vazio = sem; "art" sozinho tira a arte)
+  sub <msg>       2ª linha, menor, embaixo do nome/logo (ex.: "Preparando na Steam…"); "sub" sozinho tira
+  splash on|off   abertura: marca do Hydra e o nome no preto, por cima de tudo (entrada vinda da mesa ou do
+                  PC acordando); "off" volta ao estado de antes
 Fim do stdin (daemon parou): sai.
 
 Por que duas camadas e não uma "top" que o Hyprland esconde atrás da tela cheia: esse esmaecimento não é confiável
@@ -19,8 +22,8 @@ nem trocar de nível consertou). Uma camada "bottom" nunca fica por cima de jane
 há tela cheia.
 As camadas são sempre pretas e o estado as MOSTRA ou ESCONDE (mapeia/desmapeia), nunca só troca a cor: escondida
 atrás de uma tela cheia, a camada não recebe o aviso de quadro exibido do Hyprland, o GTK para de desenhar e ela
-congelava preta fora da área 4. Camada recém-mostrada desenha do zero. Cliques passam direto (input vazio); a regra
-de camada no_anim (hyprland.lua) faz elas aparecerem e sumirem sem animação.
+congelava preta fora da área 4. Camada recém-mostrada desenha do zero. Cliques passam direto (input vazio). Regras de
+camada no hyprland.lua: a "base" aparece e some sem animação, a "cover" esmaece (fade), como num console.
 Uso: hydraos-backdrop --monitor "<descrição ou conector>"
 """
 import os, sys, urllib.parse
@@ -39,11 +42,16 @@ gi.require_version("Gtk4LayerShell", "1.0")
 gi.require_foreign("cairo")
 from gi.repository import Gdk, Gio, GLib, Gtk, Gtk4LayerShell as Layer
 
+MARK = os.path.expanduser("~/.local/lib/console/hydra-mark.png")  # marca do Hydra, branca com fundo transparente
 CSS = """
 window { background: #000; }
-label { color: rgba(255, 255, 255, 0.6); font-size: %dpx; }
+label { color: rgba(255, 255, 255, 0.6); font-size: %(text)dpx; }
 spinner { color: rgba(255, 255, 255, 0.55); }
 picture.hero { filter: blur(18px) brightness(0.45); }
+label.sub { font-size: %(sub)dpx; color: rgba(255, 255, 255, 0.45); }
+label.brand { font-size: %(brand)dpx; font-weight: 300; letter-spacing: 0.3em; color: rgba(255, 255, 255, 0.92); }
+box.mark { background-image: url("file://%(mark)s"); background-size: contain; background-repeat: no-repeat;
+           background-position: center; }
 """
 
 
@@ -71,13 +79,15 @@ def layer_window(app, monitor, level, namespace):
 
 class Backdrop:
     def __init__(self, app, monitor):
-        self.state, self.text, self.buf = "off", "", b""
+        self.state, self.text, self.sub_text, self.splash, self.buf = "off", "", "", False, b""
         self.art = ("", "")
         self.base = layer_window(app, monitor, Layer.Layer.BOTTOM, "hydraos-base")
         self.cover = layer_window(app, monitor, Layer.Layer.TOP, "hydraos-cover")
 
         css = Gtk.CssProvider()
-        css.load_from_string(CSS % max(16, round(monitor.get_geometry().height * 0.025)))
+        h = monitor.get_geometry().height
+        css.load_from_string(CSS % {"text": max(16, round(h * 0.025)), "sub": max(12, round(h * 0.018)),
+                                    "brand": max(24, round(h * 0.045)), "mark": urllib.parse.quote(MARK)})
         Gtk.StyleContext.add_provider_for_display(self.cover.get_display(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         geo = monitor.get_geometry()
@@ -93,12 +103,27 @@ class Backdrop:
         self.logo_css = Gtk.CssProvider()
         Gtk.StyleContext.add_provider_for_display(self.cover.get_display(), self.logo_css,
                                                   Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+        self.sub = Gtk.Label()
+        self.sub.add_css_class("sub")
         self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=32, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
-        for w in (self.logo, self.label, self.spinner):
+        for w in (self.logo, self.label, self.sub, self.spinner):
             self.box.append(w)
         layers = Gtk.Overlay(child=self.hero)
         layers.add_overlay(self.box)
-        self.cover.set_child(layers)
+        # abertura: marca + "Hydra", sem fundo de jogo
+        mark = Gtk.Box()
+        mark.add_css_class("mark")
+        side = round(geo.height * 0.22)
+        mark.set_size_request(side, side)
+        brand = Gtk.Label(label="Hydra")
+        brand.add_css_class("brand")
+        splash = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=28, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
+        splash.append(mark)
+        splash.append(brand)
+        self.pages = Gtk.Stack()
+        self.pages.add_named(layers, "loading")
+        self.pages.add_named(splash, "splash")
+        self.cover.set_child(self.pages)
         for win in (self.base, self.cover):
             # a cada vez que aparece (superfície nova no Hyprland): input vazio, cliques vão para o que está embaixo
             win.connect("map", lambda w: w.get_surface().set_input_region(cairo.Region()))
@@ -106,9 +131,12 @@ class Backdrop:
         GLib.io_add_watch(GLib.IOChannel.unix_new(0), GLib.PRIORITY_DEFAULT, GLib.IO_IN | GLib.IO_HUP, self.stdin)
 
     def render(self):
-        for win, on in ((self.base, self.state != "off"), (self.cover, self.state == "cover")):
+        for win, on in ((self.base, self.state != "off" or self.splash), (self.cover, self.state == "cover" or self.splash)):
             win.set_visible(on)
-        show = self.state == "cover" and bool(self.text)
+        self.pages.set_visible_child_name("splash" if self.splash else "loading")
+        show = self.state == "cover" and bool(self.text) and not self.splash
+        self.sub.set_label(self.sub_text)
+        self.sub.set_visible(bool(self.sub_text))
         hero, logo = self.art
         self.label.set_label(self.text)
         self.label.set_visible(not logo)  # com logo, o nome escrito sobra
@@ -137,6 +165,10 @@ class Backdrop:
                 self.state = cmd
             elif cmd == "text":
                 self.text = arg.strip()
+            elif cmd == "sub":
+                self.sub_text = arg.strip()
+            elif cmd == "splash":
+                self.splash = arg.strip() == "on"
             elif cmd == "art":
                 hero, _, logo = arg.partition("\t")
                 self.art = (hero.strip(), logo.strip())

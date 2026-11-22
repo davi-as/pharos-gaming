@@ -314,6 +314,13 @@ bd_hold = False  # diálogo da Steam no carregamento: transparente enquanto ele 
 bd_sent = None  # último estado mandado: off | base | cover
 bd_text = ""
 bd_art = ("", "")  # (fundo, logo) do jogo na tela de carregamento
+bd_sub = ""  # 2ª linha da tela de carregamento ("Preparando na Steam…")
+steam_launching = None  # janela "Launching..." da Steam aberta agora (shaders, nuvem, atualização antes do jogo)
+SPLASH_SECONDS = 1.4  # abertura com a marca do Hydra ao entrar vindo da mesa ou do PC acordando
+# BP por cima do jogo (área especial): esmaece como o menu Home de um console; fora do Hydra OS, o padrão do Omarchy
+SPECIAL_ANIM_CONSOLE = 'hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 2.5, bezier = "easeOutQuint", style = "fade" })'
+SPECIAL_ANIM_DESK = 'hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 3, bezier = "easeOutQuint", style = "slidevert" })'
+
 ART_TOOL = f"{HOME}/.local/share/hydra-art/custom-games.mjs"  # "art": nome/fundo/logo dos jogos personalizados
 
 
@@ -330,7 +337,7 @@ def backdrop_ensure(tv):
                                     stderr=err, text=True, start_new_session=True)
     bd_sent = None
     log("tela base aberta")
-    return backdrop_send(f"text {bd_text}") and backdrop_send("art " + "\t".join(bd_art))
+    return backdrop_send(f"text {bd_text}") and backdrop_send("art " + "\t".join(bd_art)) and backdrop_send(f"sub {bd_sub}")
 
 
 def backdrop_send(line):
@@ -400,6 +407,7 @@ def profile(active):
                 f.write(prev or "off")
             subprocess.run([OMARCHY_SHELL, "notifications", "setDnd", "on"], capture_output=True, timeout=3)
             hypr.request("eval hl.config({ misc = { enable_anr_dialog = false } })")
+            hypr.request(f"eval {SPECIAL_ANIM_CONSOLE}")
             bar(hide=True)
             log(f"Hydra OS ativo: não perturbe ligado (antes: {prev}), sem barra e sem diálogo de travado")
         elif not active and os.path.exists(DND_PREV):
@@ -408,6 +416,7 @@ def profile(active):
             subprocess.run([OMARCHY_SHELL, "notifications", "setDnd", prev], capture_output=True, timeout=3)
             os.remove(DND_PREV)
             hypr.request("eval hl.config({ misc = { enable_anr_dialog = true } })")
+            hypr.request(f"eval {SPECIAL_ANIM_DESK}")
             bar(hide=False)
             log(f"Hydra OS inativo: não perturbe volta a {prev}, barra e diálogo de travado de volta")
     except (OSError, subprocess.SubprocessError) as e:
@@ -428,6 +437,9 @@ def enter():
         log("Hydra OS: TV fora da lista de monitores; ligando e esperando ela aparecer")
         return False
     bp_wanted_at = time.monotonic()
+    # abertura: marca do Hydra por cima de tudo enquanto a TV vai para a área 4 por baixo; depois esmaece
+    if backdrop_ensure(tv) and backdrop_send("splash on"):
+        threading.Timer(SPLASH_SECONDS, act, (backdrop_send, "splash off")).start()
     hypr.dispatch(f'hl.dsp.focus({{ monitor = "{tv["name"]}" }})')
     hypr.dispatch(f'hl.dsp.focus({{ workspace = "{GAME_WS}" }})')
     park_cursor(tv)
@@ -552,6 +564,25 @@ def hos_launched(game_id):
     sync_tv()  # tela de carregamento por cima do BP
 
 
+def set_sub(text):
+    global bd_sub
+    if text != bd_sub:
+        bd_sub = text
+        backdrop_send(f"sub {text}")
+
+
+def steam_launch_window(addr, opened):
+    """Janela "Launching..." da Steam (escondida no special:steamlaunch): enquanto ela existe a Steam está preparando o
+    jogo (shaders, nuvem, atualização); a tela de carregamento diz isso numa 2ª linha em vez de ficar muda."""
+    global steam_launching
+    if opened:
+        steam_launching = addr
+        set_sub("Preparando na Steam…" if hos.phase == "launching" else "")
+    elif addr == steam_launching:
+        steam_launching = None
+        set_sub("")
+
+
 def hos_opened_untracked(game_id):
     """Jogo que subiu sem "Launched": vira lançamento (tela de carregamento) se a janela dele ainda não abriu. Também
     completa o "Iniciando…" genérico da janela de lançamento do Neo com o nome e a arte."""
@@ -586,6 +617,7 @@ def hos_window_opened(addr):
     c = next((c for c in hypr.clients() or [] if c["address"] == addr), None)
     if c and c["workspace"]["name"] == GAME_WS and c.get("class") != "hydralauncher" and game_window(c):
         run_hos(hos.window(addr, "game", True, time.monotonic()))
+        set_sub("")
 
 
 def hos_window_closed(addr):
@@ -667,6 +699,8 @@ def game_exit_watch():
                 threading.Timer(0.4, act, (hos_bp_closed,)).start()
                 continue
             act(hos_window_closed, "0x" + data)  # jogo da área 4 fechou (volta ao BP) ou diálogo segurado sumiu
+            if w and w.get("class") == "steam" and w.get("title") == "Launching...":
+                act(steam_launch_window, "0x" + data, False)
         elif ev in ("workspacev2", "focusedmonv2", "monitoraddedv2", "monitorremovedv2"):
             act(sync_tv)
             continue
@@ -676,6 +710,8 @@ def game_exit_watch():
             if (ev == "openwindow" and parts[1:2] == [GAME_WS]) or (ev == "movewindowv2" and parts[2:3] == [GAME_WS]):
                 act(expel, "0x" + addr)
                 act(hos_window_opened, "0x" + addr)  # janela de jogo na área 4: carregamento acabou
+            if ev == "openwindow" and cls == "steam" and data.split(",", 3)[3:] == ["Launching..."]:
+                act(steam_launch_window, "0x" + addr, True)
             if ev == "openwindow" and cls == "hydralauncher" and data.split(",", 3)[3:] == [""] and parts[1:2] == [GAME_WS]:
                 act(neo_launch_window, "0x" + addr)
             if ev == "openwindow" and cls == "hydralauncher" and data.split(",", 3)[3:] == [BP_TITLE] and not warming:

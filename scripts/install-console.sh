@@ -32,8 +32,10 @@ for f in daemon.py buttons.py hypr.py hydraos.py neolog.py test_buttons.py test_
 	put "$src/lib/$f" "$HOME/.local/lib/console/$f" 644 && daemon_new=1
 done
 for f in tv-power pc-suspend controller-screenshot hydra hydraos-backdrop xbox-bt-autoconnect.sh; do
-	put "$src/bin/$f" "$HOME/.local/bin/$f" 755 || true
+	# a tela base é filha do daemon: versão nova só entra reiniciando o serviço
+	put "$src/bin/$f" "$HOME/.local/bin/$f" 755 && [[ $f == hydraos-backdrop ]] && daemon_new=1 || true
 done
+put "$src/share/hydra-mark.png" "$HOME/.local/lib/console/hydra-mark.png" 644 || true  # marca da abertura
 for f in xbox-guide.service xbox-bt-autoconnect.service; do
 	put "$src/systemd/$f" "$HOME/.config/systemd/user/$f" 644 && units_new=1
 done

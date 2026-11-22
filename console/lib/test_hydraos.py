@@ -159,6 +159,10 @@ class ReviewTest(unittest.TestCase):
         self.assertEqual(h.bp_closed(True, 0, restarting=True), [])
         self.assertEqual(h.tick(2), [])
 
+    def test_neo_cai_no_carregamento_e_o_texto_nao_sobra(self):
+        h = HydraOS(); h.launched("X", 0, hero="/h.jpg")
+        self.assertEqual(h.bp_closed(False, 1), [("text", ""), ("art", "", ""), ("restart_neo",)])
+
     def test_closed_atrasado_de_outro_jogo_e_ignorado(self):
         h = HydraOS(); h.launched("B", 0, "steam:2")
         self.assertEqual(h.process(False, 5, "steam:1"), [])

@@ -12,7 +12,7 @@ Quem manda é o daemon do controle (~/.local/lib/console/daemon.py), pelo stdin,
   art <fundo>\t<logo>  arte do jogo no "cover": fundo escurecido e desfocado, logo no centro no lugar do texto
                   (caminhos de arquivo; vazio = sem; "art" sozinho tira a arte)
   sub <msg>       2ª linha, menor, embaixo do nome/logo (ex.: "Preparando na Steam…"); "sub" sozinho tira
-  splash on|off   abertura: marca do Hydra e o nome no preto, por cima de tudo (entrada vinda da mesa ou do
+  splash on|off   abertura: só a marca do Hydra no preto, por cima de tudo (entrada vinda da mesa ou do
                   PC acordando); "off" volta ao estado de antes
 Fim do stdin (daemon parou): sai.
 
@@ -49,7 +49,6 @@ label { color: rgba(255, 255, 255, 0.6); font-size: %(text)dpx; }
 spinner { color: rgba(255, 255, 255, 0.55); }
 picture.hero { filter: blur(18px) brightness(0.45); }
 label.sub { font-size: %(sub)dpx; color: rgba(255, 255, 255, 0.45); }
-label.brand { font-size: %(brand)dpx; font-weight: 300; letter-spacing: 0.3em; color: rgba(255, 255, 255, 0.92); }
 box.mark { background-image: url("file://%(mark)s"); background-size: contain; background-repeat: no-repeat;
            background-position: center; }
 """
@@ -87,7 +86,7 @@ class Backdrop:
         css = Gtk.CssProvider()
         h = monitor.get_geometry().height
         css.load_from_string(CSS % {"text": max(16, round(h * 0.025)), "sub": max(12, round(h * 0.018)),
-                                    "brand": max(24, round(h * 0.045)), "mark": urllib.parse.quote(MARK)})
+                                    "mark": urllib.parse.quote(MARK)})
         Gtk.StyleContext.add_provider_for_display(self.cover.get_display(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         geo = monitor.get_geometry()
@@ -110,16 +109,13 @@ class Backdrop:
             self.box.append(w)
         layers = Gtk.Overlay(child=self.hero)
         layers.add_overlay(self.box)
-        # abertura: marca + "Hydra", sem fundo de jogo
+        # abertura: só a marca do Hydra, centralizada no preto
         mark = Gtk.Box()
         mark.add_css_class("mark")
-        side = round(geo.height * 0.22)
+        side = round(geo.height * 0.24)
         mark.set_size_request(side, side)
-        brand = Gtk.Label(label="Hydra")
-        brand.add_css_class("brand")
-        splash = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=28, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
+        splash = Gtk.Box(halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
         splash.append(mark)
-        splash.append(brand)
         self.pages = Gtk.Stack()
         self.pages.add_named(layers, "loading")
         self.pages.add_named(splash, "splash")

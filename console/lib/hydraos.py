@@ -118,7 +118,7 @@ class HydraOS:
             return []
         if not neo_alive:
             self._home()
-            return [("restart_neo",)]
+            return self._clear_text() + [("restart_neo",)]
         if self.phase == "launching":
             return []  # o Neo fecha o BP ao lançar: a tela base mostra o "Iniciando…"
         if self.game:

@@ -316,6 +316,7 @@ bd_text = ""
 bd_art = ("", "")  # (fundo, logo) do jogo na tela de carregamento
 bd_sub = ""  # 2ª linha da tela de carregamento ("Preparando na Steam…")
 steam_launching = None  # janela "Launching..." da Steam aberta agora (shaders, nuvem, atualização antes do jogo)
+neo_launch_win = None  # janela "Iniciando…" do Neo escondida no special:hidden durante o lançamento
 SPLASH_SECONDS = 1.4  # abertura com a marca do Hydra ao entrar vindo da mesa ou do PC acordando
 # BP por cima do jogo (área especial): esmaece como o menu Home de um console; fora do Hydra OS, o padrão do Omarchy
 SPECIAL_ANIM_CONSOLE = 'hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 2.5, bezier = "easeOutQuint", style = "fade" })'
@@ -442,7 +443,7 @@ def enter():
         threading.Timer(SPLASH_SECONDS, act, (backdrop_send, "splash off")).start()
     hypr.dispatch(f'hl.dsp.focus({{ monitor = "{tv["name"]}" }})')
     hypr.dispatch(f'hl.dsp.focus({{ workspace = "{GAME_WS}" }})')
-    park_cursor(tv)
+    park_cursor()  # relê a TV: o dict de antes ainda era da área anterior
     sync_tv()
     return True
 
@@ -503,7 +504,12 @@ def open_bp():
         log("Hydra OS: BP não reaberto (TV fora da área 4)")
         return
     bp_wanted_at = time.monotonic()
-    if bp := bp_window(hypr.clients() or []):
+    cs = hypr.clients() or []
+    if neo_launch_win and any(c["address"] == neo_launch_win for c in cs):
+        # o jogo não abriu e a janela de lançamento do Neo continua lá: é nela que o Neo mostra o erro; volta à TV
+        log("Hydra OS: o jogo não abriu -> mostra a janela do Neo (com o erro dele)")
+        show(neo_launch_win)
+    elif bp := bp_window(cs):
         show(bp)
     elif not send_signal():
         log("Hydra OS: Hydra fora do ar -> abre direto no BP")
@@ -590,13 +596,29 @@ def hos_opened_untracked(game_id):
         hos_launched(game_id)
 
 
+def forget_neo_launch_win():
+    global neo_launch_win
+    neo_launch_win = None
+
+
+def reapply_profile():
+    """Recarga da config do Hyprland (hyprctl reload, troca de tema do Omarchy) volta o que o perfil mudou por eval:
+    com o Hydra OS ativo, aplica de novo (a barra mora num arquivo do Omarchy e não volta)."""
+    if os.path.exists(DND_PREV):
+        hypr.request("eval hl.config({ misc = { enable_anr_dialog = false } })")
+        hypr.request(f"eval {SPECIAL_ANIM_CONSOLE}")
+        log("Hydra OS: config do Hyprland recarregada -> perfil aplicado de novo")
+
+
 def neo_launch_window(addr):
     """Janela sem título do Neo na área 4 com o BP aberto: a tela "Iniciando…" dele (capa num canto, texto solto: na
     TV parece quebrada). Vai para uma área escondida e a tela de carregamento do Hydra OS entra no lugar; nome e arte
     chegam com o log do Neo. Sem BP aberto é a janela principal (saída do BP): fica com o bp_closed_to_tray."""
+    global neo_launch_win
     cs = hypr.clients() or []
     if not any(is_bp(c) for c in cs):
         return
+    neo_launch_win = addr
     hypr.dispatch(f'hl.dsp.window.move({{ workspace = "special:hidden", window = "address:{addr}", follow = false }})')
     if hos.game is None and hos.phase != "launching":
         log("Hydra OS: o Neo começou a lançar um jogo -> tela de carregamento")
@@ -689,6 +711,8 @@ def game_exit_watch():
     for ev, data in hypr.events():
         if ev in ("fullscreen", "openwindow", "closewindow", "movewindowv2", "openlayer"):
             act(sync_tv)  # o que há na área 4 mudou (tela base "base" ou "cover"); camada nova pode ficar presa
+        if ev == "configreloaded":
+            act(reapply_profile)
         if ev in ("monitoraddedv2", "monitorremovedv2") and TV_DESC in data:
             act(tv_output_changed, ev == "monitoraddedv2")
         if ev == "closewindow":
@@ -701,6 +725,8 @@ def game_exit_watch():
             act(hos_window_closed, "0x" + data)  # jogo da área 4 fechou (volta ao BP) ou diálogo segurado sumiu
             if w and w.get("class") == "steam" and w.get("title") == "Launching...":
                 act(steam_launch_window, "0x" + data, False)
+            if "0x" + data == neo_launch_win:
+                act(forget_neo_launch_win)
         elif ev in ("workspacev2", "focusedmonv2", "monitoraddedv2", "monitorremovedv2"):
             act(sync_tv)
             continue

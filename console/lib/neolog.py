@@ -5,11 +5,13 @@ Linhas do ~/.config/hydralauncher-native/logs/info.txt (Neo 4.4.0):
   [2026-11-21 13:22:42.620] [info]  (main)         [ProcessWatcher] steam:1245620 opened (/…/eldenring.exe)
   [2026-11-21 13:24:32.471] [info]  (main)         [ProcessWatcher] steam:1245620 closed (+2s)
 """
-import os, re
+import json, os, re
 
 HOME = os.path.expanduser("~")
 INFO_LOG = f"{HOME}/.config/hydralauncher-native/logs/info.txt"
 STEAM_VDF = f"{HOME}/.local/share/Steam/steamapps/libraryfolders.vdf"
+STEAM_ART = f"{HOME}/.local/share/Steam/appcache/librarycache"  # <appid>/library_hero.jpg e logo.png
+ART_CACHE = f"{HOME}/.cache/hydra-os/art.json"  # jogos personalizados: custom-games.mjs art (cópia do banco do Neo)
 
 _LAUNCHED = re.compile(r"\bLaunched (\S+)")  # jogo que não é da Steam pode não ter " through ..." depois
 _WATCHER = re.compile(r"\[ProcessWatcher\] (\S+) (opened|closed)\b")
@@ -42,6 +44,25 @@ def game_name(game_id, vdf=STEAM_VDF):
         if m := re.search(r'"name"\s+"([^"]+)"', _read(f"{lib}/steamapps/appmanifest_{appid}.acf")):
             return m.group(1)
     return None
+
+
+def _file(path):
+    return path if path and os.path.isfile(path) else None
+
+
+def game_info(game_id, vdf=STEAM_VDF, steam_art=STEAM_ART, art_cache=ART_CACHE):
+    """(nome, imagem de fundo, logo) para a tela de carregamento; o que faltar vem None.
+    Steam: appmanifest + cache de artes da própria Steam. Outros (custom:<uuid>): o art.json que o
+    custom-games.mjs tira de uma cópia do banco do Neo (as artes que o hydra-art baixou)."""
+    shop, _, appid = game_id.partition(":")
+    if shop == "steam":
+        return game_name(game_id, vdf), _file(f"{steam_art}/{appid}/library_hero.jpg"), _file(f"{steam_art}/{appid}/logo.png")
+    try:
+        with open(art_cache) as f:
+            g = json.load(f).get(game_id) or {}
+    except (OSError, ValueError):
+        g = {}
+    return g.get("title"), _file(g.get("hero")), _file(g.get("logo"))
 
 
 class Follower:

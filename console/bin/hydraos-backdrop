@@ -9,6 +9,8 @@ Quem manda é o daemon do controle (~/.local/lib/console/daemon.py), pelo stdin,
   cover           preto também no nível "top", com o texto: cobre a barra, o dock e janelas soltas. Só no intervalo
                   sem nada em tela cheia na área 4 (quem sabe disso é o daemon)
   text <msg>      texto no centro do "cover", com um spinner ("text" sozinho: só preto)
+  art <fundo>\t<logo>  arte do jogo no "cover": fundo escurecido e desfocado, logo no centro no lugar do texto
+                  (caminhos de arquivo; vazio = sem; "art" sozinho tira a arte)
 Fim do stdin (daemon parou): sai.
 
 Por que duas camadas e não uma "top" que o Hyprland esconde atrás da tela cheia: esse esmaecimento não é confiável
@@ -40,7 +42,8 @@ from gi.repository import Gdk, Gio, GLib, Gtk, Gtk4LayerShell as Layer
 CSS = """
 window { background: #000; }
 label { color: rgba(255, 255, 255, 0.6); font-size: %dpx; }
-spinner { color: rgba(255, 255, 255, 0.45); }
+spinner { color: rgba(255, 255, 255, 0.55); }
+picture.hero { filter: blur(18px) brightness(0.45); }
 """
 
 
@@ -69,6 +72,7 @@ def layer_window(app, monitor, level, namespace):
 class Backdrop:
     def __init__(self, app, monitor):
         self.state, self.text, self.buf = "off", "", b""
+        self.art = ("", "")
         self.base = layer_window(app, monitor, Layer.Layer.BOTTOM, "hydraos-base")
         self.cover = layer_window(app, monitor, Layer.Layer.TOP, "hydraos-cover")
 
@@ -76,12 +80,19 @@ class Backdrop:
         css.load_from_string(CSS % max(16, round(monitor.get_geometry().height * 0.025)))
         Gtk.StyleContext.add_provider_for_display(self.cover.get_display(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
+        geo = monitor.get_geometry()
         self.label, self.spinner = Gtk.Label(), Gtk.Spinner()
-        self.spinner.set_size_request(32, 32)
-        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=24, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
-        self.box.append(self.label)
-        self.box.append(self.spinner)
-        self.cover.set_child(self.box)
+        self.spinner.set_size_request(36, 36)
+        self.hero = Gtk.Picture(content_fit=Gtk.ContentFit.COVER, can_shrink=True)
+        self.hero.add_css_class("hero")
+        self.logo = Gtk.Picture(content_fit=Gtk.ContentFit.CONTAIN, can_shrink=True)
+        self.logo.set_size_request(round(geo.width * 0.4), round(geo.height * 0.25))
+        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=32, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
+        for w in (self.logo, self.label, self.spinner):
+            self.box.append(w)
+        layers = Gtk.Overlay(child=self.hero)
+        layers.add_overlay(self.box)
+        self.cover.set_child(layers)
         for win in (self.base, self.cover):
             # a cada vez que aparece (superfície nova no Hyprland): input vazio, cliques vão para o que está embaixo
             win.connect("map", lambda w: w.get_surface().set_input_region(cairo.Region()))
@@ -92,9 +103,15 @@ class Backdrop:
         for win, on in ((self.base, self.state != "off"), (self.cover, self.state == "cover")):
             win.set_visible(on)
         show = self.state == "cover" and bool(self.text)
+        hero, logo = self.art
         self.label.set_label(self.text)
+        self.label.set_visible(not logo)  # com logo, o nome escrito sobra
         self.box.set_visible(show)
         self.spinner.set_spinning(show)
+        for pic, path in ((self.hero, hero), (self.logo, logo)):
+            if pic.get_file() is None or pic.get_file().get_path() != (path or None):
+                pic.set_filename(path or None)
+            pic.set_visible(bool(path))
 
     def stdin(self, _channel, _cond):
         # os.read + split: o readline do Python guardaria linhas no buffer dele e o watch não dispararia de novo
@@ -109,6 +126,9 @@ class Backdrop:
                 self.state = cmd
             elif cmd == "text":
                 self.text = arg.strip()
+            elif cmd == "art":
+                hero, _, logo = arg.partition("\t")
+                self.art = (hero.strip(), logo.strip())
         self.render()
         return True
 

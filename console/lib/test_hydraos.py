@@ -2,7 +2,7 @@
 # Testes da máquina de estados do Hydra OS (área 4 da TV): python3 ~/.local/lib/console/test_hydraos.py
 import unittest
 
-from hydraos import BP_TITLE, HydraOS, backdrop_state
+from hydraos import BP_TITLE, HydraOS, backdrop_state, stuck_top_layers
 
 G, BP = "0xg", "0xbp"
 
@@ -111,6 +111,18 @@ class ExitTest(unittest.TestCase):
         self.assertEqual(h.guide(False, None, None, G, 0), [("enter",), ("focus", G)])
 
 
+class ArtTest(unittest.TestCase):
+    def test_lancamento_com_arte(self):
+        h = HydraOS()
+        self.assertEqual(h.launched("ELDEN RING", 0, "steam:1", hero="/h.jpg", logo="/l.png"),
+                         [("text", "Iniciando ELDEN RING…"), ("art", "/h.jpg", "/l.png")])
+        self.assertEqual(h.window(G, "game", True, 5), [("text", ""), ("art", "", "")])
+
+    def test_arte_some_na_saida_de_emergencia(self):
+        h = HydraOS(); h.launched("X", 0, hero="/h.jpg")
+        self.assertEqual(h.guide(True, None, None, None, 1), [("text", ""), ("art", "", ""), ("open_bp",)])
+
+
 class ReviewTest(unittest.TestCase):
     """Achados da revisão final (2026-11-21)."""
 
@@ -167,6 +179,34 @@ class BackdropStateTest(unittest.TestCase):
 
     def test_dialogo_da_steam_segurado(self):
         self.assertEqual(backdrop_state(True, [], True), "base")
+
+
+LAYERS = """Monitor HDMI-A-1:
+	Layer level 0 (background):
+		Layer 555e86d330c0: xywh: -1600 -592 1600 900, a: 1, namespace: omarchy-background, pid: 3127
+	Layer level 1 (bottom):
+		Layer 555e8b80d400: xywh: -1600 -592 1600 900, a: 1, namespace: hydraos-base, pid: 1
+	Layer level 2 (top):
+		Layer 555e86234810: xywh: -1600 -592 1600 37, a: %s, namespace: omarchy-bar, pid: 3127
+		Layer 555e899339a0: xywh: -1600 -592 1600 900, a: 1, namespace: hydraos-cover, pid: 1
+	Layer level 3 (overlay):
+		Layer 555e8c000000: xywh: -1600 -592 1600 900, a: 1, namespace: notifications, pid: 3127
+
+Monitor DP-2:
+	Layer level 2 (top):
+		Layer 555e86ab5ee0: xywh: 360 128 2560 37, a: 1, namespace: omarchy-bar, pid: 3127
+"""
+
+
+class StuckLayersTest(unittest.TestCase):
+    def test_barra_presa_por_cima_da_tela_cheia(self):
+        self.assertEqual(stuck_top_layers(LAYERS % "1", "HDMI-A-1"), ["omarchy-bar"])
+
+    def test_barra_escondida_e_a_propria_tela_base_nao_contam(self):
+        self.assertEqual(stuck_top_layers(LAYERS % "0", "HDMI-A-1"), [])
+
+    def test_so_o_monitor_pedido(self):
+        self.assertEqual(stuck_top_layers(LAYERS % "0", "DP-3"), [])
 
 
 if __name__ == "__main__":

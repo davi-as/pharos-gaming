@@ -285,7 +285,10 @@ def expel(addr):
     c = next((c for c in hypr.clients() or [] if c["address"] == addr), None)
     if not c or c["workspace"]["name"] != GAME_WS or game_window(c):
         return
-    if hos.phase == "launching" and c.get("class") == "steam" and c.get("title") not in STEAM_NOT_DIALOG:
+    title = c.get("title") or ""
+    # notificationtoasts_*: aviso da Steam ("controle conectado"), não diálogo; vai para a 3 como o resto
+    if (hos.phase == "launching" and c.get("class") == "steam" and title not in STEAM_NOT_DIALOG
+            and not title.startswith("notificationtoasts")):
         log(f"Hydra OS: diálogo da Steam no carregamento fica na área {GAME_WS}: {c.get('title')!r}")
         dialogs.add(addr)
         hypr.dispatch(f'hl.dsp.window.float({{ window = "address:{addr}", action = "set" }})')
@@ -308,6 +311,8 @@ bd_spawned = float("-inf")
 bd_hold = False  # diálogo da Steam no carregamento: transparente enquanto ele existir
 bd_sent = None  # último estado mandado: off | base | cover
 bd_text = ""
+bd_art = ("", "")  # (fundo, logo) do jogo na tela de carregamento
+ART_TOOL = f"{HOME}/.local/share/hydra-art/custom-games.mjs"  # "art": nome/fundo/logo dos jogos personalizados
 
 
 def backdrop_ensure(tv):
@@ -323,7 +328,7 @@ def backdrop_ensure(tv):
                                     stderr=err, text=True, start_new_session=True)
     bd_sent = None
     log("tela base aberta")
-    return backdrop_send(f"text {bd_text}")
+    return backdrop_send(f"text {bd_text}") and backdrop_send("art " + "\t".join(bd_art))
 
 
 def backdrop_send(line):
@@ -342,12 +347,28 @@ def sync_tv():
     global bd_sent
     tv = tv_monitor()
     visible = bool(tv and tv["activeWorkspace"]["name"] == GAME_WS and tv.get("dpmsStatus", True))
+    if tv and not visible and tv["focused"] and bp_overlay_shown(tv):
+        toggle_bp_overlay()  # saiu do Hydra OS com o BP por cima do jogo: ele não vai junto para a área 3
     if tv and backdrop_ensure(tv):
         ws4 = [c for c in hypr.clients() or [] if c["workspace"]["name"] == GAME_WS]
         want = hydraos.backdrop_state(visible, ws4, bd_hold)
         if want != bd_sent and backdrop_send(want):
             bd_sent = want
+        # a área especial abre no monitor em foco: só com a TV focada
+        if visible and tv["focused"] and any(c.get("fullscreen") for c in ws4) and not bp_overlay_shown(tv):
+            unstick_layers(tv)
     profile(visible and tv["focused"])
+
+
+def unstick_layers(tv):
+    """Camada presa por cima do jogo/BP em tela cheia (a barra do Omarchy depois de a TV religar, Hyprland 0.56.2):
+    abrir e fechar uma área especial vazia faz o Hyprland refazer a conta e esconder a camada atrás da tela cheia.
+    Testado: sem piscar e sem tirar o foco do jogo. Só quando há camada presa."""
+    stuck = hydraos.stuck_top_layers(hypr.request("layers") or "", tv["name"])
+    if stuck:
+        log(f"Hydra OS: {', '.join(stuck)} por cima da tela cheia -> refaz a ordem das camadas")
+        hypr.dispatch('hl.dsp.workspace.toggle_special("hydrafix")')
+        hypr.dispatch('hl.dsp.workspace.toggle_special("hydrafix")')
 
 
 def profile(active):
@@ -403,11 +424,37 @@ def park_cursor(tv=None):
         hypr.dispatch(f"hl.dsp.cursor.move({{ x = {x}, y = {y} }})")
 
 
+def bp_overlay_shown(tv=None):
+    tv = tv or tv_monitor()
+    return bool(tv and tv["specialWorkspace"]["name"] == WARM_WS)
+
+
+def toggle_bp_overlay():
+    hypr.dispatch(f'hl.dsp.workspace.toggle_special("{WARM_WS.split(":", 1)[1]}")')
+
+
 def show(addr):
-    """Foca a janela em tela cheia na área 4 (tira o BP aquecido do WARM_WS ou de outro monitor)."""
-    c = next((c for c in hypr.clients() or [] if c["address"] == addr), None)
+    """Foca a janela em tela cheia no Hydra OS. O BP com um jogo em tela cheia na área 4 vai por CIMA dele, na área
+    especial (WARM_WS) mostrada na TV, como o menu Home de um console: o jogo continua em tela cheia embaixo, sem
+    encolher nem se minimizar (jogo em tela cheia exclusiva some ao perder a tela cheia). Sem jogo, o BP fica na 4."""
+    cs = hypr.clients() or []
+    c = next((c for c in cs if c["address"] == addr), None)
     if not c:
         return
+    tv = tv_monitor()
+    game_fs = hos.game and any(g["address"] == hos.game and g["workspace"]["name"] == GAME_WS and g.get("fullscreen")
+                               for g in cs)
+    if is_bp(c) and game_fs and tv:
+        if c["workspace"]["name"] != WARM_WS:
+            hypr.dispatch(f'hl.dsp.window.move({{ workspace = "{WARM_WS}", window = "address:{addr}", follow = false }})')
+        if not bp_overlay_shown(tv):
+            hypr.dispatch(f'hl.dsp.focus({{ monitor = "{tv["name"]}" }})')
+            toggle_bp_overlay()
+        focus(addr, fullscreen=True)
+        park_cursor()
+        return
+    if bp_overlay_shown(tv) and c["workspace"]["name"] != WARM_WS:
+        toggle_bp_overlay()  # esconde o BP de cima: o jogo já está em tela cheia embaixo
     if c["workspace"]["name"] != GAME_WS:
         hypr.dispatch(f'hl.dsp.window.move({{ workspace = "{GAME_WS}", window = "address:{addr}" }})')
     focus(addr, fullscreen=True)
@@ -431,7 +478,7 @@ def open_bp():
 
 
 def run_hos(actions):
-    global bd_text, bd_hold, bp_wanted_at
+    global bd_text, bd_art, bd_hold, bp_wanted_at
     for kind, *args in actions:
         log(f"Hydra OS: {kind} {' '.join(map(str, args))}".rstrip())
         if kind == "enter" and not enter():
@@ -450,6 +497,9 @@ def run_hos(actions):
         elif kind == "text":
             bd_text = args[0]
             backdrop_send(f"text {bd_text}")
+        elif kind == "art":
+            bd_art = (args[0], args[1])
+            backdrop_send("art " + "\t".join(bd_art))
         elif kind == "hold":
             bd_hold = args[0]
             sync_tv()
@@ -468,8 +518,22 @@ def hos_later(delay):
     threading.Timer(delay + 0.1, act, (hos_tick,)).start()
 
 
+def refresh_art():
+    """Nome/fundo/logo dos jogos personalizados (cópia do banco do Neo, ~1 s) em segundo plano."""
+    spawn("node", ART_TOOL, "art", neolog.ART_CACHE)
+
+
 def hos_launched(game_id):
-    run_hos(hos.launched(neolog.game_name(game_id), time.monotonic(), game_id))
+    name, hero, logo = neolog.game_info(game_id)
+    if not game_id.startswith("steam:") and not name:
+        refresh_art()  # jogo personalizado novo: desta vez sem arte, da próxima já com
+    run_hos(hos.launched(name, time.monotonic(), game_id, hero, logo))
+
+
+def hos_opened_untracked(game_id):
+    """Jogo que subiu sem "Launched": vira lançamento (tela de carregamento) se a janela dele ainda não abriu."""
+    if hos.game is None and hos.phase != "launching":
+        hos_launched(game_id)
 
 
 def hos_process(running, game_id=None):
@@ -503,14 +567,23 @@ def hos_window_closed(addr):
 def neo_log_watch():
     """Log do Neo: 'Launched' (o BP vai fechar; mostra 'Iniciando <jogo>…') e o ProcessWatcher (jogo abriu/fechou)."""
     f = neolog.Follower(neolog.INFO_LOG)
+    launched_id = None
+    refresh_art()
     while True:
         for line in f.read():
             if ev := neolog.parse(line):
                 kind, game_id = ev
                 log(f"Neo: {kind} {game_id}")
                 if kind == "launched":
+                    launched_id = game_id
                     act(hos_launched, game_id)
-                else:
+                elif kind == "opened" and game_id != launched_id:
+                    # jogo personalizado (emulador, script): o Neo não loga "Launched", só o "opened" quando ele sobe
+                    launched_id = game_id
+                    act(hos_opened_untracked, game_id)
+                elif kind == "closed" and game_id == launched_id:
+                    launched_id = None  # o mesmo jogo aberto de novo é outro lançamento
+                if kind != "launched":
                     act(hos_process, kind == "opened", game_id)
         time.sleep(0.25)
 
@@ -545,8 +618,8 @@ def game_exit_watch():
     wins, last_active = {}, None
     act(adopt_snapshot)  # daemon reiniciado com o 4 já na TV (e talvez um jogo nele)
     for ev, data in hypr.events():
-        if ev in ("fullscreen", "openwindow", "closewindow", "movewindowv2"):
-            act(sync_tv)  # o que há na área 4 mudou: tela base "base" ou "cover"
+        if ev in ("fullscreen", "openwindow", "closewindow", "movewindowv2", "openlayer"):
+            act(sync_tv)  # o que há na área 4 mudou (tela base "base" ou "cover"); camada nova pode ficar presa
         if ev in ("monitoraddedv2", "monitorremovedv2") and TV_DESC in data:
             act(tv_output_changed, ev == "monitoraddedv2")
         if ev == "closewindow":
@@ -835,12 +908,12 @@ def pro_connected(sysfs, wake):
     time.sleep(4)
     if dev := pro_hidraw(sysfs):
         ensure_full_mode(dev)
+    if wake:
+        # PC acordado pelo controle: sempre o Hydra OS no último estado (o BP ou o jogo que ficou aberto), mesmo
+        # quando o reinício do Hydra abaixo é adiado porque há jogo rodando (antes a TV ligava na área 3)
+        act(wake_open)
     if not hydra_main():
-        if wake:
-            wake_open()
         return
-    if wake:  # o BP vem do restart abaixo; só falta a TV
-        spawn(f"{BIN}/tv-power", "on")
     mode = "big-picture" if wake or any(is_bp(c) and c["workspace"]["name"] != WARM_WS for c in hypr.clients() or []) else "hidden"
     if game_running():
         restart_pending = mode
